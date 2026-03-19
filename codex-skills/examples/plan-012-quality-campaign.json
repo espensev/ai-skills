@@ -1,0 +1,212 @@
+{
+  "id": "plan-012",
+  "schema_version": 1,
+  "artifact_version": 1,
+  "created_at": "2026-03-14T12:00:00+01:00",
+  "approved_at": "",
+  "executed_at": "",
+  "updated_at": "2026-03-14T12:00:00+01:00",
+  "status": "draft",
+  "description": "Quality hardening for code structure, runtime state persistence, and analysis data surfaces.",
+  "slug": "quality-hardening-code-structure-database",
+  "planner_kind": "planner-refactor",
+  "source_discovery_docs": ["docs/archive/refactor-roadmap.md", "docs/file-map.md", "docs/program-flow.md"],
+  "source_roadmap": "",
+  "phase": "1 — Foundation and data integrity",
+  "behavioral_invariants": [
+    "runtime state and plan files must be validated before execution",
+    "plan ownership and schema changes are backward-compatible with legacy projects"
+  ],
+  "rollback_strategy": "Pause between agents and revert code/state artifacts via git if validation regresses.",
+  "legacy_status": "",
+  "backfill_reasons": [],
+  "next_letter": "g",
+  "agents": [
+    {
+      "letter": "a",
+      "name": "state-schema-contract",
+      "scope": "Create versioned runtime state and plan schema contracts and validation entrypoints.",
+      "deps": [],
+      "files": ["scripts/task_runtime/state.py", "scripts/task_models.py"],
+      "group": 0,
+      "complexity": "medium"
+    },
+    {
+      "letter": "b",
+      "name": "state-integrity-checksum",
+      "scope": "Add checksum/version validation and guarded write behavior for state files.",
+      "deps": ["a"],
+      "files": ["scripts/task_runtime/state.py", "tests/test_state_persistence.py", "tests/test_state_edge_cases.py"],
+      "group": 1,
+      "complexity": "medium"
+    },
+    {
+      "letter": "c",
+      "name": "plan-normalization-hardened",
+      "scope": "Centralize plan defaults, migration, and backfill handling across plan loaders.",
+      "deps": ["a"],
+      "files": ["scripts/task_manager.py", "scripts/task_runtime/plans.py", "scripts/task_runtime/validation.py"],
+      "group": 1,
+      "complexity": "high"
+    }
+    ,
+    {
+      "letter": "d",
+      "name": "analysis-cache-governance",
+      "scope": "Add cache schema metadata and corruption handling for analysis snapshots.",
+      "deps": ["a", "c"],
+      "files": ["scripts/task_manager.py", "scripts/task_runtime/state.py", "scripts/analysis/engine.py"],
+      "group": 2,
+      "complexity": "medium"
+    },
+    {
+      "letter": "e",
+      "name": "db-health-command",
+      "scope": "Add machine-readable state, plan, and cache health reporting command.",
+      "deps": ["a", "b", "c", "d"],
+      "files": ["scripts/task_manager.py", "scripts/task_runtime/state.py", "tests/test_cli_commands.py"],
+      "group": 3,
+      "complexity": "high"
+    },
+    {
+      "letter": "f",
+      "name": "quality-tracker-docs",
+      "scope": "Publish quality tracker, risk log, and rollout guidance for this campaign.",
+      "deps": ["b", "c", "d", "e"],
+      "files": ["docs/campaign-plan-012-quality-campaign-code-structure-database.md", "docs/archive/refactor-roadmap.md", "docs/archive/refactor-tracker.md", "examples/README.md"],
+      "group": 4,
+      "complexity": "low"
+    }
+  ],
+  "groups": {
+    "0": ["a"],
+    "1": ["b", "c"],
+    "2": ["d"],
+    "3": ["e"],
+    "4": ["f"]
+  },
+  "conflicts": [
+    "task_manager.py owns orchestration, validation, and persistence wiring in one runtime file"
+  ],
+  "integration_steps": [
+    "A/B/C establish schema contracts first.",
+    "D and E consume these contracts.",
+    "F publishes campaign status after the execution surface is stable."
+  ],
+  "plan_file": "data/plans/plan-012.json",
+  "plan_doc": "docs/campaign-plan-012-quality-campaign-code-structure-database.md",
+  "plan_elements": {
+    "campaign_title": "Quality hardening for code structure, runtime state persistence, and analysis data surfaces",
+    "goal_statement": "Increase reliability by improving structure boundaries and adding integrity checks across runtime state, plan storage, and analysis cache snapshots.",
+    "exit_criteria": [
+      "state and plan files validate deterministically",
+      "corrupt cache/state/payloads return actionable diagnostics",
+      "integrity command returns JSON with remediation suggestions",
+      "tests cover normal, corrupt, and recovery paths",
+      "docs tracker includes risks and rollout progress"
+    ],
+    "impact_assessment": [
+      {"file": "scripts/task_runtime/state.py", "lines": 110, "change_type": "modify", "risk": "medium"},
+      {"file": "scripts/task_manager.py", "lines": 2800, "change_type": "modify", "risk": "high"},
+      {"file": "scripts/task_runtime/plans.py", "lines": 800, "change_type": "modify", "risk": "high"},
+      {"file": "scripts/task_runtime/validation.py", "lines": 250, "change_type": "modify", "risk": "low"},
+      {"file": "tests/test_state_persistence.py", "lines": 180, "change_type": "modify", "risk": "low"},
+      {"file": "tests/test_cli_commands.py", "lines": 260, "change_type": "modify", "risk": "low"}
+    ],
+    "agent_roster": [
+      {"letter": "a", "name": "state-schema-contract", "scope": "Create versioned runtime state and plan schema contracts and validation entrypoints.", "deps": [], "files": ["scripts/task_runtime/state.py", "scripts/task_models.py"], "group": 0, "complexity": "medium"},
+      {"letter": "b", "name": "state-integrity-checksum", "scope": "Add checksum/version validation and guarded write behavior for state files.", "deps": ["a"], "files": ["scripts/task_runtime/state.py", "tests/test_state_persistence.py", "tests/test_state_edge_cases.py"], "group": 1, "complexity": "medium"},
+      {"letter": "c", "name": "plan-normalization-hardened", "scope": "Centralize plan defaults, migration, and backfill handling across plan loaders.", "deps": ["a"], "files": ["scripts/task_manager.py", "scripts/task_runtime/plans.py", "scripts/task_runtime/validation.py"], "group": 1, "complexity": "high"},
+      {"letter": "d", "name": "analysis-cache-governance", "scope": "Add cache schema metadata and corruption handling for analysis snapshots.", "deps": ["a", "c"], "files": ["scripts/task_manager.py", "scripts/task_runtime/state.py", "scripts/analysis/engine.py"], "group": 2, "complexity": "medium"},
+      {"letter": "e", "name": "db-health-command", "scope": "Add machine-readable state, plan, and cache health reporting command.", "deps": ["a", "b", "c", "d"], "files": ["scripts/task_manager.py", "scripts/task_runtime/state.py", "tests/test_cli_commands.py"], "group": 3, "complexity": "high"},
+      {"letter": "f", "name": "quality-tracker-docs", "scope": "Publish quality tracker, risk log, and rollout guidance for this campaign.", "deps": ["b", "c", "d", "e"], "files": ["docs/campaign-plan-012-quality-campaign-code-structure-database.md", "docs/archive/refactor-roadmap.md", "docs/archive/refactor-tracker.md", "examples/README.md"], "group": 4, "complexity": "low"}
+    ],
+    "dependency_graph": [
+      {"group": 0, "agents": ["a"]},
+      {"group": 1, "agents": ["b", "c"]},
+      {"group": 2, "agents": ["d"]},
+      {"group": 3, "agents": ["e"]},
+      {"group": 4, "agents": ["f"]}
+    ],
+    "file_ownership_map": [
+      {"file": "scripts/task_runtime/state.py", "owner": "a"},
+      {"file": "scripts/task_models.py", "owner": "a"},
+      {"file": "scripts/task_manager.py", "owner": "c"},
+      {"file": "scripts/task_runtime/plans.py", "owner": "c"},
+      {"file": "scripts/analysis/engine.py", "owner": "d"},
+      {"file": "tests/test_cli_commands.py", "owner": "e"},
+      {"file": "docs/campaign-plan-012-quality-campaign-code-structure-database.md", "owner": "f"}
+    ],
+    "conflict_zone_analysis": [
+      {"files": ["scripts/task_manager.py", "scripts/task_runtime/state.py"], "reason": "Orchestration and persistence coupling."},
+      {"files": ["data/tasks.json", "data/analysis-cache.json"], "reason": "Separate persistence layers currently report diagnostics differently."
+      }
+    ],
+    "integration_points": [
+      "A is the schema baseline for B/C/D/E.",
+      "C and D share migration behavior to keep plans and cache aligned.",
+      "E consumes A/B/C/D diagnostics.",
+      "F publishes residual risk after validation gates pass."
+    ],
+    "schema_changes": ["state/cache validation metadata"],
+    "risk_assessment": [
+      {"risk": "legacy snapshots fail under strict validation", "likelihood": "medium", "impact": "high", "mitigation": "non-destructive normalization plus repair guidance"},
+      {"risk": "CLI behavior drift", "likelihood": "low", "impact": "medium", "mitigation": "coverage for --json and legacy arguments"}
+    ],
+    "verification_strategy": [
+      "python -m py_compile scripts/task_manager.py scripts/task_runtime/state.py scripts/task_runtime/plans.py",
+      "python -m pytest tests/test_state_persistence.py tests/test_state_edge_cases.py tests/test_cli_commands.py tests/test_parsing.py tests/test_analysis.py",
+      "python scripts/task_manager.py plan preflight --json",
+      "python scripts/task_manager.py analyze --json"
+    ],
+    "documentation_updates": ["docs/archive/refactor-roadmap.md", "docs/archive/refactor-tracker.md", "docs/campaign-plan-012-quality-campaign-code-structure-database.md", "examples/README.md"]
+  },
+  "analysis_summary": {
+    "total_files": 101,
+    "total_lines": 28861,
+    "conflict_zones": [
+      {"files": ["scripts/task_manager.py", "scripts/task_runtime/state.py"], "reason": "execution and persistence coupling"}
+    ],
+    "modules": {
+      "scripts": 9317,
+      "tests": 13223,
+      "docs": 1809,
+      "skills": 1291,
+      "examples": 1785,
+      "root": 1043
+    },
+    "detected_stacks": ["python"],
+    "project_graph": {"nodes": [], "edges": []},
+    "analysis_schema_version": 3,
+    "analysis_providers": ["basic", "dotnet-cli"],
+    "analysis_health": {"mode": "auto", "confidence": "medium", "warnings": []},
+    "planning_context": {
+      "analysis_health": {
+        "mode": "auto",
+        "requested_providers": ["basic"],
+        "applied_providers": ["basic"],
+        "skipped_providers": [],
+        "partial_analysis": false,
+        "fallback_only": false,
+        "heuristic_only": false,
+        "confidence": "medium",
+        "warnings": []
+      },
+      "detected_stacks": ["python"],
+      "project_graph": {"nodes": [], "edges": []},
+      "conflict_zones": [],
+      "ui_surfaces": [],
+      "ownership_summary": {
+        "project_count": 0,
+        "assigned_file_count": 0,
+        "assigned_line_count": 0,
+        "unassigned_file_count": 0,
+        "unassigned_paths": [],
+        "projects": []
+      },
+      "priority_projects": {"startup": [], "packaging": []},
+      "coordination_hotspots": []
+    }
+  }
+}
+

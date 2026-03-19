@@ -1,0 +1,419 @@
+{
+  "id": "plan-009",
+  "schema_version": 1,
+  "artifact_version": 1,
+  "created_at": "2026-03-11T16:52:21+01:00",
+  "updated_at": "2026-03-11T18:20:09+01:00",
+  "status": "approved",
+  "description": "Plan lifecycle enforcement: validate plan JSON, enforce spec completeness, regenerate docs from canonical plans, switch verify to JSON-first, and migrate legacy plans",
+  "slug": "plan-lifecycle-enforcement",
+  "planner_kind": "planner",
+  "source_discovery_docs": [],
+  "source_roadmap": "docs/campaign-plan-008-skill-contract-hardening.md",
+  "phase": "",
+  "behavioral_invariants": [],
+  "rollback_strategy": "",
+  "next_letter": "au",
+  "agents": [
+    {
+      "letter": "aq",
+      "name": "task-manager-plan-lifecycle",
+      "scope": "Implement plan validation, spec-completeness checks, canonical JSON criteria helpers, deterministic markdown rendering, and refactor metadata persistence in task_manager.py.",
+      "deps": [],
+      "files": [
+        "scripts/task_manager.py"
+      ],
+      "group": 0,
+      "complexity": "high"
+    },
+    {
+      "letter": "ar",
+      "name": "plan-lifecycle-tests",
+      "scope": "Add focused lifecycle tests for validation, approval/execute gating, spec checks, markdown rendering, plan criteria output, and refactor metadata.",
+      "deps": [
+        "aq"
+      ],
+      "files": [
+        "tests/test_plan_lifecycle.py"
+      ],
+      "group": 1,
+      "complexity": "medium"
+    },
+    {
+      "letter": "as",
+      "name": "planning-surface-alignment",
+      "scope": "Align manager, planner, and planning-contract docs to the validated JSON-first lifecycle and backend-owned markdown renderer.",
+      "deps": [
+        "aq"
+      ],
+      "files": [
+        ".claude/skills/manager/SKILL.md",
+        ".claude/skills/planner/SKILL.md",
+        ".claude/skills/planning-contract.md"
+      ],
+      "group": 1,
+      "complexity": "medium"
+    },
+    {
+      "letter": "at",
+      "name": "legacy-plan-migration",
+      "scope": "Migrate existing data/plans artifacts, regenerate markdown from canonical JSON, and explicitly mark incomplete historical plans for backfill where required.",
+      "deps": [
+        "aq",
+        "ar",
+        "as"
+      ],
+      "files": [
+        "data/plans/plan-001.json",
+        "data/plans/plan-002.json",
+        "data/plans/plan-003.json",
+        "data/plans/plan-004.json",
+        "data/plans/plan-005.json",
+        "data/plans/plan-006.json",
+        "data/plans/plan-007.json",
+        "docs/campaign-*.md"
+      ],
+      "group": 2,
+      "complexity": "medium"
+    }
+  ],
+  "groups": {
+    "0": [
+      "aq"
+    ],
+    "1": [
+      "ar",
+      "as"
+    ],
+    "2": [
+      "at"
+    ]
+  },
+  "conflicts": [
+    "scripts/task_manager.py remains single-owner work for the duration of the campaign.",
+    "Planning docs must follow backend primitive names and lifecycle semantics after AQ lands.",
+    "Legacy plan JSON and derived markdown should only be rewritten after validation and rendering are stable."
+  ],
+  "integration_steps": [
+    "Implement backend lifecycle primitives in AQ before any skill-surface updates.",
+    "Use AR to lock backend behavior before migrating stored plan artifacts.",
+    "Run AS after AQ so the planning surfaces document the backend that exists, not the backend that is intended.",
+    "Run AT last so migrated plan artifacts are rendered from the final canonical schema."
+  ],
+  "analysis_summary": {
+    "total_files": 13,
+    "total_lines": 5613,
+    "conflict_zones": [
+      {
+        "files": [
+          "scripts/task_manager.py"
+        ],
+        "reason": "all lifecycle enforcement tickets converge in one backend file"
+      },
+      {
+        "files": [
+          ".claude/skills/manager/SKILL.md",
+          ".claude/skills/planner/SKILL.md",
+          ".claude/skills/planning-contract.md"
+        ],
+        "reason": "planning surfaces must stay synchronized with backend lifecycle semantics"
+      },
+      {
+        "files": [
+          "data/plans/plan-001.json",
+          "data/plans/plan-002.json",
+          "data/plans/plan-003.json",
+          "data/plans/plan-004.json",
+          "data/plans/plan-005.json",
+          "data/plans/plan-006.json",
+          "data/plans/plan-007.json"
+        ],
+        "reason": "legacy artifact migration must use one renderer and one validator"
+      }
+    ],
+    "modules": {
+      "scripts": 2222,
+      "skills": 1349,
+      "tests": 1,
+      "data": 7
+    }
+  },
+  "plan_doc": "docs/campaign-plan-009-plan-lifecycle-enforcement.md",
+  "plan_file": "data/plans/plan-009.json",
+  "plan_elements": {
+    "campaign_title": "Plan Lifecycle Enforcement",
+    "goal_statement": "Make the plan lifecycle in scripts/task_manager.py enforceable rather than advisory by adding approval-time validation, spec completeness checks before launch, backend-owned markdown rendering from canonical JSON, JSON-first criteria access for /manager verify, and explicit metadata/backfill handling for legacy plan artifacts.",
+    "exit_criteria": [
+      "plan validate [plan-id] [--json] exists, is non-mutating, and reports structured errors and warnings.",
+      "plan approve fails invalid plans by default and plan execute refuses non-approved plans.",
+      "Validation rejects missing required plan elements, unknown dependencies, duplicate agent IDs, and duplicate file ownership.",
+      "Generated spec templates include exit criteria and machine-detectable completeness markers.",
+      "run refuses incomplete generated specs with unresolved placeholders or missing exit criteria.",
+      "Every plan mutation writes both data/plans/{plan-id}.json and a regenerated docs/campaign-{plan-id}-{slug}.md.",
+      "/manager verify is documented to consume JSON plan criteria first and treat markdown as derived drift output.",
+      "Existing data/plans/plan-001.json through plan-007.json are migrated or explicitly marked for backfill.",
+      "Automated tests cover validation, approval/execute gating, spec completeness, JSON-to-markdown rendering, plan criteria output, and refactor metadata round-trip."
+    ],
+    "impact_assessment": [
+      {
+        "file": "scripts/task_manager.py",
+        "lines": 2222,
+        "change_type": "modify",
+        "risk": "high"
+      },
+      {
+        "file": ".claude/skills/manager/SKILL.md",
+        "lines": 473,
+        "change_type": "modify",
+        "risk": "medium"
+      },
+      {
+        "file": ".claude/skills/planner/SKILL.md",
+        "lines": 202,
+        "change_type": "modify",
+        "risk": "medium"
+      },
+      {
+        "file": ".claude/skills/planner/SKILL.md",
+        "lines": 306,
+        "change_type": "modify",
+        "risk": "medium"
+      },
+      {
+        "file": ".claude/skills/planning-contract.md",
+        "lines": 368,
+        "change_type": "modify",
+        "risk": "medium"
+      },
+      {
+        "file": "tests/test_plan_lifecycle.py",
+        "lines": "new",
+        "change_type": "create",
+        "risk": "low"
+      },
+      {
+        "file": "data/plans/plan-001.json ... data/plans/plan-007.json",
+        "lines": "205-435 each",
+        "change_type": "modify",
+        "risk": "medium"
+      },
+      {
+        "file": "docs/campaign-*.md derived from migrated plans",
+        "lines": "varied",
+        "change_type": "modify",
+        "risk": "medium"
+      }
+    ],
+    "agent_roster": [
+      {
+        "letter": "aq",
+        "name": "task-manager-plan-lifecycle",
+        "scope": "Implement plan validation, spec-completeness checks, canonical JSON criteria helpers, deterministic markdown rendering, and refactor metadata persistence in task_manager.py.",
+        "deps": [],
+        "files": [
+          "scripts/task_manager.py"
+        ],
+        "group": 0,
+        "complexity": "high"
+      },
+      {
+        "letter": "ar",
+        "name": "plan-lifecycle-tests",
+        "scope": "Add focused lifecycle tests for validation, approval/execute gating, spec checks, markdown rendering, plan criteria output, and refactor metadata.",
+        "deps": [
+          "aq"
+        ],
+        "files": [
+          "tests/test_plan_lifecycle.py"
+        ],
+        "group": 1,
+        "complexity": "medium"
+      },
+      {
+        "letter": "as",
+        "name": "planning-surface-alignment",
+        "scope": "Align manager, planner, and planning-contract docs to the validated JSON-first lifecycle and backend-owned markdown renderer.",
+        "deps": [
+          "aq"
+        ],
+        "files": [
+          ".claude/skills/manager/SKILL.md",
+          ".claude/skills/planner/SKILL.md",
+          ".claude/skills/planning-contract.md"
+        ],
+        "group": 1,
+        "complexity": "medium"
+      },
+      {
+        "letter": "at",
+        "name": "legacy-plan-migration",
+        "scope": "Migrate existing data/plans artifacts, regenerate markdown from canonical JSON, and explicitly mark incomplete historical plans for backfill where required.",
+        "deps": [
+          "aq",
+          "ar",
+          "as"
+        ],
+        "files": [
+          "data/plans/plan-001.json",
+          "data/plans/plan-002.json",
+          "data/plans/plan-003.json",
+          "data/plans/plan-004.json",
+          "data/plans/plan-005.json",
+          "data/plans/plan-006.json",
+          "data/plans/plan-007.json",
+          "docs/campaign-*.md"
+        ],
+        "group": 2,
+        "complexity": "medium"
+      }
+    ],
+    "dependency_graph": [
+      {
+        "group": 0,
+        "agents": [
+          "aq"
+        ]
+      },
+      {
+        "group": 1,
+        "agents": [
+          "ar",
+          "as"
+        ]
+      },
+      {
+        "group": 2,
+        "agents": [
+          "at"
+        ]
+      }
+    ],
+    "file_ownership_map": [
+      {
+        "file": "scripts/task_manager.py",
+        "owner": "aq"
+      },
+      {
+        "file": "tests/test_plan_lifecycle.py",
+        "owner": "ar"
+      },
+      {
+        "file": ".claude/skills/manager/SKILL.md",
+        "owner": "as"
+      },
+      {
+        "file": ".claude/skills/planner/SKILL.md",
+        "owner": "as"
+      },
+      {
+        "file": ".claude/skills/planner/SKILL.md",
+        "owner": "as"
+      },
+      {
+        "file": ".claude/skills/planning-contract.md",
+        "owner": "as"
+      },
+      {
+        "file": "data/plans/plan-001.json",
+        "owner": "at"
+      },
+      {
+        "file": "data/plans/plan-002.json",
+        "owner": "at"
+      },
+      {
+        "file": "data/plans/plan-003.json",
+        "owner": "at"
+      },
+      {
+        "file": "data/plans/plan-004.json",
+        "owner": "at"
+      },
+      {
+        "file": "data/plans/plan-005.json",
+        "owner": "at"
+      },
+      {
+        "file": "data/plans/plan-006.json",
+        "owner": "at"
+      },
+      {
+        "file": "data/plans/plan-007.json",
+        "owner": "at"
+      },
+      {
+        "file": "docs/campaign-*.md",
+        "owner": "at"
+      }
+    ],
+    "conflict_zone_analysis": [
+      "scripts/task_manager.py remains single-owner work for the duration of the campaign.",
+      "Planning docs must follow backend primitive names and lifecycle semantics after AQ lands.",
+      "Legacy plan JSON and derived markdown should only be rewritten after validation and rendering are stable."
+    ],
+    "integration_points": [
+      "Implement backend lifecycle primitives in AQ before any skill-surface updates.",
+      "Use AR to lock backend behavior before migrating stored plan artifacts.",
+      "Run AS after AQ so the planning surfaces document the backend that exists, not the backend that is intended.",
+      "Run AT last so migrated plan artifacts are rendered from the final canonical schema."
+    ],
+    "schema_changes": [
+      "No database schema changes.",
+      "Add approval-time validation semantics for required plan fields.",
+      "Add top-level plan metadata for planner kind, provenance, and refactor-specific fields.",
+      "Add deterministic markdown rendering from canonical JSON plan data.",
+      "Add explicit legacy/backfill markers for historical plan artifacts."
+    ],
+    "risk_assessment": [
+      {
+        "risk": "Approval strictness immediately invalidates historical plans.",
+        "likelihood": "high",
+        "impact": "high",
+        "mitigation": "Migrate or explicitly mark legacy plans rather than silently treating them as valid."
+      },
+      {
+        "risk": "task_manager.py changes break current plan persistence or command flows.",
+        "likelihood": "medium",
+        "impact": "high",
+        "mitigation": "Keep the file single-owner and add lifecycle tests immediately after backend work."
+      },
+      {
+        "risk": "Backend markdown rendering overwrites handwritten details not captured in JSON.",
+        "likelihood": "medium",
+        "impact": "medium",
+        "mitigation": "Settle canonical fields before migration and use AT to backfill preserved intent explicitly."
+      },
+      {
+        "risk": "Planning docs drift from backend semantics again.",
+        "likelihood": "medium",
+        "impact": "medium",
+        "mitigation": "Run AS only after AQ and keep all planning surfaces under one owner."
+      }
+    ],
+    "verification_strategy": [
+      "python -m py_compile scripts/task_manager.py tests/test_plan_lifecycle.py",
+      "python -m pytest tests/test_task_manager.py tests/test_task_manager_portability.py tests/test_plan_lifecycle.py -q",
+      "python scripts/task_manager.py plan validate <invalid-fixture-plan> --json",
+      "python scripts/task_manager.py plan approve <invalid-fixture-plan>",
+      "python scripts/task_manager.py plan execute <draft-plan>",
+      "python scripts/task_manager.py plan criteria <plan-id> --json",
+      "renderer smoke: regenerate docs/campaign-{plan-id}-{slug}.md from canonical JSON"
+    ],
+    "documentation_updates": [
+      "Update .claude/skills/manager/SKILL.md so verify is documented as JSON-first and markdown-secondary.",
+      "Update .claude/skills/planner/SKILL.md for backend validation and renderer ownership.",
+      "Update .claude/skills/planning-contract.md to make markdown's derived status explicit in the lifecycle section.",
+      "Regenerate migrated docs/campaign-*.md files from canonical JSON where appropriate."
+    ]
+  },
+  "legacy_status": "",
+  "approved_at": "2026-03-11T17:01:21+01:00",
+  "executed_at": "",
+  "backfill_reasons": [],
+  "historical_source_artifact": true,
+  "example_note": "Historical source artifact imported from source-repo development. Paths and commands may be source-specific and are not package-neutral install guidance."
+}
+
+
+
+

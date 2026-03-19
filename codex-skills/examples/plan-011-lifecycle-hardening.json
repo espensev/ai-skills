@@ -1,0 +1,379 @@
+{
+  "id": "plan-011",
+  "schema_version": 1,
+  "artifact_version": 1,
+  "created_at": "2026-03-11T17:44:09+01:00",
+  "status": "executed",
+  "description": "Plan lifecycle enforcement — final hardening",
+  "slug": "plan-lifecycle-enforcement-final",
+  "planner_kind": "planner",
+  "source_discovery_docs": [],
+  "source_roadmap": "",
+  "phase": "",
+  "behavioral_invariants": [],
+  "rollback_strategy": "",
+  "legacy_status": "",
+  "next_letter": "az",
+  "agents": [
+    {
+      "letter": "au",
+      "name": "criteria-resolver",
+      "scope": "Harden _resolve_plan_for_verify() to skip plans with empty exit_criteria; fix template indentation bug in _render_spec_template()",
+      "deps": [],
+      "files": [
+        "scripts/task_manager.py"
+      ],
+      "group": 0,
+      "complexity": "low"
+    },
+    {
+      "letter": "aw",
+      "name": "verify-alignment",
+      "scope": "Update manager/SKILL.md verify Phase 3 to use plan criteria --json first; align planning-contract.md, planner/SKILL.md",
+      "deps": [
+        "au"
+      ],
+      "files": [
+        ".codex/skills/manager/SKILL.md",
+        ".codex/skills/planning-contract.md",
+        ".codex/skills/planner/SKILL.md",
+      ],
+      "group": 1,
+      "complexity": "low"
+    },
+    {
+      "letter": "av",
+      "name": "legacy-migration",
+      "scope": "Add _mark_plan_needs_backfill() and wire into _normalize_state() and _load_plan_from_summary(); mark plans 001-007 and 010 as needs_backfill",
+      "deps": [
+        "au"
+      ],
+      "files": [],
+      "group": 1,
+      "complexity": "medium"
+    },
+    {
+      "letter": "ax",
+      "name": "lifecycle-tests",
+      "scope": "Add tests for: criteria resolver skipping invalid plans, legacy backfill marking, JSON-first criteria path, template indentation fix",
+      "deps": [
+        "au",
+        "av",
+        "aw"
+      ],
+      "files": [
+        "tests/test_plan_lifecycle.py"
+      ],
+      "group": 2,
+      "complexity": "medium"
+    },
+    {
+      "letter": "ay",
+      "name": "artifact-cleanup",
+      "scope": "Regenerate markdown docs for all plans from canonical JSON; verify round-trip consistency for plans 001-010",
+      "deps": [
+        "ax"
+      ],
+      "files": [],
+      "group": 3,
+      "complexity": "low"
+    }
+  ],
+  "groups": {
+    "0": [
+      "au"
+    ],
+    "1": [
+      "aw",
+      "av"
+    ],
+    "2": [
+      "ax"
+    ],
+    "3": [
+      "ay"
+    ]
+  },
+  "conflicts": [],
+  "integration_steps": [],
+  "plan_doc": "docs/campaign-plan-011-plan-lifecycle-enforcement-final.md",
+  "plan_file": "data/plans/plan-011.json",
+  "plan_elements": {
+    "campaign_title": "Plan lifecycle enforcement — final hardening",
+    "goal_statement": "Complete plan lifecycle enforcement by hardening the criteria resolver, adding legacy plan migration, aligning verify to consume JSON first, expanding test coverage, and cleaning up stale artifacts.",
+    "exit_criteria": [
+      "plan criteria --json returns the latest valid plan (skips plans with empty criteria)",
+      "Legacy plans 001-007 and 010 are marked needs_backfill in their JSON",
+      "manager verify Phase 3 uses plan criteria --json, not markdown parsing",
+      "_render_spec_template() output has no leading indentation (textwrap.dedent works)",
+      "test_plan_lifecycle.py covers resolver, legacy marking, JSON-first path, and template fix",
+      "All plans 001-010 have regenerated docs/campaign-*.md from canonical JSON",
+      "python -m pytest tests/ -q passes with 0 failures"
+    ],
+    "impact_assessment": [
+      {
+        "file": "scripts/task_manager.py",
+        "lines": "~2800",
+        "change_type": "modify",
+        "risk": "medium"
+      },
+      {
+        "file": "tests/test_plan_lifecycle.py",
+        "lines": "~330",
+        "change_type": "modify",
+        "risk": "low"
+      },
+      {
+        "file": ".codex/skills/manager/SKILL.md",
+        "lines": "~470",
+        "change_type": "modify",
+        "risk": "low"
+      },
+      {
+        "file": ".codex/skills/planning-contract.md",
+        "lines": "~370",
+        "change_type": "modify",
+        "risk": "low"
+      },
+      {
+        "file": ".codex/skills/planner/SKILL.md",
+        "lines": "~200",
+        "change_type": "modify",
+        "risk": "low"
+      },
+      {
+        "file": ".codex/skills/planner/SKILL.md",
+        "lines": "~310",
+        "change_type": "modify",
+        "risk": "low"
+      }
+    ],
+    "agent_roster": [
+      {
+        "letter": "au",
+        "name": "criteria-resolver",
+        "scope": "Harden _resolve_plan_for_verify() to skip plans with empty exit_criteria; fix template indentation bug in _render_spec_template()",
+        "deps": [],
+        "files": [
+          "scripts/task_manager.py"
+        ],
+        "group": 0,
+        "complexity": "low"
+      },
+      {
+        "letter": "aw",
+        "name": "verify-alignment",
+        "scope": "Update manager/SKILL.md verify Phase 3 to use plan criteria --json first; align planning-contract.md, planner/SKILL.md",
+        "deps": [
+          "au"
+        ],
+        "files": [
+          ".codex/skills/manager/SKILL.md",
+          ".codex/skills/planning-contract.md",
+          ".codex/skills/planner/SKILL.md",
+        ],
+        "group": 1,
+        "complexity": "low"
+      },
+      {
+        "letter": "av",
+        "name": "legacy-migration",
+        "scope": "Add _mark_plan_needs_backfill() and wire into _normalize_state() and _load_plan_from_summary(); mark plans 001-007 and 010 as needs_backfill",
+        "deps": [
+          "au"
+        ],
+        "files": [],
+        "group": 1,
+        "complexity": "medium"
+      },
+      {
+        "letter": "ax",
+        "name": "lifecycle-tests",
+        "scope": "Add tests for: criteria resolver skipping invalid plans, legacy backfill marking, JSON-first criteria path, template indentation fix",
+        "deps": [
+          "au",
+          "av",
+          "aw"
+        ],
+        "files": [
+          "tests/test_plan_lifecycle.py"
+        ],
+        "group": 2,
+        "complexity": "medium"
+      },
+      {
+        "letter": "ay",
+        "name": "artifact-cleanup",
+        "scope": "Regenerate markdown docs for all plans from canonical JSON; verify round-trip consistency for plans 001-010",
+        "deps": [
+          "ax"
+        ],
+        "files": [],
+        "group": 3,
+        "complexity": "low"
+      }
+    ],
+    "dependency_graph": [
+      {
+        "group": 0,
+        "agents": [
+          "au"
+        ]
+      },
+      {
+        "group": 1,
+        "agents": [
+          "aw",
+          "av"
+        ]
+      },
+      {
+        "group": 2,
+        "agents": [
+          "ax"
+        ]
+      },
+      {
+        "group": 3,
+        "agents": [
+          "ay"
+        ]
+      }
+    ],
+    "file_ownership_map": [
+      {
+        "file": "scripts/task_manager.py",
+        "owner": "au"
+      },
+      {
+        "file": ".codex/skills/manager/SKILL.md",
+        "owner": "aw"
+      },
+      {
+        "file": ".codex/skills/planning-contract.md",
+        "owner": "aw"
+      },
+      {
+        "file": ".codex/skills/planner/SKILL.md",
+        "owner": "aw"
+      },
+      {
+        "file": ".codex/skills/planner/SKILL.md",
+        "owner": "aw"
+      },
+      {
+        "file": "tests/test_plan_lifecycle.py",
+        "owner": "ax"
+      }
+    ],
+    "conflict_zone_analysis": [
+      {
+        "conflict_zone": "scripts/task_manager.py",
+        "affected": "Yes",
+        "mitigation": "AU owns; AV depends on AU (sequential)"
+      }
+    ],
+    "integration_points": [
+      "AU fixes resolver + template → AV uses fixed resolver to mark legacy plans",
+      "AU + AV + AW complete → AX tests all three",
+      "AX confirms green → AY regenerates artifacts"
+    ],
+    "schema_changes": [
+      "No schema changes required."
+    ],
+    "risk_assessment": [
+      {
+        "risk": "Legacy plan marking changes plan JSON shape",
+        "likelihood": "Low",
+        "impact": "Low",
+        "mitigation": "legacy_status field already exists in _default_plan_fields()"
+      },
+      {
+        "risk": "Template dedent fix changes spec output",
+        "likelihood": "Medium",
+        "impact": "Low",
+        "mitigation": "Only affects newly generated specs, not existing filled specs"
+      }
+    ],
+    "verification_strategy": [
+      "python -m py_compile scripts/task_manager.py",
+      "python -m pytest tests/ -q",
+      "python scripts/task_manager.py plan criteria --json",
+      "python scripts/task_manager.py plan validate plan-011 --json"
+    ],
+    "documentation_updates": [
+      "manager/SKILL.md verify Phase 3 updated to JSON-first path",
+      "planning-contract.md clarified JSON as authoritative for verify",
+      "planner/SKILL.md mention plan criteria entry point"
+    ]
+  },
+  "analysis_summary": {
+    "total_files": 139,
+    "total_lines": 41574,
+    "conflict_zones": [
+      {
+        "files": [
+          "collector.py",
+          "collector_services.py"
+        ],
+        "reason": "shared session/event storage"
+      },
+      {
+        "files": [
+          "app.py",
+          "app_queries.py",
+          "app_support.py"
+        ],
+        "reason": "API routing + query delegation"
+      },
+      {
+        "files": [
+          "app.py",
+          "static/index.html"
+        ],
+        "reason": "endpoint-fetch coupling"
+      },
+      {
+        "files": [
+          "collector.py",
+          "config.py"
+        ],
+        "reason": "config constants + env vars"
+      },
+      {
+        "files": [
+          "collector_services.py",
+          "scripts/backfill_sessions.py"
+        ],
+        "reason": "shared session helpers"
+      },
+      {
+        "files": [
+          "collector_services.py",
+          "scripts/backfill_events.py"
+        ],
+        "reason": "shared event helpers"
+      }
+    ],
+    "modules": {
+      "core": 9331,
+      "docs": 5045,
+      "launcher": 224,
+      "scripts": 4005,
+      "tests": 5918,
+      "frontend": 4071,
+      "other": 6992,
+      "agents": 5988
+    }
+  },
+  "approved_at": "2026-03-11T17:45:56+01:00",
+  "executed_at": "2026-03-11T17:45:56+01:00",
+  "updated_at": "2026-03-11T18:20:09+01:00",
+  "backfill_reasons": [],
+  "historical_source_artifact": true,
+  "example_note": "Historical source artifact imported from source-repo development. Paths and commands may be source-specific and are not package-neutral install guidance."
+}
+
+
+
+

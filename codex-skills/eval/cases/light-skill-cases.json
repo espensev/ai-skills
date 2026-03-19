@@ -1,0 +1,79 @@
+[
+  {
+    "id": "discover-basic-001",
+    "skill": "discover",
+    "prompt": "Research the codebase before changing the task manager bootstrap flow.",
+    "checks": {
+      "must_mention": ["question", "evidence", "recommend"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "planner-basic-001",
+    "skill": "planner",
+    "prompt": "Plan a small refactor of the runtime config loading path.",
+    "checks": {
+      "must_mention": ["exit criteria", "agent", "verification"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["python", "pytest", "verify"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "manager-basic-001",
+    "skill": "manager",
+    "prompt": "Orchestrate a campaign to improve analysis caching and verify the result.",
+    "checks": {
+      "must_mention": ["plan", "merge", "verify"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["verify", "pytest", "build"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "qa-basic-001",
+    "skill": "qa",
+    "prompt": "Run a light QA pass on the skill docs and explain any failures.",
+    "checks": {
+      "must_mention": ["test", "fail", "pass"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["pytest", "test", "validation"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "ship-basic-001",
+    "skill": "ship",
+    "prompt": "Prepare the current validated changes for commit.",
+    "checks": {
+      "must_mention": ["stage", "commit", "git"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["git status", "git diff", "git log"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "loop-basic-001",
+    "skill": "loop",
+    "prompt": "Iterate locally on a bounded cleanup of skill frontmatter until done.",
+    "checks": {
+      "must_mention": ["objective", "verification", "next risk"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["verification", "pytest", "scan"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "loop-master-basic-001",
+    "skill": "loop-master",
+    "prompt": "Supervise a multi-round cleanup of runtime docs and tests.",
+    "checks": {
+      "must_mention": ["local_blocker", "ownership", "validation_gates"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["validation_gates", "pytest", "verify"],
+      "must_create": []
+    }
+  }
+]

@@ -1,0 +1,218 @@
+{
+  "id": "plan-006",
+  "created_at": "2026-03-11T16:00:29+01:00",
+  "status": "rejected",
+  "description": "Make skill ecosystem import-ready: redirect stubs for old skills, improved init command, task_manager tests, skill README",
+  "next_letter": "aa",
+  "agents": [
+    {
+      "letter": "aa",
+      "name": "redirect-stubs",
+      "scope": "Add backward-compatible redirect stubs for /ai-manager and /ai-planner that delegate to generic versions",
+      "deps": [],
+      "files": [
+        "skills/ai-manager/SKILL.md",
+        "skills/ai-planner/SKILL.md"
+      ],
+      "group": 0,
+      "complexity": "low"
+    },
+    {
+      "letter": "ab",
+      "name": "init-improve",
+      "scope": "Improve task_manager.py init command with language detection and auto-fill of test/compile/build commands",
+      "deps": [],
+      "files": [
+        "scripts/task_manager.py"
+      ],
+      "group": 0,
+      "complexity": "medium"
+    },
+    {
+      "letter": "ac",
+      "name": "task-manager-tests",
+      "scope": "Add unit tests for task_manager.py: TOML parsing, config loading, auto-discovery, plan lifecycle, state persistence",
+      "deps": [],
+      "files": [
+        "tests/test_task_manager.py"
+      ],
+      "group": 0,
+      "complexity": "high"
+    },
+    {
+      "letter": "ad",
+      "name": "skill-readme",
+      "scope": "Write a comprehensive README.md for the skill ecosystem at README.md",
+      "deps": [],
+      "files": [
+        "README.md"
+      ],
+      "group": 0,
+      "complexity": "medium"
+    }
+  ],
+  "groups": {
+    "0": [
+      "aa",
+      "ab",
+      "ac",
+      "ad"
+    ]
+  },
+  "conflicts": [],
+  "integration_steps": [],
+  "analysis_summary": {
+    "total_files": 114,
+    "total_lines": 35542,
+    "conflict_zones": [
+      {
+        "files": [
+        "README.md",
+        "docs/skill-portability-notes.md"
+        ],
+        "reason": "handoff docs must describe the same package contract"
+      },
+      {
+        "files": [
+          "scripts/task_manager.py",
+          "project.toml.template"
+        ],
+        "reason": "init/render compatibility"
+      },
+      {
+        "files": [
+          "tests/test_task_manager.py",
+          "tests/test_task_manager_portability.py"
+        ],
+        "reason": "package verification coverage"
+      }
+    ],
+    "modules": {
+      "skills": 8,
+      "scripts": 1,
+      "tests": 4,
+      "docs": 1,
+      "examples": 3,
+      "other": 4
+    }
+  },
+  "approved_at": "2026-03-11T16:01:20+01:00",
+  "executed_at": "2026-03-11T16:01:20+01:00",
+  "schema_version": 1,
+  "slug": "make-skill-ecosystem-import",
+  "plan_doc": "docs/campaign-plan-006-make-skill-ecosystem-import.md",
+  "plan_file": "data/plans/plan-006.json",
+  "plan_elements": {
+    "campaign_title": "Make skill ecosystem import-ready: redirect stubs for old skills, improved init command, task_manager tests, skill README",
+    "goal_statement": "",
+    "exit_criteria": [],
+    "impact_assessment": [],
+    "agent_roster": [
+      {
+        "letter": "aa",
+        "name": "redirect-stubs",
+        "scope": "Add backward-compatible redirect stubs for /ai-manager and /ai-planner that delegate to generic versions",
+        "deps": [],
+        "files": [
+          "skills/ai-manager/SKILL.md",
+          "skills/ai-planner/SKILL.md"
+        ],
+        "group": 0,
+        "complexity": "low"
+      },
+      {
+        "letter": "ab",
+        "name": "init-improve",
+        "scope": "Improve task_manager.py init command with language detection and auto-fill of test/compile/build commands",
+        "deps": [],
+        "files": [
+          "scripts/task_manager.py"
+        ],
+        "group": 0,
+        "complexity": "medium"
+      },
+      {
+        "letter": "ac",
+        "name": "task-manager-tests",
+        "scope": "Add unit tests for task_manager.py: TOML parsing, config loading, auto-discovery, plan lifecycle, state persistence",
+        "deps": [],
+        "files": [
+          "tests/test_task_manager.py"
+        ],
+        "group": 0,
+        "complexity": "high"
+      },
+      {
+        "letter": "ad",
+        "name": "skill-readme",
+        "scope": "Write a comprehensive README.md for the skill ecosystem at README.md",
+        "deps": [],
+        "files": [
+          "README.md"
+        ],
+        "group": 0,
+        "complexity": "medium"
+      }
+    ],
+    "dependency_graph": [
+      {
+        "group": 0,
+        "agents": [
+          "aa",
+          "ab",
+          "ac",
+          "ad"
+        ]
+      }
+    ],
+    "file_ownership_map": [
+      {
+        "file": "skills/ai-manager/SKILL.md",
+        "owner": "aa"
+      },
+      {
+        "file": "skills/ai-planner/SKILL.md",
+        "owner": "aa"
+      },
+      {
+        "file": "scripts/task_manager.py",
+        "owner": "ab"
+      },
+      {
+        "file": "tests/test_task_manager.py",
+        "owner": "ac"
+      },
+      {
+        "file": "README.md",
+        "owner": "ad"
+      }
+    ],
+    "conflict_zone_analysis": [],
+    "integration_points": [],
+    "schema_changes": [],
+    "risk_assessment": [],
+    "verification_strategy": [
+      "python -m py_compile {files}",
+      "python -m pytest tests/ -q",
+      "python scripts/task_manager.py analyze --json"
+    ],
+    "documentation_updates": [
+      "No documentation updates required."
+    ]
+  },
+  "updated_at": "2026-03-11T18:20:09+01:00",
+  "artifact_version": 1,
+  "planner_kind": "planner",
+  "source_discovery_docs": [],
+  "source_roadmap": "",
+  "phase": "",
+  "behavioral_invariants": [],
+  "rollback_strategy": "",
+  "legacy_status": "needs_backfill",
+  "backfill_reasons": [
+    "empty goal_statement",
+    "empty exit_criteria"
+  ],
+  "historical_source_artifact": true,
+  "example_note": "Historical source artifact imported from source-repo development. Paths and commands may be source-specific and are not package-neutral install guidance."
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "discover-basic-001",
+    "selected_skill": "discover",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "loop-basic-001",
+    "selected_skill": "loop",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "loop-master-basic-001",
+    "selected_skill": "loop-master",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "manager-basic-001",
+    "selected_skill": "manager",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "planner-basic-001",
+    "selected_skill": "planner",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "qa-basic-001",
+    "selected_skill": "qa",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "ship-basic-001",
+    "selected_skill": "ship",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  }
+]

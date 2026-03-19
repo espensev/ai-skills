@@ -1,0 +1,31 @@
+{
+  "name": "wt-cli",
+  "version": "0.1.0",
+  "description": "Cross-platform worktree orchestrator for parallel AI agent development",
+  "type": "module",
+  "bin": {
+    "wt": "dist/cli.mjs"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": ["git", "worktree", "cli", "orchestrator"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

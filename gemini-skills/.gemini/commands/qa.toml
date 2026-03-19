@@ -1,0 +1,1 @@
+prompt = "@{../../docs/instructions/qa.md} {{args}}"

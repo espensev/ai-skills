@@ -1,0 +1,17 @@
+# Python caches and local tool output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Local package runtime state; source changes belong in scripts/, skills/, docs/, and tests/
+.claude/
+agents/
+data/
+docs/campaign-*.md
+live-tracker.md
+
+# Generated local databases
+data/*.db

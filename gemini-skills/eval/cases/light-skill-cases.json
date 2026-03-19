@@ -1,0 +1,156 @@
+[
+  {
+    "id": "discover-basic-001",
+    "skill": "discover",
+    "prompt": "Map the repository before planning an authentication refactor.",
+    "checks": {
+      "must_mention": ["system-map", "topological map", "identified risks"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": ["docs/system-map.md"]
+    }
+  },
+  {
+    "id": "planner-basic-001",
+    "skill": "planner",
+    "prompt": "Turn the discovery artifact into an implementation contract for a small API change.",
+    "checks": {
+      "must_mention": ["planning-contract", "ownership", "verification"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["verification", "test", "lint"],
+      "must_create": ["docs/planning-contract.md"]
+    }
+  },
+  {
+    "id": "epic-refactor-basic-001",
+    "skill": "epic-refactor",
+    "prompt": "Migrate the data layer behind a new interface without breaking existing behavior.",
+    "checks": {
+      "must_mention": ["refactor-report", "invariants", "dependency order"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["test", "type", "compile"],
+      "must_create": ["docs/refactor-report.md"]
+    }
+  },
+  {
+    "id": "forensic-debugger-basic-001",
+    "skill": "forensic-debugger",
+    "prompt": "Analyze production logs and identify the root cause of a failing request path.",
+    "checks": {
+      "must_mention": ["incident-rca", "root cause", "verification plan"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["reproduce", "staging", "test"],
+      "must_create": ["docs/incident-rca.md"]
+    }
+  },
+  {
+    "id": "ui-test-engineer-basic-001",
+    "skill": "ui-test-engineer",
+    "prompt": "Use a failing Playwright screenshot to fix a layout regression in the dashboard header.",
+    "checks": {
+      "must_mention": ["ui-regression-report", "expected behavior", "css"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["playwright", "cypress", "visual"],
+      "must_create": ["docs/ui-regression-report.md"]
+    }
+  },
+  {
+    "id": "doc-weaver-basic-001",
+    "skill": "doc-weaver",
+    "prompt": "Update stale architecture docs after a change to the API routing layer.",
+    "checks": {
+      "must_mention": ["doc-sync-report", "evidence", "docs updated"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["mermaid", "link", "consistent"],
+      "must_create": ["docs/doc-sync-report.md"]
+    }
+  },
+  {
+    "id": "guardrails-basic-001",
+    "skill": "guardrails",
+    "prompt": "Check the repo for violations of our naming conventions and no-any-type rule.",
+    "checks": {
+      "must_mention": ["guardrails report", "file:", "PASS", "rule"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "edit-basic-001",
+    "skill": "edit",
+    "prompt": "Rename the `getData` function to `fetchRecords` in src/api.ts and update all call sites.",
+    "checks": {
+      "must_mention": ["edits applied", "file:", "replace"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["read", "verify", "grep"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "brief-basic-001",
+    "skill": "brief",
+    "prompt": "Create an execution brief for task-123 from the planning contract.",
+    "checks": {
+      "must_mention": ["task-123", "interface signatures", "logic constraints"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": ["docs/briefs/task-123.md"]
+    }
+  },
+  {
+    "id": "manager-basic-001",
+    "skill": "manager",
+    "prompt": "Start orchestrating the next task from the planning contract.",
+    "checks": {
+      "must_mention": ["run-state.json", "lens strategy", "dispatch"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": [".gemini/run-state.json"]
+    }
+  },
+  {
+    "id": "ship-basic-001",
+    "skill": "ship",
+    "prompt": "Implement the task described in docs/briefs/task-123.md.",
+    "checks": {
+      "must_mention": ["modified", "idiomatic", "syntactically valid"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["test", "lint", "build"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "qa-basic-001",
+    "skill": "qa",
+    "prompt": "Review the recently completed code for task-123 against the planning contract.",
+    "checks": {
+      "must_mention": ["PASS", "FAIL", "integration", "test suite"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["pytest", "npm test", "test"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "loop-basic-001",
+    "skill": "loop",
+    "prompt": "Execute sub-task 1.1 from the planning contract.",
+    "checks": {
+      "must_mention": ["write-scoped", "handoff", "completion"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["lint", "build", "verify"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "loop-master-basic-001",
+    "skill": "loop-master",
+    "prompt": "Oversee the overall campaign and determine if exit criteria are met.",
+    "checks": {
+      "must_mention": ["global oversight", "sign-off", "exit criteria"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["verify", "test", "run"],
+      "must_create": []
+    }
+  }
+]

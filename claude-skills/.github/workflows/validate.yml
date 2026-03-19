@@ -1,0 +1,72 @@
+name: Validate Skills
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install validation dependencies
+        run: python -m pip install pytest ruff mypy
+
+      - name: Lint Python
+        run: python -m ruff check scripts/ tests/
+
+      - name: Type-check runtime
+        run: python -m mypy scripts --ignore-missing-imports
+
+      - name: Validate all skills
+        run: |
+          errors=0
+          for skill_dir in skills/*/; do
+            skill_name=$(basename "$skill_dir")
+            skill_file="$skill_dir/SKILL.md"
+
+            if [ ! -f "$skill_file" ]; then
+              echo "::error::$skill_name: missing SKILL.md"
+              errors=$((errors + 1))
+              continue
+            fi
+
+            head -1 "$skill_file" | grep -q '^---$' || {
+              echo "::error::$skill_name: SKILL.md missing frontmatter"
+              errors=$((errors + 1))
+            }
+            grep -q '^name:' "$skill_file" || {
+              echo "::error::$skill_name: SKILL.md missing name field"
+              errors=$((errors + 1))
+            }
+            grep -q '^description:' "$skill_file" || {
+              echo "::error::$skill_name: SKILL.md missing description field"
+              errors=$((errors + 1))
+            }
+
+            echo "✓ $skill_name"
+          done
+
+          if [ $errors -gt 0 ]; then
+            echo "::error::$errors validation error(s) found"
+            exit 1
+          fi
+
+      - name: Run portability tests
+        run: python -m pytest tests/ -q
+
+      - name: Lint markdown
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: '**/*.md'

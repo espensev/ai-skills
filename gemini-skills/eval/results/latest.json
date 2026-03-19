@@ -1,0 +1,74 @@
+[
+  {
+    "id": "discover-basic-001",
+    "selected_skill": "discover",
+    "output": "I have completed the discovery phase. I have mapped the repository and created the system-map document outlining the topological map and identified risks.",
+    "created_files": ["docs/system-map.md"],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Mentions system-map, topological map. Creates docs/system-map.md."
+  },
+  {
+    "id": "planner-basic-001",
+    "selected_skill": "planner",
+    "output": "I have created the planning-contract for the implementation. It includes clear ownership and verification steps.",
+    "created_files": ["docs/planning-contract.md"],
+    "verification_commands": ["npm test"],
+    "acceptability": "accept",
+    "notes": "Mentions planning-contract, ownership, verification. Creates docs/planning-contract.md."
+  },
+  {
+    "id": "epic-refactor-basic-001",
+    "selected_skill": "epic-refactor",
+    "output": "The migration is planned out in the refactor-report. All invariants and dependency order constraints are maintained.",
+    "created_files": ["docs/refactor-report.md"],
+    "verification_commands": ["npm run type-check"],
+    "acceptability": "accept",
+    "notes": "Mentions refactor-report, invariants, dependency order. Creates docs/refactor-report.md."
+  },
+  {
+    "id": "forensic-debugger-basic-001",
+    "selected_skill": "forensic-debugger",
+    "output": "Based on the logs, I have identified the root cause of the failing request. Please see the incident-rca document which includes a verification plan.",
+    "created_files": ["docs/incident-rca.md"],
+    "verification_commands": ["reproduce-script.sh"],
+    "acceptability": "accept",
+    "notes": "Mentions incident-rca, root cause, verification plan. Creates docs/incident-rca.md."
+  },
+  {
+    "id": "ui-test-engineer-basic-001",
+    "selected_skill": "ui-test-engineer",
+    "output": "I have reviewed the screenshot and updated the css to match the expected behavior. See the ui-regression-report for details.",
+    "created_files": ["docs/ui-regression-report.md"],
+    "verification_commands": ["npx playwright test"],
+    "acceptability": "accept",
+    "notes": "Mentions ui-regression-report, css, expected behavior. Creates docs/ui-regression-report.md."
+  },
+  {
+    "id": "doc-weaver-basic-001",
+    "selected_skill": "doc-weaver",
+    "output": "I have generated a doc-sync-report. It provides evidence that the architecture docs updated remain consistent with the new routing logic.",
+    "created_files": ["docs/doc-sync-report.md"],
+    "verification_commands": ["npm run build:docs"],
+    "acceptability": "accept",
+    "notes": "Mentions doc-sync-report, evidence, docs updated. Creates docs/doc-sync-report.md."
+  },
+  {
+    "id": "guardrails-basic-001",
+    "selected_skill": "guardrails",
+    "output": "I have generated the guardrails report. Review of file: src/api.ts shows it PASS all checks regarding the no-any-type rule.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Mentions guardrails report, file:, PASS, rule. Creates no files."
+  },
+  {
+    "id": "edit-basic-001",
+    "selected_skill": "edit",
+    "output": "All edits applied. The replace operation in file: src/api.ts was successful.",
+    "created_files": [],
+    "verification_commands": ["npm run verify"],
+    "acceptability": "accept",
+    "notes": "Mentions edits applied, file:, replace. Creates no files."
+  }
+]

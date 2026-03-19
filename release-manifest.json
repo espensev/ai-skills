@@ -1,0 +1,37 @@
+{
+  "export_name": "ai-skills-ready-packages",
+  "packages": [
+    {
+      "name": "codex-skills",
+      "path": "codex-skills",
+      "status": "ready",
+      "strategy": "portable-runtime",
+      "audience": "Codex",
+      "notes": "Portable skill package with runtime modules and contracts."
+    },
+    {
+      "name": "claude-skills",
+      "path": "claude-skills",
+      "status": "ready",
+      "strategy": "portable-runtime",
+      "audience": "Claude",
+      "notes": "Portable skill package with runtime modules and contracts."
+    },
+    {
+      "name": "gemini-skills",
+      "path": "gemini-skills",
+      "status": "ready",
+      "strategy": "gemini-adapter",
+      "audience": "Gemini",
+      "notes": "Bootstrap adapter with skills, command wrappers, and guardrails."
+    },
+    {
+      "name": "wt-cli",
+      "path": "wt-cli",
+      "status": "tooling",
+      "strategy": "source-only",
+      "audience": "All",
+      "notes": "Local worktree orchestration tool, not part of the skill export bundle."
+    }
+  ]
+}

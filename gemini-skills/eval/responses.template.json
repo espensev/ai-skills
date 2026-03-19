@@ -1,0 +1,56 @@
+[
+  {
+    "id": "discover-basic-001",
+    "selected_skill": "discover",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "doc-weaver-basic-001",
+    "selected_skill": "doc-weaver",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "epic-refactor-basic-001",
+    "selected_skill": "epic-refactor",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "forensic-debugger-basic-001",
+    "selected_skill": "forensic-debugger",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "planner-basic-001",
+    "selected_skill": "planner",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "ui-test-engineer-basic-001",
+    "selected_skill": "ui-test-engineer",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  }
+]

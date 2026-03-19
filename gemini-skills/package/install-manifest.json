@@ -1,0 +1,45 @@
+{
+  "delivery": "bootstrap-adapter",
+  "skills": [
+    "brief",
+    "discover",
+    "doc-weaver",
+    "edit",
+    "epic-refactor",
+    "forensic-debugger",
+    "guardrails",
+    "loop",
+    "loop-master",
+    "manager",
+    "planner",
+    "qa",
+    "ship",
+    "ui-test-engineer"
+  ],
+  "command_wrappers": [
+    "brief.toml",
+    "discover.toml",
+    "doc-weaver.toml",
+    "edit.toml",
+    "epic-refactor.toml",
+    "forensic-debugger.toml",
+    "guardrails.toml",
+    "loop-master.toml",
+    "loop.toml",
+    "manager.toml",
+    "planner.toml",
+    "qa.toml",
+    "ship.toml",
+    "ui-test-engineer.toml"
+  ],
+  "root_files": [
+    "README.md",
+    "GEMINI.md"
+  ],
+  "docs_files": [
+    "docs/skill-portability-notes.md"
+  ],
+  "script_files": [
+    "scripts/bootstrap.ps1"
+  ]
+}

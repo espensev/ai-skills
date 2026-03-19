@@ -1,0 +1,1 @@
+prompt = "@{../../docs/instructions/forensic-debugger.md} {{args}}"

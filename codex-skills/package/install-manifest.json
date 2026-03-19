@@ -1,0 +1,28 @@
+{
+  "default_skills": [
+    "discover",
+    "manager",
+    "planner",
+    "qa",
+    "ship"
+  ],
+  "optional_skills": [
+    "loop",
+    "loop-master"
+  ],
+  "contract_files": [
+    "planning-contract.md",
+    "project.toml.template"
+  ],
+  "optional_contract_files": [
+    "plan-schema.md",
+    "analysis-schema.md"
+  ],
+  "runtime_files": [
+    "scripts/task_manager.py"
+  ],
+  "runtime_directories": [
+    "scripts/analysis",
+    "scripts/task_runtime"
+  ]
+}

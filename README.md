@@ -1,37 +1,46 @@
 # AI Skills
 
-Portable skill packages and supporting runtime code for multiple agent clients.
+Portable multi-agent skill packages for Codex, Claude, and Gemini, plus
+supporting tooling for parallel agent development.
 
-## Packages
+## Included Packages
 
-- `codex-skills`: Codex-oriented campaign skills and runtime helpers.
-- `claude-skills`: Claude-oriented campaign skills and runtime helpers.
-- `gemini-skills`: Gemini-oriented skill set and supporting docs.
-- `wt-cli`: TypeScript CLI for worktree orchestration in parallel agent flows.
+| Package | Status | Purpose |
+|---|---|---|
+| `codex-skills` | Ready | Portable Codex-oriented skill docs, contracts, and Python runtime helpers |
+| `claude-skills` | Ready | Portable Claude-oriented skill docs, contracts, and Python runtime helpers |
+| `gemini-skills` | Ready | Gemini adapter package with skills, command wrappers, bootstrap script, and guardrails |
+| `wt-cli` | Tooling | TypeScript CLI for worktree orchestration in parallel agent flows |
 
-## Intended Structure
+Package readiness is tracked in `release-manifest.json`, with notes in
+`docs/release-readiness.md`.
 
-Each package keeps its own installable skill docs, shared contracts, and runtime
-scripts so the assets can be vendored into other proof-of-concept repositories
-without pulling in the full owner-repo test harness.
+## Quick Start
 
-## Shipping
-
-The ready-to-ship model packages are tracked in `release-manifest.json`.
-
-To export the currently ready packages into a shared folder:
+Export the currently ready skill packages into a shared folder:
 
 ```powershell
 .\scripts\export-ready-skill-packages.ps1 -TargetDir "C:\Users\Sev\OneDrive\Common\ai-skills-ready-packages" -Force
 ```
 
-Release notes and package readiness are documented in `docs/release-readiness.md`.
+For Gemini-specific installation into another repo:
 
-## Repo Prep
+```powershell
+.\gemini-skills\scripts\bootstrap.ps1 -TargetDir "C:\path\to\target-repo"
+```
 
-This root is set up to work as a simple multi-package repository:
+## Repository Layout
 
-- keep provider-specific assets inside their existing package folders
-- keep provider runtime/install docs with the owning package
-- add shared repo-level docs or automation at the root only when they apply to
-  every package
+- `codex-skills/`: Codex package source
+- `claude-skills/`: Claude package source
+- `gemini-skills/`: Gemini package source
+- `wt-cli/`: worktree helper CLI
+- `scripts/`: repo-level automation
+- `docs/`: repo-level release notes
+
+## Notes
+
+- Local runtime state, caches, generated install trees, and build output are
+  intentionally ignored from version control.
+- The repo stays package-first: provider-specific runtime and install docs live
+  with the owning package rather than in a shared root abstraction.

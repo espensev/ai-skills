@@ -1,19 +1,17 @@
 # Gemini Campaign Skills
 
-Instantly upgraded and ready for multi-agent workflows via Gemini CLI!
-
 A docs-first adapter for the generic multi-agent campaign skill stack on Gemini
 CLI.
 
-This package intentionally stays thin. It defines the Gemini-facing instruction
-surface, prototype command wrappers, and starter evaluation artifacts without
+This package stays intentionally thin. It defines the Gemini-facing
+instruction surface, command wrappers, and evaluation artifacts without
 vendoring a Gemini-specific runtime fork.
 
 ## Current Scope
 
 - document the Gemini-specific provider surface
-- ship prototype `skills/` for discovery, planning,
-  and Gemini-native workflows
+- ship packaged `skills/` and `.gemini/commands/` for the generic campaign
+  workflow plus Gemini-native workflows
 - harden skill instructions with explicit artifacts, stop conditions, and
   portability guardrails
 - provide a starter light-eval case set that reuses the shared scorer pattern
@@ -24,12 +22,13 @@ vendoring a Gemini-specific runtime fork.
 Gemini CLI gives this package two provider-specific integration points:
 
 - `GEMINI.md` for persistent repo guidance and hierarchical context loading
+- `.gemini/commands/` for reusable command wrappers
 - `.gemini/skills/` for reusable project or user Agent Skills
 
-Those two surfaces are enough to prove the Gemini adapter shape before
+Those surfaces are enough to expose the Gemini adapter cleanly before
 extracting a shared core.
 
-## Prototype Skills
+## Included Skills
 
 | Skill | Purpose |
 |---|---|
@@ -48,13 +47,11 @@ extracting a shared core.
 | `guardrails` | Scan the full repo for rule violations without editing files |
 | `edit` | Apply scoped, surgical file edits under contract or user instruction |
 
-The generic campaign Agent Skills are now fully implemented.
-
 ## Eval
 
 The package now includes a starter light-eval dataset under `eval/`.
 
-- `eval/README.md` describes the temporary workflow
+- `eval/README.md` describes the current lightweight workflow
 - `eval/cases/light-skill-cases.json` contains the starter Gemini cases
 - `eval/responses.template.json` is the blank response payload
 
@@ -88,12 +85,12 @@ The package should stay adapter-first until the shared runtime is extracted.
 - no package-local copy of `task_manager.py` or provider-specific runtime
   scripts should be introduced here until that shared-core split exists
 
-## Current Status
+## Status
 
 - **v1.0 Ready**: The Gemini CLI multi-agent adapter is fully registered.
 - **14 Specialized Skills**: All generic campaign skills and Gemini super-skills are mapped and constrained.
 - **Strict Guardrails**: Enforced via `GEMINI.md` and `allowed_tools` to prevent architectural drift.
-- **Ready for Shared Core**: This package is prepared for the future extraction of a provider-neutral multi-agent runtime.
+- **Shared-Core Friendly**: The package stays adapter-first so shared runtime extraction remains possible later.
 
 ## Installation
 
@@ -104,8 +101,8 @@ To install these skills and guardrails into a target repository without requirin
 .\scripts\bootstrap.ps1 -TargetDir "C:\path\to\your\target\repo"
 ```
 
-This script will safely create the `.gemini/skills/` and `.gemini/commands/`
-directories, copy the Agent Skills and command wrappers, and inject the global
+This script creates the `.gemini/skills/` and `.gemini/commands/`
+directories, copies the packaged skills and command wrappers, and injects the global
 multi-agent guardrails into the target repository's `GEMINI.md` file.
 
 ## References

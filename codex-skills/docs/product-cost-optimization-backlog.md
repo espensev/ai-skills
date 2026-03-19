@@ -8,7 +8,7 @@ footprint, and failed/autonomous run waste for `/manager go`.
 
 ## Measured Baseline (2026-03-12)
 
-Commands run from `skills/codex-skills`:
+Commands run from the package root:
 
 - `python scripts/task_manager.py analyze --json`
 - `python scripts/task_manager.py plan preflight --json`

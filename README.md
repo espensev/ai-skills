@@ -17,10 +17,10 @@ Package readiness is tracked in `release-manifest.json`, with notes in
 
 ## Quick Start
 
-Export the currently ready skill packages into a shared folder:
+Export the currently ready skill packages into a target folder:
 
 ```powershell
-.\scripts\export-ready-skill-packages.ps1 -TargetDir "C:\Users\Sev\OneDrive\Common\ai-skills-ready-packages" -Force
+.\scripts\export-ready-skill-packages.ps1 -TargetDir ".\dist\ai-skills-ready-packages" -Force
 ```
 
 For Gemini-specific installation into another repo:
@@ -44,3 +44,5 @@ For Gemini-specific installation into another repo:
   intentionally ignored from version control.
 - The repo stays package-first: provider-specific runtime and install docs live
   with the owning package rather than in a shared root abstraction.
+- If `-TargetDir` is omitted, the export script uses the default location from
+  `release-manifest.json`.

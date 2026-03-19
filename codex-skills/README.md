@@ -3,9 +3,9 @@
 A portable package for the generic multi-agent campaign skill stack used by
 Codex.
 
-This package is the owner repo for the installable skill docs, the
-`task_manager.py` backend, and the portability tests that consumer repos vendor
-into their own `.codex/skills` runtime tree.
+This source package contains the installable skill docs, the
+`task_manager.py` backend, and the portability tests that consumer repos can
+vendor into their own `.codex/skills` runtime tree.
 
 ## Package Layout
 
@@ -16,20 +16,20 @@ into their own `.codex/skills` runtime tree.
 | `plan-schema.md` | Optional schema reference copied into `.codex/skills/` |
 | `analysis-schema.md` | Optional analysis schema reference for `analysis_v2` |
 | `project.toml.template` | Config template rendered into `.codex/skills/project.toml` by `init --force` |
-| `pyproject.toml` | Maintainer-only local validation and developer tooling config |
-| `AGENTS.md` | Package maintainer conventions for this owner repo |
+| `pyproject.toml` | Local validation and development tooling config |
+| `AGENTS.md` | Package development conventions |
 | `scripts/task_manager.py` | Backend CLI copied into the target repo `scripts/` directory |
 | `scripts/analysis/` | Analyzer provider runtime copied into the target repo `scripts/` directory |
 | `scripts/task_runtime/` | Internal runtime support package copied into the target repo `scripts/` directory |
 | `scripts/task_models.py` | TypedDict contracts used by tests and local tooling |
 | `scripts/task_constants.py` | Shared status constants and symbols for local tooling/tests |
 | `docs/skill-portability-notes.md` | Handoff notes and package/install guidance |
-| `docs/file-map.md` | Maintainer-facing map of runtime and package files |
-| `docs/config-reference.md` | Maintainer-facing config and init reference |
+| `docs/file-map.md` | Reference map of runtime and package files |
+| `docs/config-reference.md` | Config and init reference |
 | `docs/program-flow.md` | End-to-end command/runtime lifecycle reference |
-| `docs/reports/` | Maintainer-only checklists and revalidation reports |
-| `examples/` | Example plan artifacts and bridge scripts for maintainer reference |
-| `tests/` | Portable verification subset |
+| `docs/reports/` | Validation checklists and revalidation reports |
+| `examples/` | Example plan artifacts and bridge scripts |
+| `tests/` | Portability and runtime verification tests |
 | `.github/workflows/validate.yml` | Package validation pipeline |
 
 ## Skills
@@ -217,7 +217,7 @@ runtime flow:
 
 ## Development
 
-For local validation parity in this owner repo, install the maintainer tooling
+For local validation in this package, install the development tooling
 from `pyproject.toml`:
 
 ```bash

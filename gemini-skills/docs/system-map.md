@@ -9,8 +9,9 @@ The following specialized entry points are registered and constrained via `allow
 - **Gemini Super-Skills:** `/epic-refactor`, `/forensic-debugger`, `/ui-test-engineer`, `/doc-weaver`.
 - **Infrastructure:** `/manager`, `/loop-master`.
 
-### Instruction Sets (`docs/instructions/`)
-9 total persona files define the behavior and guardrails for each role.
+### Skill And Guardrail Surface
+The packaged `skills/`, `.gemini/commands/`, and `GEMINI.md` files define the
+behavior, entrypoints, and guardrails for the adapter.
 
 ### Documentation & Blueprints
 - `docs/campaign-blueprints.md`: Generic campaign contracts.
@@ -22,5 +23,6 @@ The following specialized entry points are registered and constrained via `allow
 
 *(Note: The previously identified missing implementation commands for `/loop` and `/loop-master` and their contract inconsistencies have now been fully resolved.)*
 
-## Next Phase: Finalization Plan
-The formal `planning-contract.md` has been successfully executed, resolving the initial inconsistencies. The adapter is now declared "v1.0 Ready".
+## Status
+The formal `planning-contract.md` has been executed, resolving the initial
+consistency issues. The adapter is currently packaged as "v1.0 Ready".

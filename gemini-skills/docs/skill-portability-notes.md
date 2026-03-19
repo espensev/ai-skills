@@ -1,6 +1,6 @@
 # Gemini Skill Adapter Portability Notes
 
-Current portability status for the experimental `gemini-skills` package.
+Current portability status for the `gemini-skills` package.
 
 ## Intent
 
@@ -28,12 +28,14 @@ generic skills on Gemini CLI.
 
 ## Package Layout
 
-This package currently owns only adapter assets:
+This package currently owns adapter assets only:
 
 - `README.md`
 - `GEMINI.md`
+- `skills/`
 - `.gemini/commands/`
-- `docs/instructions/`
+- `scripts/bootstrap.ps1`
+- `package/install-manifest.json`
 - `docs/skill-portability-notes.md`
 - `docs/gemini-context-skills.md`
 - `eval/`
@@ -47,6 +49,7 @@ After the adapter is implemented in a consumer repo, the expected Gemini-facing
 surface should look like:
 
 - `GEMINI.md`
+- `.gemini/skills/`
 - `.gemini/commands/discover.toml`
 - `.gemini/commands/planner.toml`
 - `.gemini/commands/manager.toml`
@@ -58,9 +61,9 @@ surface should look like:
 Those command files should wrap a shared backend rather than a Gemini-only
 runtime fork.
 
-## Current Prototype Commands
+## Current Commands
 
-The package currently ships prototype wrappers for the generic orchestration commands:
+The package ships the generic orchestration command wrappers:
 - `.gemini/commands/brief.toml`
 - `.gemini/commands/manager.toml`
 - `.gemini/commands/ship.toml`
@@ -92,7 +95,6 @@ As well as the specialized Gemini skills:
 ## Remaining Gaps
 
 - no shared-core extraction yet
-- no generic Gemini orchestration wrappers yet
 - no package-local runtime scripts
 
 ## Verification Expectations

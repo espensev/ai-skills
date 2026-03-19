@@ -22,8 +22,9 @@ the same way, so release readiness is tracked explicitly.
 Use the root export script to gather the ready packages into one destination:
 
 ```powershell
-.\scripts\export-ready-skill-packages.ps1 -TargetDir "C:\Users\Sev\OneDrive\Common\ai-skills-ready-packages" -Force
+.\scripts\export-ready-skill-packages.ps1 -TargetDir ".\dist\ai-skills-ready-packages" -Force
 ```
 
 The script reads `release-manifest.json` and exports only packages whose status
-is `ready`.
+is `ready`. If `-TargetDir` is omitted, the script falls back to the manifest
+default export location.

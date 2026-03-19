@@ -115,8 +115,6 @@ the installed runtime layout.
 - There is still no installer or distribution wrapper beyond the documented
   copy steps.
 - `init` is usable but still non-interactive.
-- The package owner repo now lives at the repository root; there is no nested
-  `skills/claude-skills` ownership layout to preserve.
 
 ## Verification Expectations
 

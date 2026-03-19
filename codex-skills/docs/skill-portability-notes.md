@@ -115,8 +115,6 @@ the installed runtime layout.
 - There is still no installer or distribution wrapper beyond the documented
   copy steps.
 - `init` is usable but still non-interactive.
-- The nested `.git` in `skills/codex-skills` is an ownership decision, not a
-  runtime requirement, and should be handled explicitly before final merge.
 
 ## Verification Expectations
 

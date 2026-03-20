@@ -29,7 +29,7 @@ def candidate_worktree_roots(
     resolve_recorded_path_fn: Callable[[str], Path],
 ) -> set[Path]:
     roots: set[Path] = set()
-    for relative in (Path(".claude/worktrees"), Path(".worktrees"), Path("worktrees")):
+    for relative in (Path(".codex/worktrees"), Path(".claude/worktrees"), Path(".worktrees"), Path("worktrees")):
         candidate = (root / relative).resolve()
         if candidate.exists():
             roots.add(candidate)

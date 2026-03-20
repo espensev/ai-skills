@@ -1716,7 +1716,7 @@ def _preflight_safe_fix() -> list[str]:
 
     # Copy planning-contract.md to .codex/skills/ if source exists and dest does not
     source_contract = ROOT / "planning-contract.md"
-    dest_contract = ROOT / ".claude" / "skills" / "planning-contract.md"
+    dest_contract = ROOT / ".codex" / "skills" / "planning-contract.md"
     if source_contract.exists() and not dest_contract.exists():
         dest_contract.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(str(source_contract), str(dest_contract))
@@ -1736,8 +1736,8 @@ def _preflight_safe_fix() -> list[str]:
 def _plan_preflight_payload() -> dict:
     errors: list[str] = []
     warnings: list[str] = []
-    config_path = ROOT / ".claude" / "skills" / "project.toml"
-    contract_path = ROOT / ".claude" / "skills" / "planning-contract.md"
+    config_path = ROOT / ".codex" / "skills" / "project.toml"
+    contract_path = ROOT / ".codex" / "skills" / "planning-contract.md"
     detected = _detect_project_type(ROOT)
     detected_language = str(detected.get("language", "unknown") or "unknown")
     language_labels = {
@@ -2282,7 +2282,7 @@ def _build_init_config(detected: dict) -> str:
     rendered, _used_template = _runtime_bootstrap.build_init_config(
         ROOT,
         detected,
-        template_path=ROOT / ".claude" / "skills" / "project.toml.template",
+        template_path=ROOT / ".codex" / "skills" / "project.toml.template",
         conventions_path="AGENTS.md",
     )
     return rendered
@@ -2563,8 +2563,8 @@ def cmd_init(args):
     result = _runtime_bootstrap.init_project(
         ROOT,
         force=getattr(args, "force", False),
-        config_path=ROOT / ".claude" / "skills" / "project.toml",
-        template_path=ROOT / ".claude" / "skills" / "project.toml.template",
+        config_path=ROOT / ".codex" / "skills" / "project.toml",
+        template_path=ROOT / ".codex" / "skills" / "project.toml.template",
         conventions_path="AGENTS.md",
         detect_project_type_fn=_detect_project_type,
         load_toml_file_fn=_load_toml_file,

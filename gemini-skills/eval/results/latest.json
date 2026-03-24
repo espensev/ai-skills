@@ -1,0 +1,770 @@
+{
+  "cases": "D:\\Development\\Ai-Skills\\gemini-skills\\eval\\cases\\light-skill-cases.json",
+  "responses": "D:\\Development\\Ai-Skills\\gemini-skills\\eval\\responses.mock.json",
+  "summary": {
+    "total_cases": 36,
+    "passed": 36,
+    "failed": 0,
+    "average_score": 5.0,
+    "by_skill": {
+      "architecture-decision-records": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "backend-patterns": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "brief": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "codebase-onboarding": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "context-budget": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "continuous-learning-v2": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "database-migrations": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "discover": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "django-tdd": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "doc-weaver": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "edit": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "epic-refactor": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "forensic-debugger": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "frontend-patterns": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "golang-testing": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "guardrails": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "kotlin-patterns": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "laravel-security": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "loop": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "loop-master": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "manager": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "planner": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "python-patterns": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "qa": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "rules-distill": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "rust-patterns": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "search-first": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "security-scan": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "ship": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "springboot-verification": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "tdd-workflow": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "truthpack-validator": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "ui-test-engineer": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "verification-loop": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "vibecheck-protocol": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "worktree-guard": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "architecture-decision-records-basic-001",
+      "skill": "architecture-decision-records",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "backend-patterns-basic-001",
+      "skill": "backend-patterns",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "brief-basic-001",
+      "skill": "brief",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "codebase-onboarding-basic-001",
+      "skill": "codebase-onboarding",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "context-budget-basic-001",
+      "skill": "context-budget",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "continuous-learning-basic-001",
+      "skill": "continuous-learning-v2",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "database-migrations-basic-001",
+      "skill": "database-migrations",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "discover-basic-001",
+      "skill": "discover",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "django-tdd-basic-001",
+      "skill": "django-tdd",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "doc-weaver-basic-001",
+      "skill": "doc-weaver",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "edit-basic-001",
+      "skill": "edit",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "epic-refactor-basic-001",
+      "skill": "epic-refactor",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "forensic-debugger-basic-001",
+      "skill": "forensic-debugger",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "frontend-patterns-basic-001",
+      "skill": "frontend-patterns",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "golang-testing-basic-001",
+      "skill": "golang-testing",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "guardrails-basic-001",
+      "skill": "guardrails",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "kotlin-patterns-basic-001",
+      "skill": "kotlin-patterns",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "laravel-security-basic-001",
+      "skill": "laravel-security",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "loop-basic-001",
+      "skill": "loop",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "loop-master-basic-001",
+      "skill": "loop-master",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "manager-basic-001",
+      "skill": "manager",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "planner-basic-001",
+      "skill": "planner",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "python-patterns-basic-001",
+      "skill": "python-patterns",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "qa-basic-001",
+      "skill": "qa",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "rules-distill-basic-001",
+      "skill": "rules-distill",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "rust-patterns-basic-001",
+      "skill": "rust-patterns",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "search-first-basic-001",
+      "skill": "search-first",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "security-scan-basic-001",
+      "skill": "security-scan",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "ship-basic-001",
+      "skill": "ship",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "springboot-verification-basic-001",
+      "skill": "springboot-verification",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "tdd-workflow-basic-001",
+      "skill": "tdd-workflow",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "truthpack-validator-basic-001",
+      "skill": "truthpack-validator",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "ui-test-engineer-basic-001",
+      "skill": "ui-test-engineer",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "verification-loop-basic-001",
+      "skill": "verification-loop",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "vibecheck-basic-001",
+      "skill": "vibecheck-protocol",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "worktree-guard-basic-001",
+      "skill": "worktree-guard",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    }
+  ]
+}

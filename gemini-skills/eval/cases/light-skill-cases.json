@@ -152,5 +152,248 @@
       "verification_any_of": ["verify", "test", "run"],
       "must_create": []
     }
+  },
+
+  {
+    "id": "verification-loop-basic-001",
+    "skill": "verification-loop",
+    "prompt": "Run the full verification cycle before we hand off this change.",
+    "checks": {
+      "must_mention": ["build", "test", "lint"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["test", "build", "lint"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "tdd-workflow-basic-001",
+    "skill": "tdd-workflow",
+    "prompt": "Write a failing test first, then implement the feature to make it pass.",
+    "checks": {
+      "must_mention": ["test", "fail", "pass"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["test", "pytest", "npm test"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "continuous-learning-basic-001",
+    "skill": "continuous-learning-v2",
+    "prompt": "Show the current instinct status for this project.",
+    "checks": {
+      "must_mention": ["instinct", "confidence"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "rules-distill-basic-001",
+    "skill": "rules-distill",
+    "prompt": "Distill the current project conventions into reusable rules.",
+    "checks": {
+      "must_mention": ["rule", "convention"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "search-first-basic-001",
+    "skill": "search-first",
+    "prompt": "Search for current best practices on React Server Components before answering.",
+    "checks": {
+      "must_mention": ["search", "source"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "security-scan-basic-001",
+    "skill": "security-scan",
+    "prompt": "Scan the codebase for common security vulnerabilities.",
+    "checks": {
+      "must_mention": ["vulnerability", "finding"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["scan", "audit"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "truthpack-validator-basic-001",
+    "skill": "truthpack-validator",
+    "prompt": "Validate my assumptions about tier names and pricing against the truthpack.",
+    "checks": {
+      "must_mention": ["truthpack", "validate"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "vibecheck-basic-001",
+    "skill": "vibecheck-protocol",
+    "prompt": "Run the vibecheck protocol on the last response.",
+    "checks": {
+      "must_mention": ["verified", "vibecheck"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "worktree-guard-basic-001",
+    "skill": "worktree-guard",
+    "prompt": "Check that all worktrees are clean before merging.",
+    "checks": {
+      "must_mention": ["worktree", "clean"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["git worktree", "git status"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "backend-patterns-basic-001",
+    "skill": "backend-patterns",
+    "prompt": "Structure the new payment handler with proper validation and error handling.",
+    "checks": {
+      "must_mention": ["handler", "validation"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["test", "lint"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "frontend-patterns-basic-001",
+    "skill": "frontend-patterns",
+    "prompt": "Build a React component that follows our design system patterns.",
+    "checks": {
+      "must_mention": ["component", "accessible"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["test", "lint"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "database-migrations-basic-001",
+    "skill": "database-migrations",
+    "prompt": "Create a migration to add an index on the users email column.",
+    "checks": {
+      "must_mention": ["migration", "index"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["migrate", "test"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "codebase-onboarding-basic-001",
+    "skill": "codebase-onboarding",
+    "prompt": "Give me a quick orientation of this codebase — key entry points and architecture.",
+    "checks": {
+      "must_mention": ["entry point", "architecture"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "context-budget-basic-001",
+    "skill": "context-budget",
+    "prompt": "We're running low on context. Prioritize what to keep and what to drop.",
+    "checks": {
+      "must_mention": ["context", "prioritize"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "architecture-decision-records-basic-001",
+    "skill": "architecture-decision-records",
+    "prompt": "Write an ADR for the decision to switch from REST to GraphQL.",
+    "checks": {
+      "must_mention": ["decision", "context", "consequence"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "python-patterns-basic-001",
+    "skill": "python-patterns",
+    "prompt": "Review this Python module for idiomatic patterns and type safety.",
+    "checks": {
+      "must_mention": ["type", "pattern"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["mypy", "ruff", "pytest"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "rust-patterns-basic-001",
+    "skill": "rust-patterns",
+    "prompt": "Review this Rust code for ownership patterns and error handling.",
+    "checks": {
+      "must_mention": ["ownership", "error"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["cargo", "test", "clippy"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "golang-testing-basic-001",
+    "skill": "golang-testing",
+    "prompt": "Write table-driven tests for the ParseConfig function.",
+    "checks": {
+      "must_mention": ["test", "table"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["go test"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "kotlin-patterns-basic-001",
+    "skill": "kotlin-patterns",
+    "prompt": "Refactor this Java-style code to idiomatic Kotlin with sealed classes.",
+    "checks": {
+      "must_mention": ["sealed", "idiomatic"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["test", "build"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "django-tdd-basic-001",
+    "skill": "django-tdd",
+    "prompt": "Write a test-first implementation for the new user registration endpoint.",
+    "checks": {
+      "must_mention": ["test", "view"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["pytest", "manage.py test"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "laravel-security-basic-001",
+    "skill": "laravel-security",
+    "prompt": "Audit the authentication middleware for OWASP top-10 vulnerabilities.",
+    "checks": {
+      "must_mention": ["middleware", "vulnerability"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["test", "audit"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "springboot-verification-basic-001",
+    "skill": "springboot-verification",
+    "prompt": "Verify the Spring Boot application context loads and all endpoints respond.",
+    "checks": {
+      "must_mention": ["context", "endpoint"],
+      "must_not_mention": [".claude", ".codex"],
+      "verification_any_of": ["test", "build", "gradle"],
+      "must_create": []
+    }
   }
 ]

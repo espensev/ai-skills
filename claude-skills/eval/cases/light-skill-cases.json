@@ -1,0 +1,189 @@
+[
+  {
+    "id": "discover-basic-001",
+    "skill": "discover",
+    "prompt": "Research the codebase before changing the task manager bootstrap flow.",
+    "checks": {
+      "must_mention": ["question", "evidence", "recommend"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "discover-ambiguous-002",
+    "skill": "discover",
+    "prompt": "I need to understand this code before we do anything. Look at the analysis pipeline.",
+    "checks": {
+      "must_mention": ["question", "evidence"],
+      "must_not_mention": ["plan", "campaign", "agent roster", ".codex", ".gemini"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "planner-basic-001",
+    "skill": "planner",
+    "prompt": "Plan a small refactor of the runtime config loading path.",
+    "checks": {
+      "must_mention": ["exit criteria", "agent", "verification"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["python", "pytest", "verify"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "planner-edge-002",
+    "skill": "planner",
+    "prompt": "Plan a campaign with only one agent — just fix the config loader.",
+    "checks": {
+      "must_mention": ["agent", "exit criteria"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["pytest", "verify"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "manager-basic-001",
+    "skill": "manager",
+    "prompt": "Orchestrate a campaign to improve analysis caching and verify the result.",
+    "checks": {
+      "must_mention": ["plan", "merge", "verify"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["verify", "pytest", "build"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "manager-edge-002",
+    "skill": "manager",
+    "prompt": "I already have an approved plan. Just launch the agents and merge when they're done.",
+    "checks": {
+      "must_mention": ["plan", "merge"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["verify", "pytest", "build"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "qa-basic-001",
+    "skill": "qa",
+    "prompt": "Run a light QA pass on the skill docs and explain any failures.",
+    "checks": {
+      "must_mention": ["test", "fail", "pass"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["pytest", "test", "validation"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "qa-triage-002",
+    "skill": "qa",
+    "prompt": "Three tests are failing after the merge. Triage them and tell me the root causes.",
+    "checks": {
+      "must_mention": ["fail", "root cause"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["pytest", "test"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "ship-basic-001",
+    "skill": "ship",
+    "prompt": "Prepare the current validated changes for commit.",
+    "checks": {
+      "must_mention": ["stage", "commit", "git"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["git status", "git diff", "git log"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "ship-edge-002",
+    "skill": "ship",
+    "prompt": "Nothing is staged yet. Stage and commit only the runtime script changes.",
+    "checks": {
+      "must_mention": ["stage", "commit"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["git status", "git diff"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "observer-basic-001",
+    "skill": "observer",
+    "prompt": "Summarize project drift and record a few durable observations without changing product code.",
+    "checks": {
+      "must_mention": ["observation", "evidence", "project-intelligence"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["observations.jsonl", "metrics.jsonl", "git status"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "observer-scan-002",
+    "skill": "observer",
+    "prompt": "Run a health scan and tell me if there are any blockers before I launch agents.",
+    "checks": {
+      "must_mention": ["observation", "scan"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["observations.jsonl", "git status", "check"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "observer-test-basic-001",
+    "skill": "observer-test",
+    "prompt": "Start observing this worktree run and record any test failures you see.",
+    "checks": {
+      "must_mention": ["observation", "worktree"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["observations.jsonl", "report"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "refactor-planner-basic-001",
+    "skill": "refactor-planner",
+    "prompt": "Design a phased plan for migrating the data layer behind a new interface.",
+    "checks": {
+      "must_mention": ["phase", "contract", "seam"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["test", "verify", "pytest"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "refactor-planner-edge-002",
+    "skill": "refactor-planner",
+    "prompt": "Plan a modularization — extract the validation logic into its own module.",
+    "checks": {
+      "must_mention": ["phase", "extraction"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["test", "verify"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "worktree-manager-basic-001",
+    "skill": "worktree-manager",
+    "prompt": "Create worktrees for three agents working on different parts of the codebase.",
+    "checks": {
+      "must_mention": ["worktree", "branch"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["git worktree", "git branch"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "worktree-manager-merge-002",
+    "skill": "worktree-manager",
+    "prompt": "All agents are done. Merge their worktrees back in smallest-diff-first order.",
+    "checks": {
+      "must_mention": ["merge", "worktree"],
+      "must_not_mention": [".codex", ".gemini"],
+      "verification_any_of": ["git", "diff", "merge"],
+      "must_create": []
+    }
+  }
+]

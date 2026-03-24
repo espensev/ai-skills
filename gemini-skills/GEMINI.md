@@ -57,3 +57,7 @@
    documentation sync edits docs, and code-changing commands edit only the code
    they own. Crossing roles requires an explicit user request or contract.
 7. The Lens Strategy (Read-All, Write-Scoped): When operating as Gemini, leverage the large context window to ingest maximum repository context for perfect comprehension, but strictly limit write operations to the active task boundaries defined by the Planning Contract. Do not use the massive context window to make unauthorized, cross-cutting "drive-by" edits.
+8. Feedback before memory: treat explicit user corrections, failing verification
+   commands, repeated QA findings, and scored eval misses as the highest-signal
+   feedback. Do not promote a one-off symptom into a reusable instinct, rule,
+   or agent behavior unless it repeats or the user explicitly asks to codify it.

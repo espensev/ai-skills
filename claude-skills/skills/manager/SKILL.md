@@ -108,6 +108,18 @@ If `analysis_health.partial_analysis` or `analysis_health.fallback_only` is
 true, plan conservatively around startup projects, packaging projects, shared
 UI surfaces, and high-overlap hotspots.
 
+### Feedback Inputs
+
+Use feedback in this order:
+
+1. explicit user correction or requirement change
+2. failing build, test, lint, or verify output
+3. `/observe` blocker or regression signals
+4. plan drift between JSON, docs, tracker, and code
+
+Treat single weak signals as local context. Promote repeated or reusable ones
+into observer records so future runs start from better evidence.
+
 ### Autonomous Addition Policy
 
 When running autonomously, you may include extra improvements without asking
@@ -509,6 +521,8 @@ Produce a summary with:
 - **Stale state**: items cleaned up (or "none")
 - **Blockers**: anything that would prevent the next `go` from succeeding
 - **Observer flags**: if `data/observations.jsonl` contains recent `blocker` (warning), `regression` (failure), or `workaround` (warning/debt) observations
+- **Feedback handoff**: which findings should be recorded for future planning,
+  not just mentioned in the current report
 
 ### Refactor-aware verification
 

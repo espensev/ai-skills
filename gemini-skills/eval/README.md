@@ -60,6 +60,18 @@ The Claude scorer is interchangeable because it uses the same response format.
   judging.
 - Reuse the shared scorer contract unless the neutral core changes it.
 
+## Feedback Loop
+
+Gemini does not yet ship a separate runtime feedback store in this package, so
+use explicit artifacts:
+
+1. capture the failure mode in the response `notes`
+2. add or tighten a case in `eval/cases/light-skill-cases.json` when the issue
+   is reusable
+3. re-score with the shared scorer
+4. only then decide whether the pattern also belongs in
+   `continuous-learning-v2`
+
 ## Starter Eval Results
 
 A simulated validation run was completed to verify that the Gemini command instructions (`discover`, `planner`, `epic-refactor`, `forensic-debugger`, `ui-test-engineer`, `doc-weaver`, `guardrails`, `edit`, `brief`, `manager`, `ship`, `qa`, `loop`, `loop-master`) properly align with the neutral core checks. 

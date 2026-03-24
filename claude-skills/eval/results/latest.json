@@ -1,0 +1,331 @@
+{
+  "cases": "D:\\Development\\Ai-Skills\\claude-skills\\eval\\cases\\light-skill-cases.json",
+  "responses": "D:\\Development\\Ai-Skills\\claude-skills\\eval\\responses.mock.json",
+  "summary": {
+    "total_cases": 17,
+    "passed": 17,
+    "failed": 0,
+    "average_score": 5.0,
+    "by_skill": {
+      "discover": {
+        "count": 2,
+        "passed": 2,
+        "average_score": 5.0
+      },
+      "manager": {
+        "count": 2,
+        "passed": 2,
+        "average_score": 5.0
+      },
+      "observer": {
+        "count": 2,
+        "passed": 2,
+        "average_score": 5.0
+      },
+      "observer-test": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "planner": {
+        "count": 2,
+        "passed": 2,
+        "average_score": 5.0
+      },
+      "qa": {
+        "count": 2,
+        "passed": 2,
+        "average_score": 5.0
+      },
+      "refactor-planner": {
+        "count": 2,
+        "passed": 2,
+        "average_score": 5.0
+      },
+      "ship": {
+        "count": 2,
+        "passed": 2,
+        "average_score": 5.0
+      },
+      "worktree-manager": {
+        "count": 2,
+        "passed": 2,
+        "average_score": 5.0
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "discover-ambiguous-002",
+      "skill": "discover",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "discover-basic-001",
+      "skill": "discover",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "manager-basic-001",
+      "skill": "manager",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "manager-edge-002",
+      "skill": "manager",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "observer-basic-001",
+      "skill": "observer",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "observer-scan-002",
+      "skill": "observer",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "observer-test-basic-001",
+      "skill": "observer-test",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "planner-basic-001",
+      "skill": "planner",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "planner-edge-002",
+      "skill": "planner",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "qa-basic-001",
+      "skill": "qa",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "qa-triage-002",
+      "skill": "qa",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "refactor-planner-basic-001",
+      "skill": "refactor-planner",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "refactor-planner-edge-002",
+      "skill": "refactor-planner",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "ship-basic-001",
+      "skill": "ship",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "ship-edge-002",
+      "skill": "ship",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "worktree-manager-basic-001",
+      "skill": "worktree-manager",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "worktree-manager-merge-002",
+      "skill": "worktree-manager",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    }
+  ]
+}

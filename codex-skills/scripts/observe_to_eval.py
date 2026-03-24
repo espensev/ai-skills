@@ -19,6 +19,14 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OBS = ROOT / "data" / "observations.jsonl"
+PROVIDER_LEAKAGE_TERMS = [
+    ".claude/skills",
+    ".codex/skills",
+    ".gemini/commands",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "GEMINI.md",
+]
 
 # Observation categories that indicate skill failures worth capturing
 REGRESSION_CATS = {"regression", "blocker", "test-fail", "build-error"}
@@ -35,25 +43,25 @@ CAT_TO_SKILL: dict[str, str] = {
 CAT_TO_CHECKS: dict[str, dict[str, Any]] = {
     "test-fail": {
         "must_mention": ["test", "fail", "root cause"],
-        "must_not_mention": [".claude/skills", "CLAUDE.md"],
+        "must_not_mention": PROVIDER_LEAKAGE_TERMS,
         "verification_any_of": ["pytest", "test"],
         "must_create": [],
     },
     "build-error": {
         "must_mention": ["build", "error", "fix"],
-        "must_not_mention": [".claude/skills", "CLAUDE.md"],
+        "must_not_mention": PROVIDER_LEAKAGE_TERMS,
         "verification_any_of": ["build", "compile", "pytest"],
         "must_create": [],
     },
     "regression": {
         "must_mention": ["regression", "test", "root cause"],
-        "must_not_mention": [".claude/skills", "CLAUDE.md"],
+        "must_not_mention": PROVIDER_LEAKAGE_TERMS,
         "verification_any_of": ["pytest", "test", "verify"],
         "must_create": [],
     },
     "blocker": {
         "must_mention": ["blocker", "resolve"],
-        "must_not_mention": [".claude/skills", "CLAUDE.md"],
+        "must_not_mention": PROVIDER_LEAKAGE_TERMS,
         "verification_any_of": ["verify", "test", "check"],
         "must_create": [],
     },

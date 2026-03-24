@@ -70,3 +70,27 @@ python scripts/eval_skills.py ^
 3. Set `selected_skill` and `acceptability`.
 4. Run the scorer.
 5. Review the failures list before changing the skills.
+
+## Feedback-Driven Workflow
+
+Use the light eval harness as the durable end of the feedback loop:
+
+1. Capture high-signal failures in `data/observations.jsonl` when the repo uses
+   observer artifacts.
+2. Turn recurring regressions or blockers into eval cases:
+
+```bash
+python scripts/observe_to_eval.py ^
+  --observations data/observations.jsonl ^
+  --merge eval/cases/light-skill-cases.json
+```
+
+3. Re-score the package after skill edits.
+4. Rank the next skill fixes with:
+
+```bash
+python scripts/skill_feedback_loop.py ^
+  --observations data/observations.jsonl ^
+  --eval eval/results/latest.json ^
+  --out docs/skill-improvement-report.md
+```

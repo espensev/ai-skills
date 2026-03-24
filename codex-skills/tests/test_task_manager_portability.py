@@ -16,6 +16,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 INSTALL_MANIFEST = json.loads((ROOT / "package" / "install-manifest.json").read_text(encoding="utf-8"))
+INSTALL_SKILLS_DIR = Path(".codex") / "skills"
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import task_manager
@@ -171,12 +172,12 @@ class TaskManagerPortabilityTests(unittest.TestCase):
         for skill_name in skills:
             shutil.copytree(
                 ROOT / "skills" / skill_name,
-                install_root / ".codex" / "skills" / skill_name,
+                install_root / INSTALL_SKILLS_DIR / skill_name,
             )
 
         for rel_path in INSTALL_MANIFEST["contract_files"]:
             source = ROOT / rel_path
-            shutil.copy2(source, install_root / ".codex" / "skills" / source.name)
+            shutil.copy2(source, install_root / INSTALL_SKILLS_DIR / source.name)
 
         for rel_path in INSTALL_MANIFEST["runtime_files"]:
             source = ROOT / rel_path
@@ -786,7 +787,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
         self.assertEqual(branch_list.stdout.strip(), "")
 
     def test_plan_preflight_requires_test_command_for_autonomous_verify(self):
-        config_dir = self.root / ".codex" / "skills"
+        config_dir = self.root / INSTALL_SKILLS_DIR
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "project.toml").write_text('[project]\nname = "Portable Test"\n', encoding="utf-8")
         (config_dir / "planning-contract.md").write_text("contract\n", encoding="utf-8")
@@ -815,7 +816,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
         self.assertTrue(payload["git"]["available"])
 
     def test_plan_preflight_rejects_placeholder_test_command(self):
-        config_dir = self.root / ".codex" / "skills"
+        config_dir = self.root / INSTALL_SKILLS_DIR
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "project.toml").write_text('[project]\nname = "Portable Test"\n', encoding="utf-8")
         (config_dir / "planning-contract.md").write_text("contract\n", encoding="utf-8")
@@ -843,7 +844,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
         self.assertIn("Configured [commands].test looks like a placeholder (contains TODO).", payload["errors"])
 
     def test_plan_preflight_reports_missing_git_repo(self):
-        config_dir = self.root / ".codex" / "skills"
+        config_dir = self.root / INSTALL_SKILLS_DIR
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "project.toml").write_text('[project]\nname = "Portable Test"\n', encoding="utf-8")
         (config_dir / "planning-contract.md").write_text("contract\n", encoding="utf-8")
@@ -869,7 +870,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
         self.assertFalse(payload["git"]["available"])
 
     def test_plan_preflight_warns_on_dirty_worktree(self):
-        config_dir = self.root / ".codex" / "skills"
+        config_dir = self.root / INSTALL_SKILLS_DIR
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "project.toml").write_text('[project]\nname = "Portable Test"\n', encoding="utf-8")
         (config_dir / "planning-contract.md").write_text("contract\n", encoding="utf-8")
@@ -898,7 +899,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
         self.assertTrue(payload["git"]["dirty"])
 
     def test_plan_preflight_requires_build_command_for_dotnet_projects(self):
-        config_dir = self.root / ".codex" / "skills"
+        config_dir = self.root / INSTALL_SKILLS_DIR
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "project.toml").write_text('[project]\nname = "Portable Test"\n', encoding="utf-8")
         (config_dir / "planning-contract.md").write_text("contract\n", encoding="utf-8")
@@ -935,7 +936,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
         )
 
     def test_plan_preflight_python_missing_build_is_only_a_warning(self):
-        config_dir = self.root / ".codex" / "skills"
+        config_dir = self.root / INSTALL_SKILLS_DIR
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "project.toml").write_text('[project]\nname = "Portable Test"\n', encoding="utf-8")
         (config_dir / "planning-contract.md").write_text("contract\n", encoding="utf-8")
@@ -1094,7 +1095,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
 
     def test_init_creates_default_conventions_stub_for_installed_runtime(self):
         install_root = self.root / "consumer-init-conventions"
-        (install_root / ".codex" / "skills").mkdir(parents=True, exist_ok=True)
+        (install_root / INSTALL_SKILLS_DIR).mkdir(parents=True, exist_ok=True)
         (install_root / "scripts").mkdir(parents=True, exist_ok=True)
         (install_root / "tests").mkdir(parents=True, exist_ok=True)
         (install_root / "README.md").write_text("consumer repo\n", encoding="utf-8")
@@ -1265,7 +1266,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
             self.assertEqual(task_manager.parse_tracker(), {})
 
     def test_init_prefers_project_template_when_present(self):
-        template_dir = self.root / ".codex" / "skills"
+        template_dir = self.root / INSTALL_SKILLS_DIR
         template_dir.mkdir(parents=True, exist_ok=True)
         (template_dir / "project.toml.template").write_text(
             textwrap.dedent(
@@ -1316,7 +1317,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
 
     def test_init_creates_configured_runtime_paths_from_template(self):
         init_root = self.root / "init-root"
-        template_dir = init_root / ".codex" / "skills"
+        template_dir = init_root / INSTALL_SKILLS_DIR
         template_dir.mkdir(parents=True, exist_ok=True)
         (template_dir / "project.toml.template").write_text(
             textwrap.dedent(
@@ -1363,7 +1364,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
 
     def test_readme_install_flow_smoke_generates_project_config(self):
         install_root = self.root / "consumer"
-        (install_root / ".codex" / "skills").mkdir(parents=True, exist_ok=True)
+        (install_root / INSTALL_SKILLS_DIR).mkdir(parents=True, exist_ok=True)
         (install_root / "scripts").mkdir(parents=True, exist_ok=True)
         (install_root / "README.md").write_text("consumer repo\n", encoding="utf-8")
         self._install_runtime(install_root)
@@ -1377,7 +1378,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
         )
         self.assertIn("Created:", init_result.stdout)
 
-        rendered_config = (install_root / ".codex" / "skills" / "project.toml").read_text(encoding="utf-8")
+        rendered_config = (install_root / INSTALL_SKILLS_DIR / "project.toml").read_text(encoding="utf-8")
         self.assertIn('name = "consumer"', rendered_config)
         self.assertNotIn("{{PROJECT_NAME}}", rendered_config)
         self.assertTrue((install_root / "data" / "tasks.json").exists())
@@ -1400,7 +1401,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
 
     def test_installed_runtime_go_smoke_can_launch_record_merge_and_verify(self):
         install_root = self.root / "consumer-runtime-go"
-        (install_root / ".codex" / "skills").mkdir(parents=True, exist_ok=True)
+        (install_root / INSTALL_SKILLS_DIR).mkdir(parents=True, exist_ok=True)
         (install_root / "scripts").mkdir(parents=True, exist_ok=True)
         (install_root / "tests").mkdir(parents=True, exist_ok=True)
         (install_root / "README.md").write_text("consumer repo\n", encoding="utf-8")
@@ -1575,7 +1576,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
 
     def test_installed_runtime_go_resume_smoke_reuses_merge_after_verify_failure(self):
         install_root = self.root / "consumer-runtime-go-resume"
-        (install_root / ".codex" / "skills").mkdir(parents=True, exist_ok=True)
+        (install_root / INSTALL_SKILLS_DIR).mkdir(parents=True, exist_ok=True)
         (install_root / "scripts").mkdir(parents=True, exist_ok=True)
         (install_root / "tests").mkdir(parents=True, exist_ok=True)
         (install_root / "README.md").write_text("consumer repo\n", encoding="utf-8")
@@ -1613,7 +1614,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
             check=True,
         )
 
-        project_config = install_root / ".codex" / "skills" / "project.toml"
+        project_config = install_root / INSTALL_SKILLS_DIR / "project.toml"
         config_text = project_config.read_text(encoding="utf-8")
         project_config.write_text(
             config_text.replace(
@@ -1785,7 +1786,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
 
     def test_installed_runtime_recover_smoke_resets_stale_run_and_relaunches(self):
         install_root = self.root / "consumer-runtime-recover"
-        (install_root / ".codex" / "skills").mkdir(parents=True, exist_ok=True)
+        (install_root / INSTALL_SKILLS_DIR).mkdir(parents=True, exist_ok=True)
         (install_root / "scripts").mkdir(parents=True, exist_ok=True)
         (install_root / "tests").mkdir(parents=True, exist_ok=True)
         (install_root / "README.md").write_text("consumer repo\n", encoding="utf-8")
@@ -1918,7 +1919,7 @@ class TaskManagerPortabilityTests(unittest.TestCase):
 
     def test_installed_runtime_recover_smoke_reconciles_git_worktree_by_branch(self):
         install_root = self.root / "consumer-runtime-recover-branch"
-        (install_root / ".codex" / "skills").mkdir(parents=True, exist_ok=True)
+        (install_root / INSTALL_SKILLS_DIR).mkdir(parents=True, exist_ok=True)
         (install_root / "scripts").mkdir(parents=True, exist_ok=True)
         (install_root / "tests").mkdir(parents=True, exist_ok=True)
         (install_root / "README.md").write_text("consumer repo\n", encoding="utf-8")

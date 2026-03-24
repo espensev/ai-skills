@@ -244,7 +244,7 @@ Push the current branch to the remote. **Always confirms with the user first.**
 - `dist/`, `bin/`, `obj/` — build output
 - `node_modules/` — dependencies
 - `*.db`, `*.db-wal`, `*.db-shm` — database files
-- `.claude/worktrees/` — agent worktrees
+- `.worktrees/` — agent worktrees
 - Files in `.gitignore`
 
 ### Project-specific exclusions:

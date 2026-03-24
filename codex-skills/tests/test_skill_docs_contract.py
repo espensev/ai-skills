@@ -54,11 +54,22 @@ class TestSkillDocsContract(unittest.TestCase):
             ROOT / "scripts" / "task_runtime" / "telemetry.py",
             ROOT / "scripts" / "task_runtime" / "validation.py",
             ROOT / "docs" / "skill-portability-notes.md",
+            SKILLS / "api-design" / "SKILL.md",
+            SKILLS / "backend-patterns" / "SKILL.md",
+            SKILLS / "deep-research" / "SKILL.md",
             SKILLS / "discover" / "SKILL.md",
+            SKILLS / "dmux-workflows" / "SKILL.md",
+            SKILLS / "documentation-lookup" / "SKILL.md",
+            SKILLS / "e2e-testing" / "SKILL.md",
+            SKILLS / "exa-search" / "SKILL.md",
+            SKILLS / "frontend-patterns" / "SKILL.md",
             SKILLS / "manager" / "SKILL.md",
+            SKILLS / "mcp-server-patterns" / "SKILL.md",
+            SKILLS / "observer" / "SKILL.md",
             SKILLS / "planner" / "SKILL.md",
             SKILLS / "qa" / "SKILL.md",
             SKILLS / "ship" / "SKILL.md",
+            SKILLS / "verification-loop" / "SKILL.md",
         ]
         for path in expected:
             self.assertTrue(path.exists(), f"Missing exported file: {path}")
@@ -87,6 +98,11 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("planning_context", text)
         self.assertIn("13 standard plan elements", text)
         self.assertIn("--mode refactor", text)
+        self.assertIn("skills/api-design", text)
+        self.assertIn("skills/verification-loop", text)
+        self.assertIn("skills/dmux-workflows", text)
+        self.assertIn("skills/exa-search", text)
+        self.assertIn("skills/observer", text)
 
     def test_readme_has_valid_code_fences_and_no_pasted_python(self):
         text = README.read_text(encoding="utf-8")
@@ -118,6 +134,17 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("discover", manifest["default_skills"])
         self.assertIn("qa", manifest["default_skills"])
         self.assertIn("ship", manifest["default_skills"])
+        self.assertIn("api-design", manifest["optional_skills"])
+        self.assertIn("backend-patterns", manifest["optional_skills"])
+        self.assertIn("deep-research", manifest["optional_skills"])
+        self.assertIn("dmux-workflows", manifest["optional_skills"])
+        self.assertIn("documentation-lookup", manifest["optional_skills"])
+        self.assertIn("e2e-testing", manifest["optional_skills"])
+        self.assertIn("exa-search", manifest["optional_skills"])
+        self.assertIn("frontend-patterns", manifest["optional_skills"])
+        self.assertIn("mcp-server-patterns", manifest["optional_skills"])
+        self.assertIn("observer", manifest["optional_skills"])
+        self.assertIn("verification-loop", manifest["optional_skills"])
         self.assertIn("scripts/task_manager.py", manifest["runtime_files"])
         self.assertIn("scripts/analysis", manifest["runtime_directories"])
         self.assertIn("scripts/task_runtime", manifest["runtime_directories"])

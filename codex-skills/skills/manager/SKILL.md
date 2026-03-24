@@ -95,6 +95,18 @@ If `analysis_health.partial_analysis` or `analysis_health.fallback_only` is
 true, plan conservatively around startup projects, packaging projects, shared
 UI surfaces, and high-overlap hotspots.
 
+### Feedback Inputs
+
+Use feedback in this order:
+
+1. explicit user correction or changed requirement
+2. build, typecheck, lint, smoke, or test failure with concrete output
+3. blocker, regression, or workaround evidence from prior runs
+4. plan drift between JSON, docs, tracker, and code
+
+A single weak signal should shape the current run only. Reusable or repeated
+signals should be turned into durable feedback artifacts or eval cases.
+
 ### Autonomous Addition Policy
 
 When running autonomously, you may include extra improvements without asking
@@ -470,12 +482,25 @@ Produce a summary with:
 - **Drift findings**: optional follow-up audit findings, if any
 - **Stale state**: items cleaned up (or "none")
 - **Blockers**: anything that would prevent the next `go` from succeeding
+- **Feedback handoff**: which findings should stay local, enter observer
+  artifacts, or become eval cases
 
 ### Integration with `go`:
 
 The `go` command's full lifecycle is: `plan` → backend `go` → `merge` → `verify`.
 If `verify` finds test failures or build errors after merge, it reports them
 but does not attempt auto-fixes (that would exceed merge scope).
+
+### Optional durable feedback
+
+If the repo already uses observer artifacts, or the user explicitly asks for a
+feedback trail:
+
+- record evidence-backed blockers, regressions, and drift in
+  `data/observations.jsonl`
+- refresh `docs/observer/project-intelligence.md` when the summary is stale
+- convert recurring blocker/regression patterns into eval cases with
+  `python scripts/observe_to_eval.py --merge eval/cases/light-skill-cases.json`
 
 ---
 

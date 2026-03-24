@@ -25,6 +25,8 @@ The total score is the sum of those five checks. `acceptability` is weighted as:
 ## Files
 
 - `eval/cases/light-skill-cases.json` contains the starter cases
+- `eval/responses.template.json` is the blank response template
+- `eval/responses.mock.json` is a deterministic passing fixture for package validation
 - `eval/results/` is where scored results can be written
 - `scripts/eval_skills.py` is the scorer
 
@@ -61,6 +63,15 @@ python scripts/eval_skills.py ^
   --cases eval/cases/light-skill-cases.json ^
   --responses eval/responses.template.json ^
   --out eval/results/latest.json
+```
+
+Score the packaged mock fixture:
+
+```bash
+python scripts/eval_skills.py ^
+  --cases eval/cases/light-skill-cases.json ^
+  --responses eval/responses.mock.json ^
+  --out %TEMP%\\codex-skills-eval-latest.json
 ```
 
 ## Starter Workflow

@@ -18,6 +18,7 @@ Track whether the current Gemini command wrappers:
 
 - `eval/cases/light-skill-cases.json` contains the starter Gemini cases
 - `eval/responses.template.json` is the blank response payload
+- `eval/responses.mock.json` is a deterministic passing fixture for package validation
 - `eval/results/` is the recommended output directory for scored runs
 
 ## Temporary Scoring Workflow
@@ -36,6 +37,9 @@ python ..\codex-skills\scripts\eval_skills.py `
 ```
 
 The Claude scorer is interchangeable because it uses the same response format.
+
+For a deterministic fixture run, point the scorer at `eval/responses.mock.json`
+instead of the blank template.
 
 ## Response Format
 
@@ -74,6 +78,6 @@ use explicit artifacts:
 
 ## Starter Eval Results
 
-A simulated validation run was completed to verify that the Gemini command instructions (`discover`, `planner`, `epic-refactor`, `forensic-debugger`, `ui-test-engineer`, `doc-weaver`, `guardrails`, `edit`, `brief`, `manager`, `ship`, `qa`, `loop`, `loop-master`) properly align with the neutral core checks. 
-
-The mock output successfully passes all requirements defined in `cases/light-skill-cases.json` without any leakage of provider-specific language (e.g., `.claude`, `.codex`). The verified acceptable output has been logged to `results/latest.json`.
+Use `eval/responses.mock.json` when you want a deterministic scorer run that
+proves the package still satisfies the current light-eval contract without
+depending on a live Gemini session transcript.

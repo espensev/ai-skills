@@ -9,6 +9,8 @@ artifacts and language, and avoid provider leakage (`.codex`, `.gemini` paths).
 ## Files
 
 - `eval/cases/light-skill-cases.json` — eval cases for all Claude skills
+- `eval/responses.template.json` — blank response template
+- `eval/responses.mock.json` — deterministic passing fixture for package validation
 - `eval/results/` — scored output directory
 - `eval/results/.gitkeep` — placeholder
 
@@ -31,6 +33,15 @@ python ../codex-skills/scripts/eval_skills.py \
   --cases eval/cases/light-skill-cases.json \
   --responses eval/responses.template.json \
   --out eval/results/latest.json
+```
+
+For a deterministic fixture run:
+
+```bash
+python ../codex-skills/scripts/eval_skills.py \
+  --cases eval/cases/light-skill-cases.json \
+  --responses eval/responses.mock.json \
+  --out "${TMPDIR:-/tmp}/claude-skills-eval-latest.json"
 ```
 
 ## Response Format

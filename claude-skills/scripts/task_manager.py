@@ -365,6 +365,7 @@ def load_state() -> dict:
 
 
 def save_state(state: dict):
+    global _state_file_mtime, _last_sync_state
     try:
         _runtime_save_state(
             STATE_FILE,
@@ -372,6 +373,10 @@ def save_state(state: dict):
             normalize_state=_normalize_state,
             write_back=_write_state_file,
         )
+        # Invalidate the sync cache after explicit writes so the next sync_state()
+        # re-reads and reconciles the saved state against current specs/tracker.
+        _state_file_mtime = None
+        _last_sync_state = None
     except TaskRuntimeError as exc:
         raise TaskManagerError(str(exc)) from exc
 

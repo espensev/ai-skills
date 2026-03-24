@@ -1,0 +1,344 @@
+[
+  {
+    "id": "discover-basic-001",
+    "selected_skill": "discover",
+    "output": "Mock eval response for discover. question. evidence. recommend.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "planner-basic-001",
+    "selected_skill": "planner",
+    "output": "Mock eval response for planner. exit criteria. agent. verification. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "python",
+      "pytest",
+      "verify"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "manager-basic-001",
+    "selected_skill": "manager",
+    "output": "Mock eval response for manager. plan. merge. verify. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "verify",
+      "pytest",
+      "build"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "qa-basic-001",
+    "selected_skill": "qa",
+    "output": "Mock eval response for qa. test. fail. pass. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "pytest",
+      "test",
+      "validation"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "ship-basic-001",
+    "selected_skill": "ship",
+    "output": "Mock eval response for ship. stage. commit. git. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "git status",
+      "git diff",
+      "git log"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "loop-basic-001",
+    "selected_skill": "loop",
+    "output": "Mock eval response for loop. objective. verification. next risk. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "verification",
+      "pytest",
+      "scan"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "loop-master-basic-001",
+    "selected_skill": "loop-master",
+    "output": "Mock eval response for loop-master. local_blocker. ownership. validation_gates. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "validation_gates",
+      "pytest",
+      "verify"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "observer-basic-001",
+    "selected_skill": "observer",
+    "output": "Mock eval response for observer. observation. evidence. project-intelligence. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "observations.jsonl",
+      "metrics.jsonl",
+      "git status"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "discover-ambiguous-002",
+    "selected_skill": "discover",
+    "output": "Mock eval response for discover. question. evidence.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "discover-edge-003",
+    "selected_skill": "discover",
+    "output": "Mock eval response for discover. evidence. recommend.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "planner-ambiguous-002",
+    "selected_skill": "planner",
+    "output": "Mock eval response for planner. agent. verification. exit criteria. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "pytest",
+      "verify",
+      "python"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "planner-edge-003",
+    "selected_skill": "planner",
+    "output": "Mock eval response for planner. agent. exit criteria. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "pytest",
+      "verify"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "qa-edge-002",
+    "selected_skill": "qa",
+    "output": "Mock eval response for qa. coverage. test. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "pytest",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "qa-triage-003",
+    "selected_skill": "qa",
+    "output": "Mock eval response for qa. fail. root cause. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "pytest",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "ship-edge-002",
+    "selected_skill": "ship",
+    "output": "Mock eval response for ship. stage. commit. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "git status",
+      "git diff"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "observer-scan-002",
+    "selected_skill": "observer",
+    "output": "Mock eval response for observer. observation. scan. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "observations.jsonl",
+      "git status",
+      "check"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "observer-empty-003",
+    "selected_skill": "observer",
+    "output": "Mock eval response for observer. observation. briefing. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "observations.jsonl",
+      "git status"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "manager-edge-002",
+    "selected_skill": "manager",
+    "output": "Mock eval response for manager. plan. merge. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "verify",
+      "pytest",
+      "build"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "loop-edge-002",
+    "selected_skill": "loop",
+    "output": "Mock eval response for loop. objective. verification. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "verification",
+      "pytest",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "api-design-basic-001",
+    "selected_skill": "api-design",
+    "output": "Mock eval response for api-design. endpoint. status code. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "validate"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "backend-patterns-basic-001",
+    "selected_skill": "backend-patterns",
+    "output": "Mock eval response for backend-patterns. handler. validation. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "lint"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "deep-research-basic-001",
+    "selected_skill": "deep-research",
+    "output": "Mock eval response for deep-research. source. finding.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "dmux-workflows-basic-001",
+    "selected_skill": "dmux-workflows",
+    "output": "Mock eval response for dmux-workflows. ownership. parallel. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "merge",
+      "verify"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "documentation-lookup-basic-001",
+    "selected_skill": "documentation-lookup",
+    "output": "Mock eval response for documentation-lookup. documentation. current.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "e2e-testing-basic-001",
+    "selected_skill": "e2e-testing",
+    "output": "Mock eval response for e2e-testing. test. selector. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "playwright",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "exa-search-basic-001",
+    "selected_skill": "exa-search",
+    "output": "Mock eval response for exa-search. search. result.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "frontend-patterns-basic-001",
+    "selected_skill": "frontend-patterns",
+    "output": "Mock eval response for frontend-patterns. component. accessible. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "lint"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "mcp-server-patterns-basic-001",
+    "selected_skill": "mcp-server-patterns",
+    "output": "Mock eval response for mcp-server-patterns. schema. transport. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "validate"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "verification-loop-basic-001",
+    "selected_skill": "verification-loop",
+    "output": "Mock eval response for verification-loop. build. test. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "build",
+      "test",
+      "lint"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  }
+]

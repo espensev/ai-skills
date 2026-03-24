@@ -181,7 +181,7 @@ function Resolve-OllamaModel {
 }
 
 function Ensure-ArtifactRoot {
-    $path = Join-Path $script:RepoRoot ".claude/ollama"
+    $path = Join-Path $script:RepoRoot ".codex/ollama"
     New-Item -ItemType Directory -Path $path -Force | Out-Null
     return $path
 }
@@ -192,7 +192,7 @@ function Ensure-AgentWorktree {
         [pscustomobject]$Agent
     )
 
-    $worktreeRoot = Join-Path $script:RepoRoot ".claude/worktrees"
+    $worktreeRoot = Join-Path $script:RepoRoot ".worktrees"
     New-Item -ItemType Directory -Path $worktreeRoot -Force | Out-Null
 
     $leaf = "agent-{0}-{1}" -f ([string]$Agent.id).ToLowerInvariant(), ([string]$Agent.name).ToLowerInvariant()

@@ -1,7 +1,7 @@
 # Codex Campaign Skills
 
-A portable package for the generic multi-agent campaign skill stack used by
-Codex.
+A portable package for the generic multi-agent campaign skill stack and
+adjacent engineering skills used by Codex.
 
 This source package contains the installable skill docs, the
 `task_manager.py` backend, and the portability tests that consumer repos can
@@ -44,6 +44,25 @@ vendor into their own `.codex/skills` runtime tree.
 | Loop | `$loop` | Drive a bounded inspect-edit-verify loop for one objective |
 | Loop Master | `$loop-master` | Supervise multi-round or multi-agent execution across the stack |
 
+### Optional Engineering Skills
+
+These skills are installable package extras. They do not add runtime scripts or
+slash commands; they add Codex-native guidance for common engineering tasks.
+
+| Skill | Trigger | Purpose |
+|---|---|---|
+| API Design | auto | Design consistent HTTP APIs: resources, status codes, pagination, idempotency, and error contracts |
+| Backend Patterns | auto | Structure backend handlers, services, validation, data access, caching, and background work without overengineering |
+| Deep Research | auto | Run current, cited research workflows using built-in web search first and optional MCP accelerators when available |
+| dmux Workflows | auto | Coordinate safe parallel or delegated work with clear ownership, integration order, and optional dmux or worktree orchestration |
+| Documentation Lookup | auto | Fetch current framework and library docs before answering library-specific questions |
+| E2E Testing | auto | Build and debug Playwright E2E suites using stable selectors, app-aware setup, and artifact review |
+| Exa Search | auto | Use Exa as an optional accelerator for semantic web, code, company, or people search when Exa MCP is available |
+| Frontend Patterns | auto | Build React and Next.js UI work that respects existing design systems, accessibility, and compiler guidance |
+| MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
+| Observer | auto | Keep passive project intelligence in repo-owned artifacts such as observation logs, metrics, and synthesized health notes |
+| Verification Loop | auto | Run repo-appropriate build, lint, typecheck, test, and diff review before handoff |
+
 ## Workflow
 
 The generic campaign workflow moves through four stages:
@@ -85,6 +104,24 @@ for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
   cp -r "$d" <project>/.codex/skills/
 done
 
+# Optional loops and engineering skills
+for d in \
+  skills/loop \
+  skills/loop-master \
+  skills/api-design \
+  skills/backend-patterns \
+  skills/deep-research \
+  skills/dmux-workflows \
+  skills/documentation-lookup \
+  skills/e2e-testing \
+  skills/exa-search \
+  skills/frontend-patterns \
+  skills/mcp-server-patterns \
+  skills/observer \
+  skills/verification-loop; do
+  cp -r "$d" <project>/.codex/skills/
+done
+
 cp planning-contract.md project.toml.template <project>/.codex/skills/
 cp scripts/task_manager.py <project>/scripts/
 cp -r scripts/analysis <project>/scripts/
@@ -107,6 +144,24 @@ If you also want the schema reference docs in the installed tree, copy
 mkdir -p ~/.codex/skills
 
 for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
+  cp -r "$d" ~/.codex/skills/
+done
+
+# Optional loops and engineering skills
+for d in \
+  skills/loop \
+  skills/loop-master \
+  skills/api-design \
+  skills/backend-patterns \
+  skills/deep-research \
+  skills/dmux-workflows \
+  skills/documentation-lookup \
+  skills/e2e-testing \
+  skills/exa-search \
+  skills/frontend-patterns \
+  skills/mcp-server-patterns \
+  skills/observer \
+  skills/verification-loop; do
   cp -r "$d" ~/.codex/skills/
 done
 
@@ -199,11 +254,16 @@ After vendoring, the target repo should have this runtime layout:
 | `scripts/task_manager.py` | Backend command surface |
 | `scripts/analysis/*.py` | Analyzer provider/runtime modules |
 | `scripts/task_runtime/*.py` | Internal runtime support modules used by `task_manager.py` |
+| `.worktrees/agent-*/` | Default Codex agent worktree root |
 | `data/tasks.json` | Runtime task state |
 | `data/plans/plan-*.json` | Authoritative machine-readable campaign plans |
 | `docs/campaign-*.md` | Human-readable campaign records |
 | `agents/agent-{letter}-{name}.md` | Per-agent task specifications |
 | `live-tracker.md` | Human-readable progress tracker |
+
+Codex runtime files live under `.codex/skills/`, while agent worktrees default
+to the provider-neutral `.worktrees/` root. Recovery and merge still recognize
+legacy `.claude/worktrees/` and `.codex/worktrees/` directories when present.
 
 ## Validation
 

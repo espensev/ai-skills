@@ -8,7 +8,18 @@
   ],
   "optional_skills": [
     "loop",
-    "loop-master"
+    "loop-master",
+    "api-design",
+    "backend-patterns",
+    "deep-research",
+    "dmux-workflows",
+    "documentation-lookup",
+    "e2e-testing",
+    "exa-search",
+    "frontend-patterns",
+    "mcp-server-patterns",
+    "observer",
+    "verification-loop"
   ],
   "contract_files": [
     "planning-contract.md",

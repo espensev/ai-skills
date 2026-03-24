@@ -24,7 +24,7 @@ Optional `campaign` mode is the original end-to-end lifecycle:
 
 1. It calls `python scripts/task_manager.py go --json`.
 2. When the backend returns launch payloads, it creates worktrees under
-   `.claude/worktrees/`.
+   `.worktrees/`.
 3. It sends each agent prompt plus the current owned-file contents to the local
    Ollama server.
 4. It expects Ollama to return an `<agent_result>` JSON block and a `<patch>`
@@ -90,6 +90,8 @@ Important limits:
   local GPU or CPU while the backend still preserves worktree isolation and
   task state.
 - Raw responses, generated patches, verification logs, and result payloads are
-  written to `.claude/ollama/` in the consumer repo for inspection.
+  written to `.codex/ollama/` in the consumer repo for inspection.
+- Codex defaults worktrees to `.worktrees/`, but merge/recover still recognize
+  legacy `.claude/worktrees/` and `.codex/worktrees/` roots when present.
 
 Treat this as an example integration layer, not a core runtime contract.

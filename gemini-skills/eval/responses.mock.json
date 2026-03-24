@@ -1,0 +1,428 @@
+[
+  {
+    "id": "discover-basic-001",
+    "selected_skill": "discover",
+    "output": "Mock eval response for discover. system-map. topological map. identified risks. Artifacts accounted for in created_files.",
+    "created_files": [
+      "docs/system-map.md"
+    ],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "planner-basic-001",
+    "selected_skill": "planner",
+    "output": "Mock eval response for planner. planning-contract. ownership. verification. Artifacts accounted for in created_files. Verification coverage is listed in verification_commands.",
+    "created_files": [
+      "docs/planning-contract.md"
+    ],
+    "verification_commands": [
+      "verification",
+      "test",
+      "lint"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "epic-refactor-basic-001",
+    "selected_skill": "epic-refactor",
+    "output": "Mock eval response for epic-refactor. refactor-report. invariants. dependency order. Artifacts accounted for in created_files. Verification coverage is listed in verification_commands.",
+    "created_files": [
+      "docs/refactor-report.md"
+    ],
+    "verification_commands": [
+      "test",
+      "type",
+      "compile"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "forensic-debugger-basic-001",
+    "selected_skill": "forensic-debugger",
+    "output": "Mock eval response for forensic-debugger. incident-rca. root cause. verification plan. Artifacts accounted for in created_files. Verification coverage is listed in verification_commands.",
+    "created_files": [
+      "docs/incident-rca.md"
+    ],
+    "verification_commands": [
+      "reproduce",
+      "staging",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "ui-test-engineer-basic-001",
+    "selected_skill": "ui-test-engineer",
+    "output": "Mock eval response for ui-test-engineer. ui-regression-report. expected behavior. css. Artifacts accounted for in created_files. Verification coverage is listed in verification_commands.",
+    "created_files": [
+      "docs/ui-regression-report.md"
+    ],
+    "verification_commands": [
+      "playwright",
+      "cypress",
+      "visual"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "doc-weaver-basic-001",
+    "selected_skill": "doc-weaver",
+    "output": "Mock eval response for doc-weaver. doc-sync-report. evidence. docs updated. Artifacts accounted for in created_files. Verification coverage is listed in verification_commands.",
+    "created_files": [
+      "docs/doc-sync-report.md"
+    ],
+    "verification_commands": [
+      "mermaid",
+      "link",
+      "consistent"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "guardrails-basic-001",
+    "selected_skill": "guardrails",
+    "output": "Mock eval response for guardrails. guardrails report. file:. PASS. rule.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "edit-basic-001",
+    "selected_skill": "edit",
+    "output": "Mock eval response for edit. edits applied. file:. replace. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "read",
+      "verify",
+      "grep"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "brief-basic-001",
+    "selected_skill": "brief",
+    "output": "Mock eval response for brief. task-123. interface signatures. logic constraints. Artifacts accounted for in created_files.",
+    "created_files": [
+      "docs/briefs/task-123.md"
+    ],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "manager-basic-001",
+    "selected_skill": "manager",
+    "output": "Mock eval response for manager. run-state.json. lens strategy. dispatch. Artifacts accounted for in created_files.",
+    "created_files": [
+      ".gemini/run-state.json"
+    ],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "ship-basic-001",
+    "selected_skill": "ship",
+    "output": "Mock eval response for ship. modified. idiomatic. syntactically valid. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "lint",
+      "build"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "qa-basic-001",
+    "selected_skill": "qa",
+    "output": "Mock eval response for qa. PASS. FAIL. integration. test suite. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "pytest",
+      "npm test",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "loop-basic-001",
+    "selected_skill": "loop",
+    "output": "Mock eval response for loop. write-scoped. handoff. completion. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "lint",
+      "build",
+      "verify"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "loop-master-basic-001",
+    "selected_skill": "loop-master",
+    "output": "Mock eval response for loop-master. global oversight. sign-off. exit criteria. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "verify",
+      "test",
+      "run"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "verification-loop-basic-001",
+    "selected_skill": "verification-loop",
+    "output": "Mock eval response for verification-loop. build. test. lint. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "build",
+      "lint"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "tdd-workflow-basic-001",
+    "selected_skill": "tdd-workflow",
+    "output": "Mock eval response for tdd-workflow. test. fail. pass. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "pytest",
+      "npm test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "continuous-learning-basic-001",
+    "selected_skill": "continuous-learning-v2",
+    "output": "Mock eval response for continuous-learning-v2. instinct. confidence.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "rules-distill-basic-001",
+    "selected_skill": "rules-distill",
+    "output": "Mock eval response for rules-distill. rule. convention.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "search-first-basic-001",
+    "selected_skill": "search-first",
+    "output": "Mock eval response for search-first. search. source.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "security-scan-basic-001",
+    "selected_skill": "security-scan",
+    "output": "Mock eval response for security-scan. vulnerability. finding. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "scan",
+      "audit"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "truthpack-validator-basic-001",
+    "selected_skill": "truthpack-validator",
+    "output": "Mock eval response for truthpack-validator. truthpack. validate.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "vibecheck-basic-001",
+    "selected_skill": "vibecheck-protocol",
+    "output": "Mock eval response for vibecheck-protocol. verified. vibecheck.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "worktree-guard-basic-001",
+    "selected_skill": "worktree-guard",
+    "output": "Mock eval response for worktree-guard. worktree. clean. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "git worktree",
+      "git status"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "backend-patterns-basic-001",
+    "selected_skill": "backend-patterns",
+    "output": "Mock eval response for backend-patterns. handler. validation. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "lint"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "frontend-patterns-basic-001",
+    "selected_skill": "frontend-patterns",
+    "output": "Mock eval response for frontend-patterns. component. accessible. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "lint"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "database-migrations-basic-001",
+    "selected_skill": "database-migrations",
+    "output": "Mock eval response for database-migrations. migration. index. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "migrate",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "codebase-onboarding-basic-001",
+    "selected_skill": "codebase-onboarding",
+    "output": "Mock eval response for codebase-onboarding. entry point. architecture.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "context-budget-basic-001",
+    "selected_skill": "context-budget",
+    "output": "Mock eval response for context-budget. context. prioritize.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "architecture-decision-records-basic-001",
+    "selected_skill": "architecture-decision-records",
+    "output": "Mock eval response for architecture-decision-records. decision. context. consequence.",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "python-patterns-basic-001",
+    "selected_skill": "python-patterns",
+    "output": "Mock eval response for python-patterns. type. pattern. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "mypy",
+      "ruff",
+      "pytest"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "rust-patterns-basic-001",
+    "selected_skill": "rust-patterns",
+    "output": "Mock eval response for rust-patterns. ownership. error. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "cargo",
+      "test",
+      "clippy"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "golang-testing-basic-001",
+    "selected_skill": "golang-testing",
+    "output": "Mock eval response for golang-testing. test. table. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "go test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "kotlin-patterns-basic-001",
+    "selected_skill": "kotlin-patterns",
+    "output": "Mock eval response for kotlin-patterns. sealed. idiomatic. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "build"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "django-tdd-basic-001",
+    "selected_skill": "django-tdd",
+    "output": "Mock eval response for django-tdd. test. view. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "pytest",
+      "manage.py test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "laravel-security-basic-001",
+    "selected_skill": "laravel-security",
+    "output": "Mock eval response for laravel-security. middleware. vulnerability. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "audit"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "springboot-verification-basic-001",
+    "selected_skill": "springboot-verification",
+    "output": "Mock eval response for springboot-verification. context. endpoint. Verification coverage is listed in verification_commands.",
+    "created_files": [],
+    "verification_commands": [
+      "test",
+      "build",
+      "gradle"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  }
+]

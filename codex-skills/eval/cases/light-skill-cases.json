@@ -208,5 +208,116 @@
       "verification_any_of": ["verification", "pytest", "test"],
       "must_create": []
     }
+  },
+
+  {
+    "id": "api-design-basic-001",
+    "skill": "api-design",
+    "prompt": "Design a REST API for the new billing service with proper status codes and pagination.",
+    "checks": {
+      "must_mention": ["endpoint", "status code"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["test", "validate"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "backend-patterns-basic-001",
+    "skill": "backend-patterns",
+    "prompt": "Structure the new payment handler with proper validation, caching, and error handling.",
+    "checks": {
+      "must_mention": ["handler", "validation"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["test", "lint"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "deep-research-basic-001",
+    "skill": "deep-research",
+    "prompt": "Research current best practices for database connection pooling in serverless environments.",
+    "checks": {
+      "must_mention": ["source", "finding"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "dmux-workflows-basic-001",
+    "skill": "dmux-workflows",
+    "prompt": "Coordinate three parallel agents working on different modules with clear ownership.",
+    "checks": {
+      "must_mention": ["ownership", "parallel"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["merge", "verify"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "documentation-lookup-basic-001",
+    "skill": "documentation-lookup",
+    "prompt": "Check the current Next.js docs for the correct App Router middleware pattern.",
+    "checks": {
+      "must_mention": ["documentation", "current"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "e2e-testing-basic-001",
+    "skill": "e2e-testing",
+    "prompt": "Write a Playwright E2E test for the login flow using stable selectors.",
+    "checks": {
+      "must_mention": ["test", "selector"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["playwright", "test"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "exa-search-basic-001",
+    "skill": "exa-search",
+    "prompt": "Use Exa to find recent examples of MCP server implementations in Python.",
+    "checks": {
+      "must_mention": ["search", "result"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "frontend-patterns-basic-001",
+    "skill": "frontend-patterns",
+    "prompt": "Build an accessible React form component that follows our design system.",
+    "checks": {
+      "must_mention": ["component", "accessible"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["test", "lint"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "mcp-server-patterns-basic-001",
+    "skill": "mcp-server-patterns",
+    "prompt": "Build an MCP server with proper schema validation and transport handling.",
+    "checks": {
+      "must_mention": ["schema", "transport"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["test", "validate"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "verification-loop-basic-001",
+    "skill": "verification-loop",
+    "prompt": "Run the full build-lint-test-review cycle before handing off this change.",
+    "checks": {
+      "must_mention": ["build", "test"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["build", "test", "lint"],
+      "must_create": []
+    }
   }
 ]

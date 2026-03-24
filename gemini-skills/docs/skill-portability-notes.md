@@ -92,10 +92,29 @@ As well as the specialized Gemini skills:
 - Keep command instructions artifact-driven so they can later be wrapped by a
   shared backend without re-interpreting vague personas.
 
+## Feedback Model
+
+Gemini should stay explicit and artifact-driven here too:
+
+- immediate feedback lives in command output, QA findings, and eval response
+  notes
+- reusable feedback becomes tighter eval cases or contract language
+- only repeated, high-confidence patterns should be promoted into
+  `continuous-learning-v2`
+- do not invent a hidden package-local memory runtime while the shared core is
+  still missing
+
 ## Remaining Gaps
 
 - no shared-core extraction yet
 - no package-local runtime scripts
+
+## ECC Portability Implications
+
+The `gemini-skills` repository recently ingested components from the `everything-claude-code` (ECC) ecosystem:
+- **Domain Skills:** Idiomatic constraint files (e.g., `kotlin-patterns`, `golang-testing`) were copied verbatim and function natively in Gemini as prompt context under the Lens Strategy.
+- **Session Adapters:** `SESSION-ADAPTER-CONTRACT.md` and related parsing libraries represent an agnostic approach to standardizing session state across environments, bypassing reliance on vendor-specific coordination structures.
+- **Continuous Learning & Rules Distill:** These tools (`continuous-learning-v2` and `rules-distill`) originated as heavy background-shell tasks in Claude Code relying on CLI hooks. For the Gemini adapter, they have been structurally shifted: `rules-distill` now uses `glob` and `read_file` instead of bash scripts, leveraging Gemini's context window. `continuous-learning-v2` is currently positioned as a conceptual port awaiting Gemini hook parity; background observations cannot yet be natively triggered.
 
 ## Verification Expectations
 

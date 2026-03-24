@@ -1,0 +1,57 @@
+{
+  "$comment": "Observer hook configuration for .claude/settings.json or .claude/settings.local.json. Copy the 'hooks' block into your project settings. Adjust script paths to match your install location.",
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/hooks/observe_session_briefing.py",
+            "timeout": 10,
+            "statusMessage": "Loading project health briefing..."
+          }
+        ]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/hooks/observe_test_output.py",
+            "timeout": 5,
+            "statusMessage": "Checking for test/build results..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/hooks/observe_churn.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/hooks/observe_agent_stop.py",
+            "timeout": 10,
+            "statusMessage": "Checking agent observations..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -8,10 +8,14 @@ The following specialized entry points are registered and constrained via `allow
 - **Core Pipeline:** `/discover`, `/planner`, `/brief`, `/ship`, `/qa`.
 - **Gemini Super-Skills:** `/epic-refactor`, `/forensic-debugger`, `/ui-test-engineer`, `/doc-weaver`.
 - **Infrastructure:** `/manager`, `/loop-master`.
+- **Domain & Execution:** `/tdd`, `/continuous-learning`, `/rules-distill`.
 
 ### Skill And Guardrail Surface
 The packaged `skills/`, `.gemini/commands/`, and `GEMINI.md` files define the
-behavior, entrypoints, and guardrails for the adapter.
+behavior, entrypoints, and guardrails for the adapter. This includes dozens of domain-specific constraints from the `everything-claude-code` ecosystem (e.g., `kotlin-patterns`, `golang-testing`).
+
+### Unified Session State
+The repo implements the ECC Canonical Session Adapter Contract (`docs/SESSION-ADAPTER-CONTRACT.md`) to manage agent loops through a structured, agnostic state schema instead of solely relying on raw run-state.
 
 ### Documentation & Blueprints
 - `docs/campaign-blueprints.md`: Generic campaign contracts.

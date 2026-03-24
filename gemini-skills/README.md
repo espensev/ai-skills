@@ -47,6 +47,14 @@ extracting a shared core.
 | `guardrails` | Scan the full repo for rule violations without editing files |
 | `edit` | Apply scoped, surgical file edits under contract or user instruction |
 
+## ECC Ported Capabilities
+
+This repository now includes significant capability ports from the `everything-claude-code` ecosystem, mapped to Gemini natively:
+
+- **Domain-Specific Skills:** Dozens of specialized patterns (e.g., `kotlin-patterns`, `django-tdd`, `rust-patterns`, `golang-testing`) to elevate the quality of execution tasks.
+- **Continuous Learning & Rule Distillation:** The `continuous-learning-v2` and `rules-distill` tools enable systematic self-improvement workflows.
+- **Canonical Session Adapters:** (`docs/SESSION-ADAPTER-CONTRACT.md`) Adapters are ported to unify worker tracking natively.
+
 ## Eval
 
 The package now includes a starter light-eval dataset under `eval/`.

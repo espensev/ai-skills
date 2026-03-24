@@ -261,7 +261,7 @@ def generate_recommendations(health: SkillHealth) -> list[str]:
     if health.debt_count > 0:
         recs.append(
             f"Address {health.debt_count} technical debt item(s) — "
-            f"review data/observations.jsonl and {DEFAULT_INTELLIGENCE.relative_to(ROOT)} for details."
+            f"review data/observations.jsonl and {DEFAULT_INTELLIGENCE.relative_to(ROOT).as_posix()} for details."
         )
 
     if health.coverage_gaps:

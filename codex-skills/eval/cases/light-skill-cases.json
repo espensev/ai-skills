@@ -75,5 +75,138 @@
       "verification_any_of": ["validation_gates", "pytest", "verify"],
       "must_create": []
     }
+  },
+  {
+    "id": "observer-basic-001",
+    "skill": "observer",
+    "prompt": "Summarize project drift and record a few durable observations without changing product code.",
+    "checks": {
+      "must_mention": ["observation", "evidence", "project-intelligence"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md", "task_manager.py command"],
+      "verification_any_of": ["observations.jsonl", "metrics.jsonl", "git status"],
+      "must_create": []
+    }
+  },
+
+  {
+    "id": "discover-ambiguous-002",
+    "skill": "discover",
+    "prompt": "I need to understand this code before we do anything. Look at the analysis pipeline.",
+    "checks": {
+      "must_mention": ["question", "evidence"],
+      "must_not_mention": ["plan", "campaign", "agent roster"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "discover-edge-003",
+    "skill": "discover",
+    "prompt": "What dependencies does task_manager.py have? Map them before we touch anything.",
+    "checks": {
+      "must_mention": ["evidence", "recommend"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "planner-ambiguous-002",
+    "skill": "planner",
+    "prompt": "Break down the work for splitting task_runtime into separate modules.",
+    "checks": {
+      "must_mention": ["agent", "verification", "exit criteria"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["pytest", "verify", "python"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "planner-edge-003",
+    "skill": "planner",
+    "prompt": "Plan a campaign with only one agent — just fix the config loader.",
+    "checks": {
+      "must_mention": ["agent", "exit criteria"],
+      "must_not_mention": [".claude/skills"],
+      "verification_any_of": ["pytest", "verify"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "qa-edge-002",
+    "skill": "qa",
+    "prompt": "There are no tests in this directory. What's the coverage situation?",
+    "checks": {
+      "must_mention": ["coverage", "test"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["pytest", "test"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "qa-triage-003",
+    "skill": "qa",
+    "prompt": "Three tests are failing after the merge. Triage them and tell me the root causes.",
+    "checks": {
+      "must_mention": ["fail", "root cause"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["pytest", "test"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "ship-edge-002",
+    "skill": "ship",
+    "prompt": "Nothing is staged yet. Stage and commit only the runtime script changes.",
+    "checks": {
+      "must_mention": ["stage", "commit"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["git status", "git diff"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "observer-scan-002",
+    "skill": "observer",
+    "prompt": "Run a health scan and tell me if there are any blockers before I launch agents.",
+    "checks": {
+      "must_mention": ["observation", "scan"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md", "task_manager.py command"],
+      "verification_any_of": ["observations.jsonl", "git status", "check"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "observer-empty-003",
+    "skill": "observer",
+    "prompt": "This is a fresh repo with no prior observations. Give me a baseline briefing.",
+    "checks": {
+      "must_mention": ["observation", "briefing"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md", "task_manager.py command"],
+      "verification_any_of": ["observations.jsonl", "git status"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "manager-edge-002",
+    "skill": "manager",
+    "prompt": "I already have an approved plan. Just launch the agents and merge when they're done.",
+    "checks": {
+      "must_mention": ["plan", "merge"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["verify", "pytest", "build"],
+      "must_create": []
+    }
+  },
+  {
+    "id": "loop-edge-002",
+    "skill": "loop",
+    "prompt": "Keep running the test suite every 5 minutes until all tests pass.",
+    "checks": {
+      "must_mention": ["objective", "verification"],
+      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "verification_any_of": ["verification", "pytest", "test"],
+      "must_create": []
+    }
   }
 ]

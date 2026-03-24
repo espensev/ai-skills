@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
+INSTALL_SKILLS_DIR = Path(".codex") / "skills"
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import task_manager  # noqa: E402
@@ -38,7 +39,7 @@ class _TempProject:
         self.state_file = self.data_dir / "tasks.json"
         self.tracker_file = self.root / "custom-tracker.md"
         self.conventions_file = self.root / "AGENTS.md"
-        self.skills_dir = self.root / ".claude" / "skills"
+        self.skills_dir = self.root / INSTALL_SKILLS_DIR
         self.skills_dir.mkdir(parents=True, exist_ok=True)
 
     def cleanup(self):
@@ -63,7 +64,7 @@ class TestPreflightSafeFixContract(unittest.TestCase):
         # Place a planning-contract.md at the repo root (package source)
         source = self._proj.root / "planning-contract.md"
         source.write_text("# Planning Contract\nTest content.\n", encoding="utf-8")
-        dest = self._proj.root / ".claude" / "skills" / "planning-contract.md"
+        dest = self._proj.root / INSTALL_SKILLS_DIR / "planning-contract.md"
         self.assertFalse(dest.exists())
 
         with mock.patch.object(task_manager, "ROOT", self._proj.root):
@@ -76,7 +77,7 @@ class TestPreflightSafeFixContract(unittest.TestCase):
     def test_skips_existing_planning_contract(self):
         source = self._proj.root / "planning-contract.md"
         source.write_text("source version\n", encoding="utf-8")
-        dest = self._proj.root / ".claude" / "skills" / "planning-contract.md"
+        dest = self._proj.root / INSTALL_SKILLS_DIR / "planning-contract.md"
         dest.write_text("existing version\n", encoding="utf-8")
 
         with mock.patch.object(task_manager, "ROOT", self._proj.root):
@@ -93,7 +94,7 @@ class TestPreflightSafeFixContract(unittest.TestCase):
         with mock.patch.object(task_manager, "ROOT", self._proj.root), mock.patch.object(task_manager, "CONVENTIONS_FILE", "AGENTS.md"):
             actions = task_manager._preflight_safe_fix()
 
-        dest = self._proj.root / ".claude" / "skills" / "planning-contract.md"
+        dest = self._proj.root / INSTALL_SKILLS_DIR / "planning-contract.md"
         self.assertFalse(dest.exists())
         self.assertEqual(len(actions), 0)
 

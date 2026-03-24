@@ -42,6 +42,18 @@ If no project.toml exists, fall back to scanning the project structure:
 - Look for `tests/` directory and detect test framework (pytest, jest, etc.)
 - List source files in the project root
 
+## Feedback Hierarchy
+
+Use these signals, in order of trust:
+
+1. explicit user correction or rejection
+2. failing verification command with concrete output
+3. repeat failure pattern across multiple files or runs
+4. coverage gap that explains an escaped defect
+
+When the signal is reusable beyond the current run, capture it as durable
+feedback instead of leaving it buried in prose.
+
 ---
 
 ## Command: `run` — Execute Tests
@@ -73,6 +85,8 @@ Run the test suite with clear reporting.
 
 4. **If failures exist**, automatically proceed to triage (Phase 1 only —
    classify each failure, do not attempt fixes).
+5. **Flag reusable failures.** If the same class of failure is likely to recur,
+   call it out as a regression-test or eval-case candidate in the report.
 
 ---
 
@@ -191,6 +205,8 @@ Diagnose current test failures with structured root cause analysis.
 5. **Report.** Grouped failures with suggested fixes. If failures are
    interrelated (e.g. one import error causes 10 downstream failures),
    identify the root failure and mark others as cascading.
+6. **Promote durable feedback.** For repeated regressions or blockers, include
+   the exact scenario that should become a regression test or eval case.
 
 ---
 
@@ -218,6 +234,7 @@ Generate targeted regression tests for specific changed files.
    b. Read the existing test file(s) for that module
    c. Identify which functions/methods were added or modified
    d. Check which of those are already covered by existing tests
+   e. Note the specific bug or failure mode the new test protects against
 
 3. **Generate new tests** for uncovered changes:
    - Follow the existing test patterns in the project (read existing tests to

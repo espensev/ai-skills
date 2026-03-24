@@ -106,7 +106,24 @@ ROOT = Path(__file__).resolve().parent.parent
 # Project config — loaded from .codex/skills/project.toml
 # ---------------------------------------------------------------------------
 
-_CONFIG_PATH = _runtime_config_path(ROOT)
+
+def _config_path_for(root: Path | None = None) -> Path:
+    return _runtime_config_path(root or ROOT)
+
+
+def _skills_dir_for(root: Path | None = None) -> Path:
+    return _config_path_for(root).parent
+
+
+def _contract_path_for(root: Path | None = None) -> Path:
+    return _skills_dir_for(root) / "planning-contract.md"
+
+
+def _template_path_for(root: Path | None = None) -> Path:
+    return _skills_dir_for(root) / "project.toml.template"
+
+
+_CONFIG_PATH = _config_path_for()
 
 
 def _parse_toml_simple(path: Path) -> dict:
@@ -122,6 +139,23 @@ def _load_config() -> dict:
     return _runtime_load_config(_CONFIG_PATH)
 
 
+def _refresh_runtime_bindings() -> None:
+    global _CONFIG_PATH, _CFG, _RUNTIME_PATHS, AGENTS_DIR, STATE_FILE, ANALYSIS_CACHE_FILE, PLANS_DIR
+    global _tracker_str, TRACKER_FILE, CONVENTIONS_FILE
+
+    _CONFIG_PATH = _config_path_for()
+    _CFG = _runtime_load_config(_CONFIG_PATH)
+    _RUNTIME_PATHS = _runtime_derive_runtime_paths(ROOT, _CFG)
+
+    AGENTS_DIR = _RUNTIME_PATHS["agents_dir"]
+    STATE_FILE = _RUNTIME_PATHS["state_file"]
+    ANALYSIS_CACHE_FILE = _RUNTIME_PATHS["analysis_cache_file"]
+    PLANS_DIR = _RUNTIME_PATHS["plans_dir"]
+    _tracker_str = _RUNTIME_PATHS["tracker_path"]
+    TRACKER_FILE = _RUNTIME_PATHS["tracker_file"]
+    CONVENTIONS_FILE = _CFG.get("project", {}).get("conventions", "AGENTS.md")
+
+
 def _get_module_map() -> dict:
     return _runtime_get_module_map(ROOT, _CFG)
 
@@ -134,16 +168,7 @@ def _get_conflict_zones() -> list:
     return _runtime_get_conflict_zones(_CFG)
 
 
-_CFG = _load_config()
-_RUNTIME_PATHS = _runtime_derive_runtime_paths(ROOT, _CFG)
-
-# Paths — from config or defaults
-AGENTS_DIR = _RUNTIME_PATHS["agents_dir"]
-STATE_FILE = _RUNTIME_PATHS["state_file"]
-ANALYSIS_CACHE_FILE = _RUNTIME_PATHS["analysis_cache_file"]
-PLANS_DIR = _RUNTIME_PATHS["plans_dir"]
-_tracker_str = _RUNTIME_PATHS["tracker_path"]
-TRACKER_FILE = _RUNTIME_PATHS["tracker_file"]
+_refresh_runtime_bindings()
 _analysis_cache: dict | None = None
 _analysis_cache_key_value: str | None = None
 _analysis_cache_file_mtime: int | None = None
@@ -151,10 +176,6 @@ _agents_dir_mtime: int | None = None
 _tracker_file_mtime: int | None = None
 _state_file_mtime: int | None = None
 _last_sync_state: dict | None = None
-
-# Conventions file — what agents read first for project context
-CONVENTIONS_FILE = _CFG.get("project", {}).get("conventions", "AGENTS.md")
-
 
 class TaskManagerError(TaskRuntimeError):
     """Raised when task-manager state or inputs are invalid."""
@@ -365,6 +386,7 @@ def load_state() -> dict:
 
 
 def save_state(state: dict):
+    global _state_file_mtime, _last_sync_state
     try:
         _runtime_save_state(
             STATE_FILE,
@@ -372,6 +394,10 @@ def save_state(state: dict):
             normalize_state=_normalize_state,
             write_back=_write_state_file,
         )
+        # Invalidate the sync cache after explicit writes so the next sync_state()
+        # re-reads and reconciles the saved state against current specs/tracker.
+        _state_file_mtime = None
+        _last_sync_state = None
     except TaskRuntimeError as exc:
         raise TaskManagerError(str(exc)) from exc
 
@@ -1716,7 +1742,7 @@ def _preflight_safe_fix() -> list[str]:
 
     # Copy planning-contract.md to .codex/skills/ if source exists and dest does not
     source_contract = ROOT / "planning-contract.md"
-    dest_contract = ROOT / ".claude" / "skills" / "planning-contract.md"
+    dest_contract = _contract_path_for()
     if source_contract.exists() and not dest_contract.exists():
         dest_contract.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(str(source_contract), str(dest_contract))
@@ -1736,8 +1762,17 @@ def _preflight_safe_fix() -> list[str]:
 def _plan_preflight_payload() -> dict:
     errors: list[str] = []
     warnings: list[str] = []
-    config_path = ROOT / ".claude" / "skills" / "project.toml"
-    contract_path = ROOT / ".claude" / "skills" / "planning-contract.md"
+    config_path = _config_path_for()
+    contract_path = _contract_path_for()
+    live_cfg = _runtime_load_config(config_path) if config_path.exists() else {}
+    effective_cfg = copy.deepcopy(_CFG)
+    for section, value in live_cfg.items():
+        if isinstance(value, dict) and isinstance(effective_cfg.get(section), dict):
+            merged_section = dict(effective_cfg.get(section, {}))
+            merged_section.update(value)
+            effective_cfg[section] = merged_section
+        else:
+            effective_cfg[section] = value
     detected = _detect_project_type(ROOT)
     detected_language = str(detected.get("language", "unknown") or "unknown")
     language_labels = {
@@ -1757,7 +1792,8 @@ def _plan_preflight_payload() -> dict:
     if not contract_path.exists():
         errors.append("Missing .codex/skills/planning-contract.md in the installed runtime.")
 
-    conventions_value = str(CONVENTIONS_FILE or "").strip()
+    project_cfg = effective_cfg.get("project", {}) if isinstance(effective_cfg.get("project"), dict) else {}
+    conventions_value = str(project_cfg.get("conventions", CONVENTIONS_FILE) or "").strip()
     conventions_path = ""
     if not conventions_value:
         errors.append("Config is missing [project].conventions.")
@@ -1770,7 +1806,7 @@ def _plan_preflight_payload() -> dict:
         except TaskManagerError as exc:
             errors.append(str(exc))
 
-    commands = _commands_cfg()
+    commands = effective_cfg.get("commands", {}) if isinstance(effective_cfg.get("commands"), dict) else {}
     test_command = str(commands.get("test", "")).strip()
     compile_command = str(commands.get("compile", "")).strip()
     build_command = str(commands.get("build", "")).strip()
@@ -2282,7 +2318,7 @@ def _build_init_config(detected: dict) -> str:
     rendered, _used_template = _runtime_bootstrap.build_init_config(
         ROOT,
         detected,
-        template_path=ROOT / ".claude" / "skills" / "project.toml.template",
+        template_path=_template_path_for(),
         conventions_path="AGENTS.md",
     )
     return rendered
@@ -2563,8 +2599,8 @@ def cmd_init(args):
     result = _runtime_bootstrap.init_project(
         ROOT,
         force=getattr(args, "force", False),
-        config_path=ROOT / ".claude" / "skills" / "project.toml",
-        template_path=ROOT / ".claude" / "skills" / "project.toml.template",
+        config_path=_config_path_for(),
+        template_path=_template_path_for(),
         conventions_path="AGENTS.md",
         detect_project_type_fn=_detect_project_type,
         load_toml_file_fn=_load_toml_file,
@@ -2572,6 +2608,7 @@ def cmd_init(args):
         safe_resolve_fn=lambda path, root=ROOT: _safe_resolve(str(path), root),
         default_state_factory=_default_state,
     )
+    _refresh_runtime_bindings()
     for line in _runtime_bootstrap.format_init_messages(result):
         print(line)
 

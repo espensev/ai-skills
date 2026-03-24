@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OBS = ROOT / "data" / "observations.jsonl"
 DEFAULT_EVAL = ROOT / "eval" / "results" / "latest.json"
 DEFAULT_CASES = ROOT / "eval" / "cases" / "light-skill-cases.json"
+DEFAULT_INTELLIGENCE = ROOT / "docs" / "observer" / "project-intelligence.md"
 
 
 @dataclass
@@ -91,6 +92,13 @@ def analyze_observations(observations: list[dict[str, Any]]) -> dict[str, SkillH
 
     # Categories that map to specific skills
     cat_skill_map = {
+        "decision": "observer",
+        "pattern": "observer",
+        "drift": "observer",
+        "risk": "observer",
+        "progress": "manager",
+        "question": "planner",
+        "debt": "observer",
         "test-fail": "qa",
         "test-pass": "qa",
         "build-error": "qa",
@@ -106,7 +114,12 @@ def analyze_observations(observations: list[dict[str, Any]]) -> dict[str, SkillH
             continue
 
         # Determine which skill this observation relates to
-        skill_name = obs.get("agent", "") or cat_skill_map.get(cat, "")
+        agent_name = str(obs.get("agent", "") or "")
+        skill_name = ""
+        if agent_name and not agent_name.lower().startswith("agent-"):
+            skill_name = agent_name
+        if not skill_name:
+            skill_name = cat_skill_map.get(cat, "")
         if not skill_name:
             # Try to infer from files
             files = obs.get("files", [])
@@ -248,7 +261,7 @@ def generate_recommendations(health: SkillHealth) -> list[str]:
     if health.debt_count > 0:
         recs.append(
             f"Address {health.debt_count} technical debt item(s) — "
-            f"run `/observe list --category debt` for details."
+            f"review data/observations.jsonl and {DEFAULT_INTELLIGENCE.relative_to(ROOT)} for details."
         )
 
     if health.coverage_gaps:
@@ -318,7 +331,7 @@ def format_report_markdown(ranked: list[SkillHealth]) -> str:
     lines.append("2. Run `python scripts/observe_to_eval.py --merge eval/cases/light-skill-cases.json` to capture regressions as eval cases")
     lines.append("3. Add baseline eval cases for uncovered skills")
     lines.append("4. Address drift by updating SKILL.md specs to match actual behavior")
-    lines.append("5. Run `/observe cycle` after improvements to track progress")
+    lines.append("5. Refresh `docs/observer/project-intelligence.md` after improvements when observer artifacts are in use")
     lines.append("")
 
     return "\n".join(lines)

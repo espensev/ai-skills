@@ -35,3 +35,10 @@ coverage/
 
 # Logs
 *.log
+
+# Reference material (not part of the monorepo)
+everything-claude-code-main/
+gemini-skills/everything-claude-code/
+
+# Stray exports
+aa.csv

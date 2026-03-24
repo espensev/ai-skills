@@ -38,9 +38,12 @@ vendor into their own `.claude/skills` runtime tree.
 |---|---|---|
 | Manager | `/manager` | Orchestrate parallel agents: plan, launch, merge, verify |
 | Planner | `/planner` | Design structured campaign plans with agent decomposition (supports `--mode refactor` for phased refactors) |
+| Refactor Planner | `/refactor-planner` | Design phased refactor campaigns with contracts-first ordering and roadmap integration |
 | Discover | `/discover` | Research codebase before planning (supports optimization discovery) |
 | QA | `/qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
 | Ship | `/ship` | Stage, commit, and push with smart file classification |
+| Observer | `/observe` | Passive project intelligence — note patterns, drift, decisions over time |
+| Observer Test | `/observe-test` | Short-lived worktree observer for capturing agent execution signals |
 
 ## Workflow
 
@@ -62,10 +65,24 @@ For end-to-end autonomous execution:
 /manager go "Add feature X"
 ```
 
-For phased refactors:
+For phased refactors (single-campaign):
 
 ```text
 /planner --mode refactor "Extract storage layer"
+```
+
+For multi-phase architectural refactors (roadmap-driven):
+
+```text
+/refactor-planner "Migrate frontend transport from HTTP to host bridge"
+/refactor-planner next
+```
+
+For passive project intelligence:
+
+```text
+/observe review           -> suggest observations from recent context
+/observe synthesize       -> update project-intelligence.md
 ```
 
 ## Installation
@@ -79,7 +96,7 @@ is different from this package layout.
 mkdir -p <project>/.claude/skills
 mkdir -p <project>/scripts
 
-for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
+for d in skills/discover skills/manager skills/planner skills/refactor-planner skills/qa skills/ship skills/observer skills/observer-test; do
   cp -r "$d" <project>/.claude/skills/
 done
 
@@ -104,7 +121,7 @@ If you also want the schema reference docs in the installed tree, copy
 ```bash
 mkdir -p ~/.claude/skills
 
-for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
+for d in skills/discover skills/manager skills/planner skills/refactor-planner skills/qa skills/ship skills/observer skills/observer-test; do
   cp -r "$d" ~/.claude/skills/
 done
 
@@ -140,8 +157,8 @@ test = "python -m pytest tests/ -q"
 set, the runtime falls back to `[commands].test`.
 
 The base planning surface contains 13 standard plan elements. In refactor mode
-(`/planner --mode refactor`), elements `R1`, `R2`, and `R3` are added on top
-of that shared contract.
+(`/planner --mode refactor` or `/refactor-planner`), elements `R1`, `R2`, and
+`R3` are added on top of that shared contract.
 
 Use `[analysis].mode = "basic" | "auto" | "deep"` to control provider
 selection. `basic` runs only the portable heuristic scanner. `auto` and `deep`
@@ -192,6 +209,9 @@ After vendoring, the target repo should have this runtime layout:
 |---|---|
 | `.claude/skills/manager/SKILL.md` | Manager skill runtime doc |
 | `.claude/skills/planner/SKILL.md` | Planner skill runtime doc (includes refactor mode) |
+| `.claude/skills/refactor-planner/SKILL.md` | Refactor planner for multi-phase architectural refactors |
+| `.claude/skills/observer/SKILL.md` | Observer skill for passive project intelligence |
+| `.claude/skills/observer-test/SKILL.md` | Observer-test skill for worktree execution signals |
 | `.claude/skills/planning-contract.md` | Shared planning contract |
 | `.claude/skills/project.toml` | Generated project-local config |
 | `scripts/task_manager.py` | Backend command surface |
@@ -199,6 +219,7 @@ After vendoring, the target repo should have this runtime layout:
 | `scripts/task_runtime/*.py` | Internal runtime support modules used by `task_manager.py` |
 | `data/tasks.json` | Runtime task state |
 | `data/plans/plan-*.json` | Authoritative machine-readable campaign plans |
+| `data/observations.jsonl` | Observer observation log (append-only JSONL) |
 | `docs/campaign-*.md` | Human-readable campaign records |
 | `agents/agent-{letter}-{name}.md` | Per-agent task specifications |
 | `live-tracker.md` | Human-readable progress tracker |

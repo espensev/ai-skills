@@ -16,7 +16,7 @@ document that downstream planners can consume.
 **You produce knowledge, not plans.**
 
 **Output:** `docs/discovery-{name}.md` — structured findings document
-**Consumers:** `/planner`, `/planner --mode refactor`, or human review
+**Consumers:** `/planner`, `/planner --mode refactor`, `/refactor-planner`, or human review
 
 ---
 
@@ -124,7 +124,9 @@ Then produce cross-cutting analysis:
 Based on the findings, state the recommended next step:
 
 - **Ready to plan:** "Findings support proceeding. Run `/planner <goal>`
-  (or `/planner --mode refactor <goal>` for refactors) with this document as input."
+  (or `/planner --mode refactor <goal>` for single-campaign refactors,
+  or `/refactor-planner <goal>` for multi-phase architectural refactors)
+  with this document as input."
 - **Needs more discovery:** "Questions X and Y remain open. Run
   `/discover <narrower question>` next."
 - **Not feasible:** "Findings indicate X is not viable because [reason].
@@ -286,6 +288,7 @@ The findings document path should be passed to the planner as context:
 ```
 /planner Add WebSocket push (see docs/discovery-websocket-feasibility.md)
 /planner --mode refactor Extract storage layer (see docs/discovery-collector-deps.md)
+/refactor-planner Extract storage layer (see docs/discovery-collector-deps.md)
 ```
 
 ---

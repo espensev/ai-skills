@@ -43,3 +43,8 @@ tracker = "live-tracker.md"
 # [ship]
 # exclude-extra = []
 # warn = []
+
+# Optional: configure observer storage. By default, observations are stored
+# in data/observations.jsonl (append-only JSONL, no dependencies).
+# [observer]
+# storage = "data/observations.jsonl"

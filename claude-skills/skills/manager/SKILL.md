@@ -419,6 +419,18 @@ state directly.
 - **Same-group agents** — manual merge, keep both contributions.
 - **Never silently drop changes** — report every conflict and resolution.
 
+### Observer-test promotion
+
+After merging worktrees, check each merged worktree path for `observations.jsonl`.
+If present, promote observations to the project-level log:
+
+1. Read and parse the JSONL file from the worktree root
+2. Append each observation to `data/observations.jsonl`
+3. Report promoted observation count per worktree
+
+This feeds `/observe synthesize` with execution-time signals (test results,
+build errors, churn, blockers) that improve future planning.
+
 ---
 
 ## Command: `verify` — Post-Merge Validation
@@ -496,6 +508,7 @@ Produce a summary with:
 - **Drift findings**: optional follow-up audit findings, if any
 - **Stale state**: items cleaned up (or "none")
 - **Blockers**: anything that would prevent the next `go` from succeeding
+- **Observer flags**: if `data/observations.jsonl` contains recent `blocker` (warning), `regression` (failure), or `workaround` (warning/debt) observations
 
 ### Refactor-aware verification
 

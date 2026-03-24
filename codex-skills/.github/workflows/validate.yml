@@ -63,6 +63,17 @@ jobs:
             exit 1
           fi
 
+      - name: Validate eval cases and scorer
+        run: |
+          python scripts/eval_skills.py \
+            --cases eval/cases/light-skill-cases.json \
+            --write-template /tmp/eval-template.json
+          python scripts/eval_skills.py \
+            --cases eval/cases/light-skill-cases.json \
+            --responses /tmp/eval-template.json \
+            --out /tmp/eval-dry-run.json
+          echo "✓ Eval scorer validated ($(python -c "import json; print(len(json.load(open('eval/cases/light-skill-cases.json'))))")  cases)"
+
       - name: Run portability tests
         run: python -m pytest tests/ -q
 

@@ -290,8 +290,8 @@ exclude-globs = [
 
 ### `[models]` -- Optional
 
-Maps agent complexity tiers to Claude model names. Agents inherit their
-model from their complexity rating (set during planning).
+Maps agent complexity tiers to abstract launch tiers. Agents inherit their
+launch tier from their complexity rating (set during planning).
 
 ```toml
 [models]
@@ -308,6 +308,17 @@ high = "max"
 
 Valid values: `"mini"`, `"standard"`, `"max"`. Invalid values fall back to
 `"standard"`.
+
+These values are intentionally provider-neutral. They are not required to be
+literal model IDs from a specific vendor. In Codex, a common launch mapping is:
+
+- `mini` -> prefer `GPT-5.3-Codex-Spark` when available
+- `standard` -> the normal general-purpose coding model
+- `max` -> the highest-capability coding model
+
+For Codex specifically, keep bounded delegated work, sidecar research, and
+test/doc agents in the `low` tier when possible so they can route to
+`GPT-5.3-Codex-Spark` and preserve primary-model budget.
 
 ### `[timeouts]` -- Optional
 

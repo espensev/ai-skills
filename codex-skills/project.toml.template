@@ -21,6 +21,15 @@ tracker = "live-tracker.md"
 {{COMPILE_LINE}}
 {{BUILD_LINE}}
 
+[models]
+# Abstract launch tiers. Keep these portable and map them to provider-specific
+# models at launch time.
+# On Codex, `mini` commonly maps to `GPT-5.3-Codex-Spark` for bounded
+# background subagents when available.
+low = "mini"
+medium = "standard"
+high = "max"
+
 # [modules]
 # core = ["src/main.py"]
 # tests = ["tests/"]

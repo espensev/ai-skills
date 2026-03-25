@@ -18,6 +18,8 @@ parallel or delegated execution and the task can be partitioned safely.
 ## Scope
 
 - Prefer built-in Codex agent workflows first when they fit the task.
+- When Codex exposes `GPT-5.3-Codex-Spark`, prefer it for bounded sidecar
+  subagents and background work that fits a low-complexity tier.
 - Use dmux only as an optional external orchestration layer.
 - Do not force tmux or external tooling into a task that can be handled with
   normal Codex delegation or a single execution thread.
@@ -33,6 +35,8 @@ parallel or delegated execution and the task can be partitioned safely.
    - owned files or modules
    - dependencies and merge order
    - verification expected from each worker
+   - which workers are intentionally low-complexity so they can route to a
+     Spark-class subagent
 3. Choose the orchestration mode:
    - built-in Codex agents for normal delegated work
    - git worktrees when file conflicts are likely
@@ -52,6 +56,8 @@ parallel or delegated execution and the task can be partitioned safely.
   - tests
   - docs
   - review
+- Shape sidecar work so it stays low-risk and low-complexity when possible;
+  that lets Codex route more delegated work to `GPT-5.3-Codex-Spark`.
 - Prefer 2-3 workers for most tasks. More than that adds coordination cost fast.
 
 ## dmux Usage

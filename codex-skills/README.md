@@ -290,6 +290,7 @@ installed consumer runtime under `scripts/` remains stdlib-only.
 Useful maintainer references:
 
 - `docs/file-map.md`
+- `docs/codex-launch-mapping.md`
 - `docs/config-reference.md`
 - `docs/program-flow.md`
 

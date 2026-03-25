@@ -311,9 +311,22 @@ all dependency groups until every agent is done or failed.**
 
 2. **Parse the JSON.** For each agent in the `agents` array, launch:
    - `subagent_type`: `"general-purpose"`
+   - `model`: honor the JSON `model` field as the requested launch tier
    - `isolation`: `"worktree"`
    - `run_in_background`: `true`
    - `prompt`: from the JSON `prompt` field
+
+   For Codex launches, treat the backend `model` field as an abstract tier:
+   - `mini` -> prefer `GPT-5.3-Codex-Spark` when available
+   - `standard` -> use the normal general-purpose coding model
+   - `max` -> use the strongest available coding model
+
+   Prefer `GPT-5.3-Codex-Spark` for bounded background subagents, sidecar
+   research, docs, and test-focused work when the task fits the low tier. This
+   preserves higher-capability model budget for integration-heavy or ambiguous
+   tasks, and it may use separate limits when Codex exposes them separately.
+   If the preferred model is unavailable, fall back to the closest stronger
+   available model rather than blocking launch.
 
    **CRITICAL:** Launch ALL agents in a SINGLE message with multiple Agent tool calls.
 
@@ -595,5 +608,6 @@ Report failures in the final summary. Do not halt the pipeline for a single fail
 - Plan documents: `docs/campaign-{plan-id}-{slug}.md`
 - Specs: `agents/agent-{letter}-{name}.md` (or path from `[paths].specs`)
 - Letters sequential (a-z, then aa, ab, etc.)
+- Always honor the backend `model` tier when launching subagents
 - Always `isolation: "worktree"` for launches
 - Always verify before declaring done

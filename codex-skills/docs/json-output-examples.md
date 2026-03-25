@@ -72,7 +72,7 @@ python scripts/task_manager.py run ready --json
 | `agents[].spec_file` | string | Relative path to the agent spec file. |
 | `agents[].isolation` | string | Always `"worktree"`. Agents run in isolated git worktrees. |
 | `agents[].background` | boolean | Always `true`. Agents run in the background. |
-| `agents[].model` | string | Claude model tier: `"mini"`, `"standard"`, or `"max"`. Derived from agent complexity via the `[models]` config section. |
+| `agents[].model` | string | Abstract launch tier: `"mini"`, `"standard"`, or `"max"`. Derived from agent complexity via the `[models]` config section. |
 | `agents[].prompt` | string | Full prompt text to pass to the Agent tool. Includes the agent spec content and structured result format instructions. |
 
 ### How model is resolved
@@ -88,6 +88,10 @@ The `model` field is derived from the agent's `complexity` field using the
 
 If the `[models]` section is absent or contains an invalid value, the
 runtime falls back to `"standard"`.
+
+In Codex, these tiers are usually mapped at launch time rather than treated as
+literal model IDs. A common mapping is `mini` -> `GPT-5.3-Codex-Spark` when
+available, then progressively stronger models for `standard` and `max`.
 
 ## `plan create --json` -- Plan Creation Output
 

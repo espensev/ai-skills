@@ -94,6 +94,7 @@ Codebase analysis providers and synthesis pipeline.
 |------|---------|
 | `docs/campaign-plan-*.md` | Auto-generated campaign plan documents |
 | `docs/config-reference.md` | Configuration reference |
+| `docs/codex-launch-mapping.md` | Codex-specific mapping from portable launch tiers to concrete subagent models such as `gpt-5.3-codex-spark` |
 | `docs/skill-portability-notes.md` | Package/install portability guidance |
 | `docs/json-output-examples.md` | CLI JSON output format examples |
 | `planning-contract.md` | Shared planning contract (13 standard plan elements) |

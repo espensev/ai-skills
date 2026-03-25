@@ -129,10 +129,20 @@ class TestBuildInitConfigTemplate(unittest.TestCase):
 
     def test_unreadable_template_raises(self):
         template_path = self.root / "bad-template"
-        template_path.mkdir()  # Directory, not a file — will fail to read
+        template_path.mkdir()  # Directory, not a file - will fail to read
         detected = {"name": "proj", "test": "", "compile": "", "build": ""}
         with self.assertRaises(TaskRuntimeError):
             build_init_config(self.root, detected, template_path=template_path)
+
+    def test_repo_template_includes_models_section(self):
+        detected = {"name": "my-app", "test": "pytest", "compile": "", "build": ""}
+        content, used_template = build_init_config(ROOT, detected, template_path=ROOT / "project.toml.template")
+        self.assertTrue(used_template)
+        self.assertIn("[models]", content)
+        self.assertIn('low = "mini"', content)
+        self.assertIn('medium = "standard"', content)
+        self.assertIn('high = "max"', content)
+        self.assertIn("GPT-5.3-Codex-Spark", content)
 
 
 # ---------------------------------------------------------------------------

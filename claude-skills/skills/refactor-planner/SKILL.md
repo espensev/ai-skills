@@ -4,6 +4,7 @@ description: Design phased refactor campaigns with contracts-first ordering, sea
 argument-hint: "<description> — describe the refactor goal, or 'next' to plan the next roadmap phase"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true
+agent-invocable: true
 ---
 
 # Refactor Planner — Phased Campaign Designer

@@ -1,5 +1,68 @@
 [
   {
+    "id": "architecture-decision-records-basic-001",
+    "selected_skill": "architecture-decision-records",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "backend-patterns-basic-001",
+    "selected_skill": "backend-patterns",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "brief-basic-001",
+    "selected_skill": "brief",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "codebase-onboarding-basic-001",
+    "selected_skill": "codebase-onboarding",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "context-budget-basic-001",
+    "selected_skill": "context-budget",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "continuous-learning-basic-001",
+    "selected_skill": "continuous-learning-v2",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "database-migrations-basic-001",
+    "selected_skill": "database-migrations",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "discover-basic-001",
     "selected_skill": "discover",
     "output": "",
@@ -9,8 +72,26 @@
     "notes": ""
   },
   {
+    "id": "django-tdd-basic-001",
+    "selected_skill": "django-tdd",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "doc-weaver-basic-001",
     "selected_skill": "doc-weaver",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "edit-basic-001",
+    "selected_skill": "edit",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -36,6 +117,78 @@
     "notes": ""
   },
   {
+    "id": "frontend-patterns-basic-001",
+    "selected_skill": "frontend-patterns",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "golang-testing-basic-001",
+    "selected_skill": "golang-testing",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "guardrails-basic-001",
+    "selected_skill": "guardrails",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "kotlin-patterns-basic-001",
+    "selected_skill": "kotlin-patterns",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "laravel-security-basic-001",
+    "selected_skill": "laravel-security",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "loop-basic-001",
+    "selected_skill": "loop",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "loop-master-basic-001",
+    "selected_skill": "loop-master",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "manager-basic-001",
+    "selected_skill": "manager",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "planner-basic-001",
     "selected_skill": "planner",
     "output": "",
@@ -45,8 +198,125 @@
     "notes": ""
   },
   {
+    "id": "python-patterns-basic-001",
+    "selected_skill": "python-patterns",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "qa-basic-001",
+    "selected_skill": "qa",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "rules-distill-basic-001",
+    "selected_skill": "rules-distill",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "rust-patterns-basic-001",
+    "selected_skill": "rust-patterns",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "search-first-basic-001",
+    "selected_skill": "search-first",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "security-scan-basic-001",
+    "selected_skill": "security-scan",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "ship-basic-001",
+    "selected_skill": "ship",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "springboot-verification-basic-001",
+    "selected_skill": "springboot-verification",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "tdd-workflow-basic-001",
+    "selected_skill": "tdd-workflow",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "truthpack-validator-basic-001",
+    "selected_skill": "truthpack-validator",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "ui-test-engineer-basic-001",
     "selected_skill": "ui-test-engineer",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "verification-loop-basic-001",
+    "selected_skill": "verification-loop",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "vibecheck-basic-001",
+    "selected_skill": "vibecheck-protocol",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "worktree-guard-basic-001",
+    "selected_skill": "worktree-guard",
     "output": "",
     "created_files": [],
     "verification_commands": [],

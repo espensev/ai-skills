@@ -188,7 +188,7 @@ def main() -> int:
     # Deduplicate against existing if merging
     if args.merge:
         merge_path = args.merge if args.merge.is_absolute() else ROOT / args.merge
-        existing = load_json(merge_path)
+        existing = load_json(merge_path) if merge_path.exists() else []
         cases = deduplicate_cases(cases, existing)
         if not cases:
             print("All generated cases already exist. Nothing to add.")

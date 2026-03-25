@@ -1,5 +1,41 @@
 [
   {
+    "id": "api-design-basic-001",
+    "selected_skill": "api-design",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "backend-patterns-basic-001",
+    "selected_skill": "backend-patterns",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "deep-research-basic-001",
+    "selected_skill": "deep-research",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "discover-ambiguous-002",
+    "selected_skill": "discover",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "discover-basic-001",
     "selected_skill": "discover",
     "output": "",
@@ -9,7 +45,70 @@
     "notes": ""
   },
   {
+    "id": "discover-edge-003",
+    "selected_skill": "discover",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "dmux-workflows-basic-001",
+    "selected_skill": "dmux-workflows",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "documentation-lookup-basic-001",
+    "selected_skill": "documentation-lookup",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "e2e-testing-basic-001",
+    "selected_skill": "e2e-testing",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "exa-search-basic-001",
+    "selected_skill": "exa-search",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "frontend-patterns-basic-001",
+    "selected_skill": "frontend-patterns",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "loop-basic-001",
+    "selected_skill": "loop",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "loop-edge-002",
     "selected_skill": "loop",
     "output": "",
     "created_files": [],
@@ -36,7 +135,70 @@
     "notes": ""
   },
   {
+    "id": "manager-edge-002",
+    "selected_skill": "manager",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "mcp-server-patterns-basic-001",
+    "selected_skill": "mcp-server-patterns",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "observer-basic-001",
+    "selected_skill": "observer",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "observer-empty-003",
+    "selected_skill": "observer",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "observer-scan-002",
+    "selected_skill": "observer",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "planner-ambiguous-002",
+    "selected_skill": "planner",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "planner-basic-001",
+    "selected_skill": "planner",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "planner-edge-003",
     "selected_skill": "planner",
     "output": "",
     "created_files": [],
@@ -54,8 +216,44 @@
     "notes": ""
   },
   {
+    "id": "qa-edge-002",
+    "selected_skill": "qa",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "qa-triage-003",
+    "selected_skill": "qa",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "ship-basic-001",
     "selected_skill": "ship",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "ship-edge-002",
+    "selected_skill": "ship",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "verification-loop-basic-001",
+    "selected_skill": "verification-loop",
     "output": "",
     "created_files": [],
     "verification_commands": [],

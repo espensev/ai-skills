@@ -71,18 +71,8 @@ python scripts/task_manager.py plan preflight --json
 
 If preflight reports errors, stop and report the exact blocker before planning.
 
-Then run the project analyzer:
-
-```bash
-python scripts/task_manager.py analyze --json
-```
-
-From the analysis, extract:
-- **File inventory** — files, sizes, module membership
-- **Planning context** — `analysis_v2.planning_context` for analysis health, UI/package surfaces, ownership summary, and coordination hotspots
-- **Conflict zones** — one coordination signal inside the planning context
-- **Dependency edges** — import relationships between modules
-- **Existing agents** — avoid duplicating completed work
+Note: `plan create` in Phase 3 runs codebase analysis internally and returns
+the full analysis JSON. Do not run a separate `analyze --json` here.
 
 Also read source files relevant to the user's request (use Grep/Glob to find them).
 

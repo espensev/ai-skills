@@ -125,13 +125,10 @@ Analyze which source modules have test coverage and where gaps exist.
 ### Steps:
 
 1. **Build the source-to-test map.** Use the `[modules]` config from project.toml
-   to get the list of source files. For each source module, grep all test files
-   for imports:
-   ```bash
-   grep -l "import <module>\|from <module>" tests/test_*.py
-   ```
-   If no `[modules]` config, scan the project root for `.py` files (or
-   equivalent source files for the project's language).
+   to get the list of source files. For each source module, use the Grep tool
+   to find test files that import it (pattern: `import <module>|from <module>`,
+   search the test directory, output mode: `files_with_matches`).
+   If no `[modules]` config, scan the project root for source files using Glob.
 
 2. **Count tests per file** using the test framework's collection mode:
    ```bash

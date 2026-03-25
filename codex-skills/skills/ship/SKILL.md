@@ -204,15 +204,16 @@ Push the current branch to the remote. **Always confirms with the user first.**
 
 ### Steps:
 
-1. **Check remote status:**
+1. **Detect the default branch and check remote status:**
    ```bash
    git remote -v
-   git rev-list --count origin/main..HEAD 2>/dev/null
+   BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||') || BASE="main"
+   git rev-list --count "origin/$BASE..HEAD" 2>/dev/null
    ```
 
 2. **Show what would be pushed:**
    ```bash
-   git log --oneline origin/main..HEAD
+   git log --oneline "origin/$BASE..HEAD"
    ```
 
 3. **Ask the user for confirmation** before pushing. Show:

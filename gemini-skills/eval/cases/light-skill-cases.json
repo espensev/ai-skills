@@ -425,13 +425,13 @@
     }
   },
   {
-    "id": "truthpack-validator-basic-001",
-    "skill": "truthpack-validator",
-    "prompt": "Validate my assumptions about tier names and pricing against the truthpack.",
+    "id": "truthpack-drift-basic-001",
+    "skill": "truthpack-drift",
+    "prompt": "Check declared truth stores for drift against the current codebase.",
     "checks": {
       "must_mention": [
         "truthpack",
-        "validate"
+        "drift"
       ],
       "must_not_mention": [
         ".claude",

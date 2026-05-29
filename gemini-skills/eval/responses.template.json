@@ -279,8 +279,8 @@
     "notes": ""
   },
   {
-    "id": "truthpack-validator-basic-001",
-    "selected_skill": "truthpack-validator",
+    "id": "truthpack-drift-basic-001",
+    "selected_skill": "truthpack-drift",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -317,6 +317,15 @@
   {
     "id": "worktree-guard-basic-001",
     "selected_skill": "worktree-guard",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "delegate-basic-001",
+    "selected_skill": "delegate",
     "output": "",
     "created_files": [],
     "verification_commands": [],

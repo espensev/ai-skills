@@ -9,7 +9,7 @@ description: Detect documentation drift, stale claims, path mismatches, and merg
 Detect when key documentation surfaces have diverged from each other or from the actual codebase state. Catch contradictions, stale claims, merge conflict markers, and version mismatches across the documentation surface. All commands run to completion autonomously.
 
 ## Execution Rules
-1. **Read config first:** Read `project.toml` and extract the `[docs-sync]` section before any command. Follow the global guardrails in GEMINI.md for house consistency.
+1. **Read config first:** Read `project.toml` and extract the `[docs-sync]` section before any command. This is an ops drift skill, not a planning skill; no planning-contract gate applies. Follow GEMINI.md for house consistency.
 2. **Read globally, write nothing in product code:** Docs-sync is a detection skill. Only `docs-sync fix` may modify documentation files, and only for unambiguous fixes. Never delete documentation — only update or flag.
 3. **Evidence over intuition:** Every flagged drift must cite the source of truth (file path + line) and the diverged location.
 4. **Severity-aware:** Conflict markers and cross-doc contradictions are always FAIL (highest severity). Stale paths, undocumented routes, and staleness are WARN.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import stat
 import tempfile
 import textwrap
 from contextlib import ExitStack
@@ -20,6 +21,11 @@ os.environ["TMPDIR"] = str(_TEST_TMP_ROOT)
 os.environ["TEMP"] = str(_TEST_TMP_ROOT)
 os.environ["TMP"] = str(_TEST_TMP_ROOT)
 tempfile.tempdir = str(_TEST_TMP_ROOT)
+
+
+def _retry_remove_readonly(func, path, _exc_info) -> None:
+    os.chmod(path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+    func(path)
 
 
 def _workspace_temp_path(*, suffix: str = "", prefix: str = "tmp", dir: str | os.PathLike[str] | None = None) -> Path:
@@ -60,7 +66,10 @@ class WorkspaceTemporaryDirectory:
         if self._closed:
             return
         self._closed = True
-        shutil.rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+        if self._ignore_cleanup_errors:
+            shutil.rmtree(self.name, ignore_errors=True)
+            return
+        shutil.rmtree(self.name, onerror=_retry_remove_readonly)
 
 
 def _workspace_mkdtemp(suffix: str | None = None, prefix: str | None = None, dir: str | os.PathLike[str] | None = None) -> str:

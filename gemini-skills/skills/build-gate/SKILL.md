@@ -9,7 +9,7 @@ description: Validate multi-target build chains, verify artifacts, and run targe
 Verify that the project's build chain is healthy across all configured targets before any merge, release, or campaign handoff. Detect missing artifacts, stale outputs, source-list drift, and failing target tests.
 
 ## Execution Rules
-1. **Adhere to the Contract:** All operations must adhere to the 13-element Planning Contract and strictly follow the global guardrails defined in GEMINI.md.
+1. **Follow global guardrails:** This is an ops verification skill, not a planning skill; no planning-contract gate applies. Follow GEMINI.md for house consistency.
 2. **Read project.toml:** Enumerate `[build-gate.<name>]` tables to discover targets. If absent, fall back to `[commands].build` + `[commands].test` as a single implicit `default` target.
 3. **Evidence Over Intuition:** Report exact file paths, timestamps, and exit codes — never assume artifacts are fresh.
 4. **Read globally, write nothing:** Build-gate is a verification skill. Do not modify build outputs; only report state.

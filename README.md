@@ -18,13 +18,13 @@
 **Export all ready packages** into a target folder:
 
 ```powershell
-.\scripts\export-ready-skill-packages.ps1 -TargetDir ".\disti-skills-ready-packages" -Force
+.\scripts\export-ready-skill-packages.ps1 -TargetDir ".\dist\ai-skills-ready-packages" -Force
 ```
 
 **Bootstrap Gemini skills** into another repo:
 
 ```powershell
-.\gemini-skills\scriptsootstrap.ps1 -TargetDir "C:\path	o	arget-repo"
+.\gemini-skills\scripts\bootstrap.ps1 -TargetDir "C:\path\to\target-repo"
 ```
 
 The bootstrap script creates `.gemini/skills/` and `.gemini/commands/`, copies skill wrappers, and injects multi-agent guardrails into `GEMINI.md`.

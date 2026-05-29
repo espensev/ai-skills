@@ -4,10 +4,19 @@
     "skill": "discover",
     "prompt": "Map the repository before planning an authentication refactor.",
     "checks": {
-      "must_mention": ["system-map", "topological map", "identified risks"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "system-map",
+        "topological map",
+        "identified risks"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
-      "must_create": ["docs/system-map.md"]
+      "must_create": [
+        "docs/system-map.md"
+      ]
     }
   },
   {
@@ -15,10 +24,23 @@
     "skill": "planner",
     "prompt": "Turn the discovery artifact into an implementation contract for a small API change.",
     "checks": {
-      "must_mention": ["planning-contract", "ownership", "verification"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["verification", "test", "lint"],
-      "must_create": ["docs/planning-contract.md"]
+      "must_mention": [
+        "planning-contract",
+        "ownership",
+        "verification"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "verification",
+        "test",
+        "lint"
+      ],
+      "must_create": [
+        "docs/planning-contract.md"
+      ]
     }
   },
   {
@@ -26,10 +48,23 @@
     "skill": "epic-refactor",
     "prompt": "Migrate the data layer behind a new interface without breaking existing behavior.",
     "checks": {
-      "must_mention": ["refactor-report", "invariants", "dependency order"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["test", "type", "compile"],
-      "must_create": ["docs/refactor-report.md"]
+      "must_mention": [
+        "refactor-report",
+        "invariants",
+        "dependency order"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "test",
+        "type",
+        "compile"
+      ],
+      "must_create": [
+        "docs/refactor-report.md"
+      ]
     }
   },
   {
@@ -37,10 +72,23 @@
     "skill": "forensic-debugger",
     "prompt": "Analyze production logs and identify the root cause of a failing request path.",
     "checks": {
-      "must_mention": ["incident-rca", "root cause", "verification plan"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["reproduce", "staging", "test"],
-      "must_create": ["docs/incident-rca.md"]
+      "must_mention": [
+        "incident-rca",
+        "root cause",
+        "verification plan"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "reproduce",
+        "staging",
+        "test"
+      ],
+      "must_create": [
+        "docs/incident-rca.md"
+      ]
     }
   },
   {
@@ -48,10 +96,23 @@
     "skill": "ui-test-engineer",
     "prompt": "Use a failing Playwright screenshot to fix a layout regression in the dashboard header.",
     "checks": {
-      "must_mention": ["ui-regression-report", "expected behavior", "css"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["playwright", "cypress", "visual"],
-      "must_create": ["docs/ui-regression-report.md"]
+      "must_mention": [
+        "ui-regression-report",
+        "expected behavior",
+        "css"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "playwright",
+        "cypress",
+        "visual"
+      ],
+      "must_create": [
+        "docs/ui-regression-report.md"
+      ]
     }
   },
   {
@@ -59,10 +120,23 @@
     "skill": "doc-weaver",
     "prompt": "Update stale architecture docs after a change to the API routing layer.",
     "checks": {
-      "must_mention": ["doc-sync-report", "evidence", "docs updated"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["mermaid", "link", "consistent"],
-      "must_create": ["docs/doc-sync-report.md"]
+      "must_mention": [
+        "doc-sync-report",
+        "evidence",
+        "docs updated"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "mermaid",
+        "link",
+        "consistent"
+      ],
+      "must_create": [
+        "docs/doc-sync-report.md"
+      ]
     }
   },
   {
@@ -70,8 +144,16 @@
     "skill": "guardrails",
     "prompt": "Check the repo for violations of our naming conventions and no-any-type rule.",
     "checks": {
-      "must_mention": ["guardrails report", "file:", "PASS", "rule"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "guardrails report",
+        "file:",
+        "PASS",
+        "rule"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -81,9 +163,20 @@
     "skill": "edit",
     "prompt": "Rename the `getData` function to `fetchRecords` in src/api.ts and update all call sites.",
     "checks": {
-      "must_mention": ["edits applied", "file:", "replace"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["read", "verify", "grep"],
+      "must_mention": [
+        "edits applied",
+        "file:",
+        "replace"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "read",
+        "verify",
+        "grep"
+      ],
       "must_create": []
     }
   },
@@ -92,10 +185,19 @@
     "skill": "brief",
     "prompt": "Create an execution brief for task-123 from the planning contract.",
     "checks": {
-      "must_mention": ["task-123", "interface signatures", "logic constraints"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "task-123",
+        "interface signatures",
+        "logic constraints"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
-      "must_create": ["docs/briefs/task-123.md"]
+      "must_create": [
+        "docs/briefs/task-123.md"
+      ]
     }
   },
   {
@@ -103,10 +205,19 @@
     "skill": "manager",
     "prompt": "Start orchestrating the next task from the planning contract.",
     "checks": {
-      "must_mention": ["run-state.json", "lens strategy", "dispatch"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "run-state.json",
+        "lens strategy",
+        "dispatch"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
-      "must_create": [".gemini/run-state.json"]
+      "must_create": [
+        ".gemini/run-state.json"
+      ]
     }
   },
   {
@@ -114,9 +225,20 @@
     "skill": "ship",
     "prompt": "Implement the task described in docs/briefs/task-123.md.",
     "checks": {
-      "must_mention": ["modified", "idiomatic", "syntactically valid"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["test", "lint", "build"],
+      "must_mention": [
+        "modified",
+        "idiomatic",
+        "syntactically valid"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "test",
+        "lint",
+        "build"
+      ],
       "must_create": []
     }
   },
@@ -125,9 +247,21 @@
     "skill": "qa",
     "prompt": "Review the recently completed code for task-123 against the planning contract.",
     "checks": {
-      "must_mention": ["PASS", "FAIL", "integration", "test suite"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["pytest", "npm test", "test"],
+      "must_mention": [
+        "PASS",
+        "FAIL",
+        "integration",
+        "test suite"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "pytest",
+        "npm test",
+        "test"
+      ],
       "must_create": []
     }
   },
@@ -136,9 +270,20 @@
     "skill": "loop",
     "prompt": "Execute sub-task 1.1 from the planning contract.",
     "checks": {
-      "must_mention": ["write-scoped", "handoff", "completion"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["lint", "build", "verify"],
+      "must_mention": [
+        "write-scoped",
+        "handoff",
+        "completion"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "lint",
+        "build",
+        "verify"
+      ],
       "must_create": []
     }
   },
@@ -147,21 +292,42 @@
     "skill": "loop-master",
     "prompt": "Oversee the overall campaign and determine if exit criteria are met.",
     "checks": {
-      "must_mention": ["global oversight", "sign-off", "exit criteria"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["verify", "test", "run"],
+      "must_mention": [
+        "global oversight",
+        "sign-off",
+        "exit criteria"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "verify",
+        "test",
+        "run"
+      ],
       "must_create": []
     }
   },
-
   {
     "id": "verification-loop-basic-001",
     "skill": "verification-loop",
     "prompt": "Run the full verification cycle before we hand off this change.",
     "checks": {
-      "must_mention": ["build", "test", "lint"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["test", "build", "lint"],
+      "must_mention": [
+        "build",
+        "test",
+        "lint"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "test",
+        "build",
+        "lint"
+      ],
       "must_create": []
     }
   },
@@ -170,9 +336,20 @@
     "skill": "tdd-workflow",
     "prompt": "Write a failing test first, then implement the feature to make it pass.",
     "checks": {
-      "must_mention": ["test", "fail", "pass"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["test", "pytest", "npm test"],
+      "must_mention": [
+        "test",
+        "fail",
+        "pass"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "test",
+        "pytest",
+        "npm test"
+      ],
       "must_create": []
     }
   },
@@ -181,8 +358,14 @@
     "skill": "continuous-learning-v2",
     "prompt": "Show the current instinct status for this project.",
     "checks": {
-      "must_mention": ["instinct", "confidence"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "instinct",
+        "confidence"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -192,8 +375,14 @@
     "skill": "rules-distill",
     "prompt": "Distill the current project conventions into reusable rules.",
     "checks": {
-      "must_mention": ["rule", "convention"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "rule",
+        "convention"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -203,8 +392,14 @@
     "skill": "search-first",
     "prompt": "Search for current best practices on React Server Components before answering.",
     "checks": {
-      "must_mention": ["search", "source"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "search",
+        "source"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -214,9 +409,18 @@
     "skill": "security-scan",
     "prompt": "Scan the codebase for common security vulnerabilities.",
     "checks": {
-      "must_mention": ["vulnerability", "finding"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["scan", "audit"],
+      "must_mention": [
+        "vulnerability",
+        "finding"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "scan",
+        "audit"
+      ],
       "must_create": []
     }
   },
@@ -225,8 +429,14 @@
     "skill": "truthpack-validator",
     "prompt": "Validate my assumptions about tier names and pricing against the truthpack.",
     "checks": {
-      "must_mention": ["truthpack", "validate"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "truthpack",
+        "validate"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -236,8 +446,14 @@
     "skill": "vibecheck-protocol",
     "prompt": "Run the vibecheck protocol on the last response.",
     "checks": {
-      "must_mention": ["verified", "vibecheck"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "verified",
+        "vibecheck"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -247,9 +463,18 @@
     "skill": "worktree-guard",
     "prompt": "Check that all worktrees are clean before merging.",
     "checks": {
-      "must_mention": ["worktree", "clean"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["git worktree", "git status"],
+      "must_mention": [
+        "worktree",
+        "clean"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "git worktree",
+        "git status"
+      ],
       "must_create": []
     }
   },
@@ -258,9 +483,18 @@
     "skill": "backend-patterns",
     "prompt": "Structure the new payment handler with proper validation and error handling.",
     "checks": {
-      "must_mention": ["handler", "validation"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["test", "lint"],
+      "must_mention": [
+        "handler",
+        "validation"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "test",
+        "lint"
+      ],
       "must_create": []
     }
   },
@@ -269,9 +503,18 @@
     "skill": "frontend-patterns",
     "prompt": "Build a React component that follows our design system patterns.",
     "checks": {
-      "must_mention": ["component", "accessible"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["test", "lint"],
+      "must_mention": [
+        "component",
+        "accessible"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "test",
+        "lint"
+      ],
       "must_create": []
     }
   },
@@ -280,9 +523,18 @@
     "skill": "database-migrations",
     "prompt": "Create a migration to add an index on the users email column.",
     "checks": {
-      "must_mention": ["migration", "index"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["migrate", "test"],
+      "must_mention": [
+        "migration",
+        "index"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "migrate",
+        "test"
+      ],
       "must_create": []
     }
   },
@@ -291,8 +543,14 @@
     "skill": "codebase-onboarding",
     "prompt": "Give me a quick orientation of this codebase — key entry points and architecture.",
     "checks": {
-      "must_mention": ["entry point", "architecture"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "entry point",
+        "architecture"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -302,8 +560,14 @@
     "skill": "context-budget",
     "prompt": "We're running low on context. Prioritize what to keep and what to drop.",
     "checks": {
-      "must_mention": ["context", "prioritize"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "context",
+        "prioritize"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -313,8 +577,15 @@
     "skill": "architecture-decision-records",
     "prompt": "Write an ADR for the decision to switch from REST to GraphQL.",
     "checks": {
-      "must_mention": ["decision", "context", "consequence"],
-      "must_not_mention": [".claude", ".codex"],
+      "must_mention": [
+        "decision",
+        "context",
+        "consequence"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -324,9 +595,19 @@
     "skill": "python-patterns",
     "prompt": "Review this Python module for idiomatic patterns and type safety.",
     "checks": {
-      "must_mention": ["type", "pattern"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["mypy", "ruff", "pytest"],
+      "must_mention": [
+        "type",
+        "pattern"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "mypy",
+        "ruff",
+        "pytest"
+      ],
       "must_create": []
     }
   },
@@ -335,9 +616,19 @@
     "skill": "rust-patterns",
     "prompt": "Review this Rust code for ownership patterns and error handling.",
     "checks": {
-      "must_mention": ["ownership", "error"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["cargo", "test", "clippy"],
+      "must_mention": [
+        "ownership",
+        "error"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "cargo",
+        "test",
+        "clippy"
+      ],
       "must_create": []
     }
   },
@@ -346,9 +637,17 @@
     "skill": "golang-testing",
     "prompt": "Write table-driven tests for the ParseConfig function.",
     "checks": {
-      "must_mention": ["test", "table"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["go test"],
+      "must_mention": [
+        "test",
+        "table"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "go test"
+      ],
       "must_create": []
     }
   },
@@ -357,9 +656,18 @@
     "skill": "kotlin-patterns",
     "prompt": "Refactor this Java-style code to idiomatic Kotlin with sealed classes.",
     "checks": {
-      "must_mention": ["sealed", "idiomatic"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["test", "build"],
+      "must_mention": [
+        "sealed",
+        "idiomatic"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "test",
+        "build"
+      ],
       "must_create": []
     }
   },
@@ -368,9 +676,18 @@
     "skill": "django-tdd",
     "prompt": "Write a test-first implementation for the new user registration endpoint.",
     "checks": {
-      "must_mention": ["test", "view"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["pytest", "manage.py test"],
+      "must_mention": [
+        "test",
+        "view"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "pytest",
+        "manage.py test"
+      ],
       "must_create": []
     }
   },
@@ -379,9 +696,18 @@
     "skill": "laravel-security",
     "prompt": "Audit the authentication middleware for OWASP top-10 vulnerabilities.",
     "checks": {
-      "must_mention": ["middleware", "vulnerability"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["test", "audit"],
+      "must_mention": [
+        "middleware",
+        "vulnerability"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "test",
+        "audit"
+      ],
       "must_create": []
     }
   },
@@ -390,9 +716,41 @@
     "skill": "springboot-verification",
     "prompt": "Verify the Spring Boot application context loads and all endpoints respond.",
     "checks": {
-      "must_mention": ["context", "endpoint"],
-      "must_not_mention": [".claude", ".codex"],
-      "verification_any_of": ["test", "build", "gradle"],
+      "must_mention": [
+        "context",
+        "endpoint"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "test",
+        "build",
+        "gradle"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "delegate-basic-001",
+    "skill": "delegate",
+    "prompt": "I already fetched the failing build log. Summarize these 180 lines into the failing tests and why — offload it to a local model if that's safe.",
+    "checks": {
+      "must_mention": [
+        "delegate",
+        "controller"
+      ],
+      "must_not_mention": [
+        ".claude",
+        ".codex"
+      ],
+      "verification_any_of": [
+        "readiness",
+        "guidance",
+        "ollama",
+        "stay with controller"
+      ],
       "must_create": []
     }
   }

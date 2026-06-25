@@ -75,8 +75,14 @@ if (Test-Path $SourceCommandsDir) {
         }
 
         if (-Not (Test-Path $TargetCommandPath)) {
-            Write-Host "  Copying command wrapper: $CommandWrapper"
-            Copy-Item -Path $SourceCommandPath -Destination $TargetCommandPath -Force
+            Write-Host "  Installing command wrapper: $CommandWrapper"
+            # Source wrappers use '@{../../skills/<name>/SKILL.md}', which is correct
+            # for the source repo and the exported package (skills at '<root>/skills/').
+            # Bootstrap installs skills one level deeper, at '<target>/.gemini/skills/',
+            # so rewrite the include to '@{../skills/...}' for the installed copy.
+            $WrapperContent = Get-Content -Path $SourceCommandPath -Raw
+            $WrapperContent = $WrapperContent -replace '@\{\.\./\.\./skills/', '@{../skills/'
+            Set-Content -Path $TargetCommandPath -Value $WrapperContent -NoNewline
         } else {
             Write-Host "  Skipping existing command wrapper: $CommandWrapper"
         }

@@ -23,6 +23,7 @@
   **Impact:** after `bootstrap.ps1`, every Gemini `/<skill>` command injects a path that points at a missing file, so the command loses its skill body. Affects all 28 wrappers.
   **Recommendation (approved — Approach A):** make `bootstrap.ps1` rewrite the wrapper path on copy (`@{../../skills/` -> `@{../skills/`) so source and exported-package wrappers stay correct while the installed copy matches `.gemini/skills/`. Re-bootstrap to confirm resolution.
   **Caveat:** Gemini's `@{}` is documented "workspace-aware" and Gemini CLI is not installed on this machine, so the resolver behavior could not be confirmed live. The filesystem mismatch is certain, and the repo's original wrappers (`../../docs/instructions/...`) show file-relative authoring, under which `../skills/` is correct. A live `gemini /skills reload` should still confirm before the Gemini package is relied on in production.
+  **The fix is monotonic:** under file-relative resolution it corrects the path; under a workspace-aware reading the install was already unresolved (the alternative form would be `@{.gemini/skills/<name>/SKILL.md}`), so the change cannot regress a currently-working state — worst case it is no worse than before, best case it is fixed.
 
 ### Medium
 
@@ -30,7 +31,7 @@
 
 ### Low
 
-- **[axis: standards] a few Gemini command wrappers exist on disk but are not listed in the install manifest** (e.g. `gemini-skills/.gemini/commands/tdd.toml`, `continuous-learning.toml`). Harmless today because export and bootstrap are manifest-driven, so these are simply ignored. Worth reconciling (add to the manifest or remove) so the `.gemini/commands/` directory and the manifest do not drift.
+- **[axis: standards] a few Gemini command wrappers exist on disk but are not listed in the install manifest** (e.g. `gemini-skills/.gemini/commands/tdd.toml`, `continuous-learning.toml`). *(Deferred — not changed in this pass.)* Harmless today because export and bootstrap are manifest-driven, so these are simply ignored. Worth reconciling (add to the manifest or remove) so the `.gemini/commands/` directory and the manifest do not drift.
   Evidence: 31 wrapper `.toml` files present; `package/install-manifest.json` lists 28 `command_wrappers`.
 
 ## Verification
@@ -39,11 +40,15 @@
 - `python -m pytest codex-skills/tests/test_skill_docs_contract.py -q` - pass (9 passed)
 - Manifest skill counts vs README (78 = 19 + 31 + 28) - pass (claude 19, codex 31, gemini 28)
 - `scripts/bootstrap.ps1` into a temp target, then filesystem path-resolution check - confirmed the High finding (shipped path missing, `../skills/` path present)
+- Post-fix re-bootstrap into a fresh temp target - pass (28/28 wrappers install, each resolving to its real skill; source tree retains `../../`)
+- Cross-poll parity sweep - pass: command-contract check on `delegate` / `token-audit` / `worktree-preflight` (all documented commands present) + leak-class grep over `gemini-skills/skills/` for `.claude`/`.codex` paths, `$`-prefix (Codex) command refs, and `@{` includes (no matches)
+- `git check-ignore dist` - pass (export artifact is gitignored; auto-commit will not sweep it)
+- `scripts/export-ready-skill-packages.ps1 -TargetDir .\dist\ai-skills-ready-packages -Force` - pass (3 packages, 19 + 31 + 28 skills; exported bootstrap carries the fix; packaged wrappers correctly retain `../../`)
 
 ## Coverage Notes
 
 - **Files reviewed deeply:** the three `review/SKILL.md` variants; all 28 Gemini wrappers (`@{...}` path); `gemini-skills/scripts/bootstrap.ps1`; `scripts/export-ready-skill-packages.ps1`; the three `package/install-manifest.json`; `release-manifest.json`; `docs/skill-directory-review-2026-06-25.md`; `claude-skills/CLAUDE.md`; `gemini-skills/docs/skill-portability-notes.md`.
-- **Sampled / not deep-reviewed:** the broader committed cross-poll skill bodies (`delegate`, `delegation-eval`, `token-audit`, etc.) — read for parity shape, not line-audited.
+- **Cross-poll parity sweep (completed):** the 13 cross-poll Gemini skill bodies (`agent-report`, `build-gate`, `campaign-health`, `delegate`, `delegation-eval`, `docs-sync`, `schema-validator`, `session-stats`, `smart-test`, `telemetry-live-ops`, `token-audit`, `truthpack-drift`, `worktree-preflight`) were checked against their Claude/Codex siblings. Command contracts are preserved (deep-checked `delegate` = guidance/check/batch/`<task>`, `token-audit` = status/breakdown/budget/forecast/history, `worktree-preflight` = check/plan/dirty — all present). No `.claude`/`.codex` path leaks, no `$`-prefix (Codex) command leaks, no stray `@{}` includes anywhere under `gemini-skills/skills/`. Gemini's structural divergence (Core Mandate / Execution Rules / Output Contract instead of the Claude/Codex framing) is intentional per the documented "Lens Strategy" (`gemini-skills/docs/skill-portability-notes.md:13-14`), not drift.
 - **Explicitly excluded (out of scope by agreement):** the untracked `gemini-skills/` ECC/JS import (`agents/`, `scripts/lib/`, multi-language `docs/`), the top-level reference `skills/` tree, `.antigravitycli/`. These are separate, larger integration decisions, not improvements to the shipped packages.
 
 ## Open Questions

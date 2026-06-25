@@ -40,12 +40,28 @@ extracting a shared core.
 | `qa` | Evaluate the completed work against the planning contract |
 | `loop` | Iteratively execute specific assigned sub-tasks |
 | `loop-master` | Orchestrate high-level campaign lifecycle and continuous verification |
+| `agent-report` | Produce structured agent handoff and performance reports |
+| `build-gate` | Validate build chains, artifact freshness, and target tests |
+| `campaign-health` | Find stale plans, orphaned agents, and stuck worktrees |
+| `delegate` | Route one bounded helper task to local Ollama when telemetry readiness allows it |
+| `delegation-eval` | Evaluate helper-model routing with telemetry evals and judge packets |
+| `docs-sync` | Detect drift between docs and code-facing facts |
+| `schema-validator` | Validate schema usage across data, API, and tests |
+| `session-stats` | Summarize session/tool activity from measured telemetry where available |
+| `smart-test` | Map changes to the smallest useful test subset |
+| `token-audit` | Analyze token, cost, and budget usage |
+| `truthpack-drift` | Detect drift in reusable truth facts |
+| `worktree-preflight` | Check branch, worktree, and file-ownership conflicts before launch |
 | `epic-refactor` | Execute repo-scale migrations under a strict refactor report |
 | `forensic-debugger` | Produce an incident RCA and patch proposal from large artifacts |
 | `ui-test-engineer` | Triage and fix visual regressions from multimodal test evidence |
 | `doc-weaver` | Synchronize architecture docs and code-facing docs with source changes |
 | `guardrails` | Scan the full repo for rule violations without editing files |
 | `edit` | Apply scoped, surgical file edits under contract or user instruction |
+
+The bootstrap installer reads `package/install-manifest.json`; source-only skill
+folders such as `telemetry-live-ops` are not installed unless they are added to
+that manifest.
 
 ## ECC Ported Capabilities
 
@@ -96,7 +112,7 @@ The package should stay adapter-first until the shared runtime is extracted.
 ## Status
 
 - **v1.0 Ready**: The Gemini CLI multi-agent adapter is fully registered.
-- **14 Specialized Skills**: All generic campaign skills and Gemini super-skills are mapped and constrained.
+- **27 Curated Adapter Skills**: All generic campaign skills, ops/analytics skills, delegation helpers, and Gemini super-skills in `package/install-manifest.json` are mapped and constrained.
 - **Strict Guardrails**: Enforced via `GEMINI.md` and `allowed_tools` to prevent architectural drift.
 - **Shared-Core Friendly**: The package stays adapter-first so shared runtime extraction remains possible later.
 

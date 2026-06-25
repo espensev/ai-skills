@@ -98,11 +98,21 @@ foreach ($Package in $Manifest.packages) {
 
             Copy-Item -Path (Join-Path $SourceRoot "scripts\bootstrap.ps1") -Destination (Join-Path $PackageDest "scripts\bootstrap.ps1") -Force
             Copy-Item -Path (Join-Path $SourceRoot "docs\skill-portability-notes.md") -Destination (Join-Path $PackageDest "docs\skill-portability-notes.md") -Force
-            Copy-Item -Path (Join-Path $SourceRoot "skills") -Destination $PackageDest -Recurse -Force
-            Copy-Item -Path (Join-Path $SourceRoot ".gemini\commands") -Destination (Join-Path $PackageDest ".gemini") -Recurse -Force
-
             if (Test-Path $GeminiManifestFile) {
+                $GeminiInstallManifest = Get-Content -Raw $GeminiManifestFile | ConvertFrom-Json
+
+                foreach ($Skill in $GeminiInstallManifest.skills) {
+                    Copy-Item -Path (Join-Path $SourceRoot ("skills\" + $Skill)) -Destination (Join-Path $PackageDest "skills") -Recurse -Force
+                }
+
+                New-Item -ItemType Directory -Path (Join-Path $PackageDest ".gemini\commands") -Force | Out-Null
+                foreach ($CommandWrapper in $GeminiInstallManifest.command_wrappers) {
+                    Copy-Item -Path (Join-Path $SourceRoot (".gemini\commands\" + $CommandWrapper)) -Destination (Join-Path $PackageDest ".gemini\commands\$CommandWrapper") -Force
+                }
+
                 Copy-Item -Path $GeminiManifestFile -Destination (Join-Path $PackageDest "package\install-manifest.json") -Force
+            } else {
+                throw "Missing install manifest: $GeminiManifestFile"
             }
         }
 

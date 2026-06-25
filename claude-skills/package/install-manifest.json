@@ -11,17 +11,14 @@
     "build-gate",
     "campaign-health",
     "delegate",
+    "delegation-eval",
     "docs-sync",
     "observer",
-    "observer-test",
-    "refactor-planner",
     "schema-validator",
     "session-stats",
     "smart-test",
-    "telemetry-live-ops",
     "token-audit",
     "truthpack-drift",
-    "worktree-manager",
     "worktree-preflight"
   ],
   "contract_files": [

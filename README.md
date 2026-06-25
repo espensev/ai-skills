@@ -2,11 +2,11 @@
 
 **Portable, production-ready skill packages that give AI coding agents structured workflows for planning, testing, shipping, multi-agent orchestration, and cost-aware local-model delegation.**
 
-78 install-ready skills across three provider-specific packages — each package's install manifest lists exactly what ships. Drop them into any project and your agents gain campaign planning, parallel worktree coordination, QA pipelines, ops/analytics, and grounded model routing.
+75 install-ready skills across three provider-specific packages — each package's install manifest lists exactly what ships. Drop them into any project and your agents gain campaign planning, parallel worktree coordination, QA pipelines, ops/analytics, and grounded model routing.
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 21 | Core campaign orchestration plus the shared ops/analytics suite (build gates, health, docs sync, schema/truth validation, session & token analytics) and worktree guardrails for Claude Code |
+| **claude-skills** | 18 | Core campaign orchestration plus the shared ops/analytics suite (build gates, health, docs sync, schema/truth validation, session & token analytics) and worktree guardrails for Claude Code |
 | **codex-skills** | 30 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, plus the full ops/analytics and verification suite |
 | **gemini-skills** | 27 | Gemini bootstrap adapter: campaign workflow, guardrails, the ops/analytics suite, and editor/refactor helpers |
 | **wt-cli** | — | TypeScript CLI for cross-platform worktree orchestration in parallel agent flows |
@@ -62,15 +62,26 @@ The bootstrap script creates `.gemini/skills/` and `.gemini/commands/`, copies s
 
 | Skill | Purpose |
 |---|---|
-| **delegate** | Decide whether a narrow, well-scoped sub-task should go to a **local Ollama model** vs stay with the controller, and route it if so. Grounded in the [`ollama-telemetry`](https://github.com) MCP delegation tools (`ollama_readiness` / `ollama_delegate` / `ollama_batch_delegate`), with a static-guidance fallback when the MCP server is unavailable. The controller always verifies the result. |
+| **delegate** | Decide whether a narrow, well-scoped sub-task should go to a **local Ollama model** vs stay with the controller, and route it if so. Grounded in the local `ollama-telemetry` MCP delegation tools (`ollama_readiness` / `ollama_delegate` / `ollama_batch_delegate`), with a static-guidance fallback when the MCP server is unavailable. The controller always verifies the result. |
+| **delegation-eval** | Evaluate whether local model routing is worth keeping. Uses `ollama-telemetry` eval runs, judge packets, usage metrics, and `dispatch_recommendations` to compare helper models and propose reviewed `dispatch-rules.json` changes. |
 
 `token-audit` and `session-stats` also gained a **telemetry-first data tier**: when a local `ollama-telemetry` API is reachable (`http://127.0.0.1:8099`), they read real measured token/cost data instead of character-heuristic estimates, falling back silently when it is not.
+
+Telemetry integration is deliberately split by portability:
+
+- `delegate`, `delegation-eval`, `token-audit`, and `session-stats` are portable and depend on API/MCP contracts.
+- `telemetry-live-ops` is machine-local, points at a personal live deployment, and is not exported.
+- Deprecated/duplicative Claude-only skills (`refactor-planner`, `observer-test`, `worktree-manager`) remain in source for compatibility but are no longer in the curated install manifest.
+
+See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md) for the integration boundary.
 
 ### Machine-local ops
 
 | Skill | Purpose |
 |---|---|
 | **telemetry-live-ops** | Machine-local skill that starts/verifies a live `ollama-telemetry` deployment over SSH. Retarget via `OLLAMA_TELEMETRY_*` env vars; not a portable skill. |
+
+`telemetry-live-ops` is kept in this source repo for this workstation only. It is intentionally excluded from the install manifests and ready-package export.
 
 ### Gemini adapter extras
 

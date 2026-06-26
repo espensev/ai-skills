@@ -1,0 +1,1 @@
+prompt = "@{../../skills/docs-sync/SKILL.md} {{args}}"

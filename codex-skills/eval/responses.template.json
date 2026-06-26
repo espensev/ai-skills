@@ -259,5 +259,14 @@
     "verification_commands": [],
     "acceptability": "reject",
     "notes": ""
+  },
+  {
+    "id": "delegate-basic-001",
+    "selected_skill": "delegate",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
   }
 ]

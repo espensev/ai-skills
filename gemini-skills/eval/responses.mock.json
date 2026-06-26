@@ -247,9 +247,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "truthpack-validator-basic-001",
-    "selected_skill": "truthpack-validator",
-    "output": "Mock eval response for truthpack-validator. truthpack. validate.",
+    "id": "truthpack-drift-basic-001",
+    "selected_skill": "truthpack-drift",
+    "output": "Mock eval response for truthpack-drift. truthpack. drift.",
     "created_files": [],
     "verification_commands": [],
     "acceptability": "accept",
@@ -421,6 +421,18 @@
       "test",
       "build",
       "gradle"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "delegate-basic-001",
+    "selected_skill": "delegate",
+    "output": "Mock eval response for delegate. delegate. controller. readiness. ollama.",
+    "created_files": [],
+    "verification_commands": [
+      "readiness",
+      "ollama"
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."

@@ -1,1 +1,1 @@
-prompt = "@{../../docs/instructions/epic-refactor.md} {{args}}"
+prompt = "@{../../skills/epic-refactor/SKILL.md} {{args}}"

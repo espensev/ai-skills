@@ -1,1 +1,1 @@
-prompt = "@{../../docs/instructions/qa.md} {{args}}"
+prompt = "@{../../skills/qa/SKILL.md} {{args}}"

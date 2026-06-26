@@ -17,6 +17,14 @@ if (-Not (Test-Path $TargetDir)) {
     exit 1
 }
 
+$ManifestPath = Join-Path $ProjectRoot "package\install-manifest.json"
+if (-Not (Test-Path $ManifestPath)) {
+    Write-Error "Missing install manifest: $ManifestPath"
+    exit 1
+}
+
+$InstallManifest = Get-Content -Path $ManifestPath -Raw | ConvertFrom-Json
+
 # 1. Setup target Gemini runtime directories
 $TargetGeminiDir = Join-Path $TargetDir ".gemini"
 $TargetSkillsDir = Join-Path $TargetGeminiDir "skills"
@@ -33,13 +41,18 @@ foreach ($Dir in @($TargetGeminiDir, $TargetSkillsDir, $TargetCommandsDir)) {
 $SourceSkillsDir = Join-Path $ProjectRoot "skills"
 Write-Host "Copying skills from $SourceSkillsDir..."
 if (Test-Path $SourceSkillsDir) {
-    Get-ChildItem -Path $SourceSkillsDir -Directory | ForEach-Object {
-        $SkillName = $_.Name
+    foreach ($SkillName in $InstallManifest.skills) {
+        $SourceSkillPath = Join-Path $SourceSkillsDir $SkillName
         $TargetSkillPath = Join-Path $TargetSkillsDir $SkillName
-        
+
+        if (-Not (Test-Path $SourceSkillPath)) {
+            Write-Error "Manifest references missing skill: $SourceSkillPath"
+            exit 1
+        }
+
         if (-Not (Test-Path $TargetSkillPath)) {
             Write-Host "  Copying skill: $SkillName"
-            Copy-Item -Path $_.FullName -Destination $TargetSkillsDir -Recurse
+            Copy-Item -Path $SourceSkillPath -Destination $TargetSkillsDir -Recurse
         } else {
             Write-Host "  Skipping existing skill: $SkillName"
         }
@@ -52,14 +65,26 @@ if (Test-Path $SourceSkillsDir) {
 $SourceCommandsDir = Join-Path $ProjectRoot ".gemini\commands"
 Write-Host "Copying command wrappers from $SourceCommandsDir..."
 if (Test-Path $SourceCommandsDir) {
-    Get-ChildItem -Path $SourceCommandsDir -File | ForEach-Object {
-        $TargetCommandPath = Join-Path $TargetCommandsDir $_.Name
+    foreach ($CommandWrapper in $InstallManifest.command_wrappers) {
+        $SourceCommandPath = Join-Path $SourceCommandsDir $CommandWrapper
+        $TargetCommandPath = Join-Path $TargetCommandsDir $CommandWrapper
+
+        if (-Not (Test-Path $SourceCommandPath)) {
+            Write-Error "Manifest references missing command wrapper: $SourceCommandPath"
+            exit 1
+        }
 
         if (-Not (Test-Path $TargetCommandPath)) {
-            Write-Host "  Copying command wrapper: $($_.Name)"
-            Copy-Item -Path $_.FullName -Destination $TargetCommandPath -Force
+            Write-Host "  Installing command wrapper: $CommandWrapper"
+            # Source wrappers use '@{../../skills/<name>/SKILL.md}', which is correct
+            # for the source repo and the exported package (skills at '<root>/skills/').
+            # Bootstrap installs skills one level deeper, at '<target>/.gemini/skills/',
+            # so rewrite the include to '@{../skills/...}' for the installed copy.
+            $WrapperContent = Get-Content -Path $SourceCommandPath -Raw
+            $WrapperContent = $WrapperContent -replace '@\{\.\./\.\./skills/', '@{../skills/'
+            Set-Content -Path $TargetCommandPath -Value $WrapperContent -NoNewline
         } else {
-            Write-Host "  Skipping existing command wrapper: $($_.Name)"
+            Write-Host "  Skipping existing command wrapper: $CommandWrapper"
         }
     }
 } else {

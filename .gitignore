@@ -41,5 +41,53 @@ coverage/
 everything-claude-code-main/
 gemini-skills/everything-claude-code/
 
+# ECC ecosystem mirror under gemini-skills/ — a drifted copy of the gitignored
+# everything-claude-code/ upstream. The package ports capabilities into the
+# Gemini-native surface (skills/ + .gemini/commands/*.toml) via the c54bfac
+# convert pattern; it does NOT vendor this raw fork. Keep the working copy local
+# but out of git. Tracked c54bfac artifacts (bootstrap.ps1, scripts/lib/
+# session-adapters + state-store, the 9 design docs) are deliberately NOT matched.
+gemini-skills/agents/
+gemini-skills/commands/
+gemini-skills/hooks/
+gemini-skills/manifests/
+gemini-skills/mcp-configs/
+gemini-skills/rules/
+gemini-skills/schemas/
+gemini-skills/scripts/*.js
+gemini-skills/scripts/*.sh
+gemini-skills/scripts/ci/
+gemini-skills/scripts/codemaps/
+gemini-skills/scripts/codex/
+gemini-skills/scripts/codex-git-hooks/
+gemini-skills/scripts/hooks/
+gemini-skills/scripts/lib/*.js
+gemini-skills/scripts/lib/*.d.ts
+gemini-skills/scripts/lib/install-targets/
+gemini-skills/scripts/lib/install/
+gemini-skills/scripts/lib/skill-evolution/
+gemini-skills/scripts/lib/skill-improvement/
+gemini-skills/docs/business/
+gemini-skills/docs/releases/
+gemini-skills/docs/ja-JP/
+gemini-skills/docs/ko-KR/
+gemini-skills/docs/pt-BR/
+gemini-skills/docs/tr/
+gemini-skills/docs/zh-CN/
+gemini-skills/docs/zh-TW/
+gemini-skills/docs/ANTIGRAVITY-GUIDE.md
+gemini-skills/docs/ARCHITECTURE-IMPROVEMENTS.md
+gemini-skills/docs/COMMAND-AGENT-MAP.md
+gemini-skills/docs/ECC-2.0-REFERENCE-ARCHITECTURE.md
+gemini-skills/docs/MEGA-PLAN-REPO-PROMPTS-2026-03-12.md
+gemini-skills/docs/PHASE1-ISSUE-BUNDLE-2026-03-12.md
+gemini-skills/docs/PR-399-REVIEW-2026-03-12.md
+gemini-skills/docs/PR-QUEUE-TRIAGE-2026-03-13.md
+gemini-skills/docs/SELECTIVE-INSTALL-ARCHITECTURE.md
+gemini-skills/docs/SELECTIVE-INSTALL-DESIGN.md
+gemini-skills/docs/SKILL-PLACEMENT-POLICY.md
+gemini-skills/docs/continuous-learning-v2-spec.md
+gemini-skills/docs/token-optimization.md
+
 # Stray exports
 aa.csv

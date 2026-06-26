@@ -205,5 +205,17 @@
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "delegate-basic-001",
+    "selected_skill": "delegate",
+    "output": "Mock eval response for delegate. delegate. controller. readiness. ollama.",
+    "created_files": [],
+    "verification_commands": [
+      "readiness",
+      "ollama"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
   }
 ]

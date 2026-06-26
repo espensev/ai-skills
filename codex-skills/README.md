@@ -54,6 +54,8 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | API Design | auto | Design consistent HTTP APIs: resources, status codes, pagination, idempotency, and error contracts |
 | Backend Patterns | auto | Structure backend handlers, services, validation, data access, caching, and background work without overengineering |
 | Deep Research | auto | Run current, cited research workflows using built-in web search first and optional MCP accelerators when available |
+| Delegate | auto | Route one bounded, already-fetched transform to local Ollama via the `ollama-telemetry` MCP tools when readiness and task class allow it |
+| Delegation Eval | auto | Run and judge local-model helper evals from `ollama-telemetry`, then compare measured results against dispatch rules |
 | dmux Workflows | auto | Coordinate safe parallel or delegated work with clear ownership, integration order, and optional dmux or worktree orchestration |
 | Documentation Lookup | auto | Fetch current framework and library docs before answering library-specific questions |
 | E2E Testing | auto | Build and debug Playwright E2E suites using stable selectors, app-aware setup, and artifact review |
@@ -61,6 +63,9 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Frontend Patterns | auto | Build React and Next.js UI work that respects existing design systems, accessibility, and compiler guidance |
 | MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
 | Observer | auto | Keep passive project intelligence in repo-owned artifacts such as observation logs, metrics, and synthesized health notes |
+| Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
+| Session Stats | auto | Summarize session/tool activity, preferring measured `ollama-telemetry` usage data when available |
+| Token Audit | auto | Analyze tokens, costs, budgets, and forecasts, preferring measured telemetry API data when available |
 | Verification Loop | auto | Run repo-appropriate build, lint, typecheck, test, and diff review before handoff |
 
 ## Workflow
@@ -108,9 +113,15 @@ done
 for d in \
   skills/loop \
   skills/loop-master \
+  skills/agent-report \
   skills/api-design \
   skills/backend-patterns \
+  skills/build-gate \
+  skills/campaign-health \
   skills/deep-research \
+  skills/delegate \
+  skills/delegation-eval \
+  skills/docs-sync \
   skills/dmux-workflows \
   skills/documentation-lookup \
   skills/e2e-testing \
@@ -118,6 +129,13 @@ for d in \
   skills/frontend-patterns \
   skills/mcp-server-patterns \
   skills/observer \
+  skills/review \
+  skills/schema-validator \
+  skills/session-stats \
+  skills/smart-test \
+  skills/token-audit \
+  skills/truthpack-drift \
+  skills/worktree-preflight \
   skills/verification-loop; do
   cp -r "$d" <project>/.codex/skills/
 done
@@ -151,9 +169,15 @@ done
 for d in \
   skills/loop \
   skills/loop-master \
+  skills/agent-report \
   skills/api-design \
   skills/backend-patterns \
+  skills/build-gate \
+  skills/campaign-health \
   skills/deep-research \
+  skills/delegate \
+  skills/delegation-eval \
+  skills/docs-sync \
   skills/dmux-workflows \
   skills/documentation-lookup \
   skills/e2e-testing \
@@ -161,6 +185,13 @@ for d in \
   skills/frontend-patterns \
   skills/mcp-server-patterns \
   skills/observer \
+  skills/review \
+  skills/schema-validator \
+  skills/session-stats \
+  skills/smart-test \
+  skills/token-audit \
+  skills/truthpack-drift \
+  skills/worktree-preflight \
   skills/verification-loop; do
   cp -r "$d" ~/.codex/skills/
 done

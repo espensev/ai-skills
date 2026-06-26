@@ -6,7 +6,22 @@
     "qa",
     "ship"
   ],
-  "optional_skills": [],
+  "optional_skills": [
+    "agent-report",
+    "build-gate",
+    "campaign-health",
+    "delegate",
+    "delegation-eval",
+    "docs-sync",
+    "observer",
+    "review",
+    "schema-validator",
+    "session-stats",
+    "smart-test",
+    "token-audit",
+    "truthpack-drift",
+    "worktree-preflight"
+  ],
   "contract_files": [
     "planning-contract.md",
     "project.toml.template"

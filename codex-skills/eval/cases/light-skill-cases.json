@@ -4,8 +4,15 @@
     "skill": "discover",
     "prompt": "Research the codebase before changing the task manager bootstrap flow.",
     "checks": {
-      "must_mention": ["question", "evidence", "recommend"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "must_mention": [
+        "question",
+        "evidence",
+        "recommend"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -15,9 +22,20 @@
     "skill": "planner",
     "prompt": "Plan a small refactor of the runtime config loading path.",
     "checks": {
-      "must_mention": ["exit criteria", "agent", "verification"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["python", "pytest", "verify"],
+      "must_mention": [
+        "exit criteria",
+        "agent",
+        "verification"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "python",
+        "pytest",
+        "verify"
+      ],
       "must_create": []
     }
   },
@@ -26,9 +44,20 @@
     "skill": "manager",
     "prompt": "Orchestrate a campaign to improve analysis caching and verify the result.",
     "checks": {
-      "must_mention": ["plan", "merge", "verify"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["verify", "pytest", "build"],
+      "must_mention": [
+        "plan",
+        "merge",
+        "verify"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "verify",
+        "pytest",
+        "build"
+      ],
       "must_create": []
     }
   },
@@ -37,9 +66,20 @@
     "skill": "qa",
     "prompt": "Run a light QA pass on the skill docs and explain any failures.",
     "checks": {
-      "must_mention": ["test", "fail", "pass"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["pytest", "test", "validation"],
+      "must_mention": [
+        "test",
+        "fail",
+        "pass"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "pytest",
+        "test",
+        "validation"
+      ],
       "must_create": []
     }
   },
@@ -48,9 +88,20 @@
     "skill": "ship",
     "prompt": "Prepare the current validated changes for commit.",
     "checks": {
-      "must_mention": ["stage", "commit", "git"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["git status", "git diff", "git log"],
+      "must_mention": [
+        "stage",
+        "commit",
+        "git"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "git status",
+        "git diff",
+        "git log"
+      ],
       "must_create": []
     }
   },
@@ -59,9 +110,20 @@
     "skill": "loop",
     "prompt": "Iterate locally on a bounded cleanup of skill frontmatter until done.",
     "checks": {
-      "must_mention": ["objective", "verification", "next risk"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["verification", "pytest", "scan"],
+      "must_mention": [
+        "objective",
+        "verification",
+        "next risk"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "verification",
+        "pytest",
+        "scan"
+      ],
       "must_create": []
     }
   },
@@ -70,9 +132,20 @@
     "skill": "loop-master",
     "prompt": "Supervise a multi-round cleanup of runtime docs and tests.",
     "checks": {
-      "must_mention": ["local_blocker", "ownership", "validation_gates"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["validation_gates", "pytest", "verify"],
+      "must_mention": [
+        "local_blocker",
+        "ownership",
+        "validation_gates"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "validation_gates",
+        "pytest",
+        "verify"
+      ],
       "must_create": []
     }
   },
@@ -81,20 +154,38 @@
     "skill": "observer",
     "prompt": "Summarize project drift and record a few durable observations without changing product code.",
     "checks": {
-      "must_mention": ["observation", "evidence", "project-intelligence"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md", "task_manager.py command"],
-      "verification_any_of": ["observations.jsonl", "metrics.jsonl", "git status"],
+      "must_mention": [
+        "observation",
+        "evidence",
+        "project-intelligence"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md",
+        "task_manager.py command"
+      ],
+      "verification_any_of": [
+        "observations.jsonl",
+        "metrics.jsonl",
+        "git status"
+      ],
       "must_create": []
     }
   },
-
   {
     "id": "discover-ambiguous-002",
     "skill": "discover",
     "prompt": "I need to understand this code before we do anything. Look at the analysis pipeline.",
     "checks": {
-      "must_mention": ["question", "evidence"],
-      "must_not_mention": ["plan", "campaign", "agent roster"],
+      "must_mention": [
+        "question",
+        "evidence"
+      ],
+      "must_not_mention": [
+        "plan",
+        "campaign",
+        "agent roster"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -104,8 +195,14 @@
     "skill": "discover",
     "prompt": "What dependencies does task_manager.py have? Map them before we touch anything.",
     "checks": {
-      "must_mention": ["evidence", "recommend"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "must_mention": [
+        "evidence",
+        "recommend"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -115,9 +212,20 @@
     "skill": "planner",
     "prompt": "Break down the work for splitting task_runtime into separate modules.",
     "checks": {
-      "must_mention": ["agent", "verification", "exit criteria"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["pytest", "verify", "python"],
+      "must_mention": [
+        "agent",
+        "verification",
+        "exit criteria"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "pytest",
+        "verify",
+        "python"
+      ],
       "must_create": []
     }
   },
@@ -126,9 +234,17 @@
     "skill": "planner",
     "prompt": "Plan a campaign with only one agent — just fix the config loader.",
     "checks": {
-      "must_mention": ["agent", "exit criteria"],
-      "must_not_mention": [".claude/skills"],
-      "verification_any_of": ["pytest", "verify"],
+      "must_mention": [
+        "agent",
+        "exit criteria"
+      ],
+      "must_not_mention": [
+        ".claude/skills"
+      ],
+      "verification_any_of": [
+        "pytest",
+        "verify"
+      ],
       "must_create": []
     }
   },
@@ -137,9 +253,18 @@
     "skill": "qa",
     "prompt": "There are no tests in this directory. What's the coverage situation?",
     "checks": {
-      "must_mention": ["coverage", "test"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["pytest", "test"],
+      "must_mention": [
+        "coverage",
+        "test"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "pytest",
+        "test"
+      ],
       "must_create": []
     }
   },
@@ -148,9 +273,18 @@
     "skill": "qa",
     "prompt": "Three tests are failing after the merge. Triage them and tell me the root causes.",
     "checks": {
-      "must_mention": ["fail", "root cause"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["pytest", "test"],
+      "must_mention": [
+        "fail",
+        "root cause"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "pytest",
+        "test"
+      ],
       "must_create": []
     }
   },
@@ -159,9 +293,18 @@
     "skill": "ship",
     "prompt": "Nothing is staged yet. Stage and commit only the runtime script changes.",
     "checks": {
-      "must_mention": ["stage", "commit"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["git status", "git diff"],
+      "must_mention": [
+        "stage",
+        "commit"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "git status",
+        "git diff"
+      ],
       "must_create": []
     }
   },
@@ -170,9 +313,20 @@
     "skill": "observer",
     "prompt": "Run a health scan and tell me if there are any blockers before I launch agents.",
     "checks": {
-      "must_mention": ["observation", "scan"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md", "task_manager.py command"],
-      "verification_any_of": ["observations.jsonl", "git status", "check"],
+      "must_mention": [
+        "observation",
+        "scan"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md",
+        "task_manager.py command"
+      ],
+      "verification_any_of": [
+        "observations.jsonl",
+        "git status",
+        "check"
+      ],
       "must_create": []
     }
   },
@@ -181,9 +335,19 @@
     "skill": "observer",
     "prompt": "This is a fresh repo with no prior observations. Give me a baseline briefing.",
     "checks": {
-      "must_mention": ["observation", "briefing"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md", "task_manager.py command"],
-      "verification_any_of": ["observations.jsonl", "git status"],
+      "must_mention": [
+        "observation",
+        "briefing"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md",
+        "task_manager.py command"
+      ],
+      "verification_any_of": [
+        "observations.jsonl",
+        "git status"
+      ],
       "must_create": []
     }
   },
@@ -192,9 +356,19 @@
     "skill": "manager",
     "prompt": "I already have an approved plan. Just launch the agents and merge when they're done.",
     "checks": {
-      "must_mention": ["plan", "merge"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["verify", "pytest", "build"],
+      "must_mention": [
+        "plan",
+        "merge"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "verify",
+        "pytest",
+        "build"
+      ],
       "must_create": []
     }
   },
@@ -203,21 +377,39 @@
     "skill": "loop",
     "prompt": "Keep running the test suite every 5 minutes until all tests pass.",
     "checks": {
-      "must_mention": ["objective", "verification"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["verification", "pytest", "test"],
+      "must_mention": [
+        "objective",
+        "verification"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "verification",
+        "pytest",
+        "test"
+      ],
       "must_create": []
     }
   },
-
   {
     "id": "api-design-basic-001",
     "skill": "api-design",
     "prompt": "Design a REST API for the new billing service with proper status codes and pagination.",
     "checks": {
-      "must_mention": ["endpoint", "status code"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["test", "validate"],
+      "must_mention": [
+        "endpoint",
+        "status code"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "test",
+        "validate"
+      ],
       "must_create": []
     }
   },
@@ -226,9 +418,18 @@
     "skill": "backend-patterns",
     "prompt": "Structure the new payment handler with proper validation, caching, and error handling.",
     "checks": {
-      "must_mention": ["handler", "validation"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["test", "lint"],
+      "must_mention": [
+        "handler",
+        "validation"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "test",
+        "lint"
+      ],
       "must_create": []
     }
   },
@@ -237,8 +438,14 @@
     "skill": "deep-research",
     "prompt": "Research current best practices for database connection pooling in serverless environments.",
     "checks": {
-      "must_mention": ["source", "finding"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "must_mention": [
+        "source",
+        "finding"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -248,9 +455,18 @@
     "skill": "dmux-workflows",
     "prompt": "Coordinate three parallel agents working on different modules with clear ownership.",
     "checks": {
-      "must_mention": ["ownership", "parallel"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["merge", "verify"],
+      "must_mention": [
+        "ownership",
+        "parallel"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "merge",
+        "verify"
+      ],
       "must_create": []
     }
   },
@@ -259,8 +475,14 @@
     "skill": "documentation-lookup",
     "prompt": "Check the current Next.js docs for the correct App Router middleware pattern.",
     "checks": {
-      "must_mention": ["documentation", "current"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "must_mention": [
+        "documentation",
+        "current"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -270,9 +492,18 @@
     "skill": "e2e-testing",
     "prompt": "Write a Playwright E2E test for the login flow using stable selectors.",
     "checks": {
-      "must_mention": ["test", "selector"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["playwright", "test"],
+      "must_mention": [
+        "test",
+        "selector"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "playwright",
+        "test"
+      ],
       "must_create": []
     }
   },
@@ -281,8 +512,14 @@
     "skill": "exa-search",
     "prompt": "Use Exa to find recent examples of MCP server implementations in Python.",
     "checks": {
-      "must_mention": ["search", "result"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
+      "must_mention": [
+        "search",
+        "result"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
       "verification_any_of": [],
       "must_create": []
     }
@@ -292,9 +529,18 @@
     "skill": "frontend-patterns",
     "prompt": "Build an accessible React form component that follows our design system.",
     "checks": {
-      "must_mention": ["component", "accessible"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["test", "lint"],
+      "must_mention": [
+        "component",
+        "accessible"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "test",
+        "lint"
+      ],
       "must_create": []
     }
   },
@@ -303,9 +549,18 @@
     "skill": "mcp-server-patterns",
     "prompt": "Build an MCP server with proper schema validation and transport handling.",
     "checks": {
-      "must_mention": ["schema", "transport"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["test", "validate"],
+      "must_mention": [
+        "schema",
+        "transport"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "test",
+        "validate"
+      ],
       "must_create": []
     }
   },
@@ -314,9 +569,41 @@
     "skill": "verification-loop",
     "prompt": "Run the full build-lint-test-review cycle before handing off this change.",
     "checks": {
-      "must_mention": ["build", "test"],
-      "must_not_mention": [".claude/skills", "CLAUDE.md"],
-      "verification_any_of": ["build", "test", "lint"],
+      "must_mention": [
+        "build",
+        "test"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "build",
+        "test",
+        "lint"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "delegate-basic-001",
+    "skill": "delegate",
+    "prompt": "I already fetched the failing build log. Summarize these 180 lines into the failing tests and why — offload it to a local model if that's safe.",
+    "checks": {
+      "must_mention": [
+        "delegate",
+        "controller"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "readiness",
+        "guidance",
+        "ollama",
+        "stay with controller"
+      ],
       "must_create": []
     }
   }

@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Run tests, check coverage, triage failures, optionally smoke-test configured HTTP endpoints, and generate regression tests. Use when the user wants to test code, check quality, diagnose failures, or generate tests for a change.
+description: Run tests, check coverage, triage failures, optionally smoke-test a configured app (HTTP endpoints or a desktop/GUI build), and generate regression tests. Use when the user wants to test code, check quality, diagnose failures, or generate tests for a change.
 ---
 
 # QA — Testing & Quality Assurance
@@ -10,16 +10,16 @@ generate regression tests.
 
 **All commands run to completion autonomously.**
 
-**Config:** `.codex/skills/project.toml` — project-specific paths, commands, modules
-**Test command:** from `[commands].test` in project.toml
-**Source modules:** from `[modules]` in project.toml (or auto-discovered)
+**Config:** `.codex/skills/project.toml` — paths, commands, modules, smoke, and QA policy
+**Test command:** `[commands].test`. **Framework:** `[qa].framework` (else auto-detect; default `pytest`)
+**Source modules:** `[modules]` in project.toml (or auto-discovered)
 
 ## Commands
 
 | Command | Usage | Purpose |
 |---------|-------|---------|
 | `run` | `$qa` or `$qa run [scope]` | Run tests — full suite or scoped |
-| `smoke` | `$qa smoke` | Start a configured HTTP app, hit all configured endpoints, verify responses |
+| `smoke` | `$qa smoke` | Smoke-test a configured app — HTTP endpoints, or a provenance-gated desktop/GUI build (`[smoke-test].mode`) |
 | `coverage` | `$qa coverage` | Map source modules to tests, find gaps |
 | `triage` | `$qa triage` | Diagnose current test failures with root cause analysis |
 | `regtest` | `$qa regtest <files>` | Generate regression tests for changed files |
@@ -35,12 +35,30 @@ Before any command, load project configuration:
 1. Read `.codex/skills/project.toml`
 2. Extract `[commands].test` for the test command
 3. Extract `[modules]` for the source module list (if configured)
-4. Extract `[smoke-test]` for HTTP smoke-test configuration (if configured)
-5. Read the conventions file specified in `[project].conventions`
+4. Extract `[smoke-test]` for smoke-test config (HTTP by default; `mode = "gui"` for a desktop app)
+5. Extract `[qa]` for QA policy (if present): `framework`, `evidence-dir`, `manual-target`,
+   `provenance-verify`, `never-test-build-output`, `forbidden-actions`, `checklist`
+6. Read the conventions file specified in `[project].conventions`
 
 If no project.toml exists, fall back to scanning the project structure:
 - Look for `tests/` directory and detect test framework (pytest, jest, etc.)
 - List source files in the project root
+
+### Framework idioms
+
+Resolve every toolchain-specific command from `[qa].framework` (auto-detect if unset). **`pytest` is
+the default**, so a project with no `[qa].framework` behaves exactly as before:
+
+| framework | scope / select | collect-and-count | verbose run | test→source link |
+|---|---|---|---|---|
+| `pytest` *(default)* | `<test-cmd> <files>` | `<test-cmd> <file> --co 2>&1 \| tail -1` | `<test-cmd> -v` | import (`import X` / `from X`) |
+| `dotnet` | `<test-cmd> --filter "<expr>"` | `<test-cmd> --list-tests` | `<test-cmd> --logger "console;verbosity=detailed"` | type name (`FooTests` ↔ type `Foo`) |
+| `jest` | `<test-cmd> <pattern>` | `<test-cmd> --listTests` | `<test-cmd> --verbose` | import / path convention |
+| `cargo` | `<test-cmd> <name>` | `<test-cmd> -- --list` | `<test-cmd> -- --nocapture` | module path |
+| `go` | `<test-cmd> ./... -run <Re>` | `<test-cmd> ./... -list '.*'` | `<test-cmd> -v ./...` | package |
+
+`<test-cmd>` is always `[commands].test`. For `dotnet`/xUnit, **scope by `--filter`, not by appending
+file paths** — a bare scope token is a `Category=`/`FullyQualifiedName~` expression, never a path.
 
 ## Feedback Hierarchy
 
@@ -69,13 +87,15 @@ Run the test suite with clear reporting.
 
 ### Steps:
 
-1. **Resolve scope** to test file paths. If a bare module name is given (e.g.
-   `api`), map it to the matching test file. If a source module is given (e.g.
-   `collector`), find all test files that import it via Grep.
+1. **Resolve scope** to tests. If a bare module name is given (e.g. `api`), map it to the matching
+   test via the framework's *test→source link* (imports for pytest/jest; type name for dotnet/xUnit
+   — see *Framework idioms*).
 
-2. **Run the test command** from `[commands].test` in project.toml:
+2. **Run the test command** (`[commands].test`) using the framework's *scope / select* idiom — for
+   `pytest` that is appended file paths; for `dotnet` it is `--filter "<expr>"` (never appended
+   paths). See *Framework idioms*.
    ```bash
-   <test-command> [scoped files]
+   <test-command> [scoped files | --filter "<expr>"]
    ```
 
 3. **Report results.** Show:
@@ -90,42 +110,64 @@ Run the test suite with clear reporting.
 
 ---
 
-## Command: `smoke` — Live Endpoint Smoke Test
+## Command: `smoke` — Live Smoke Test
 
-Start the app and verify all endpoints return valid responses.
+Read `[smoke-test]` from project.toml. If no `[smoke-test]` config exists, skip and report that
+smoke config is needed. Dispatch on `[smoke-test].mode` (default `http`).
 
-Use a QA-owned dev-server command from `[smoke-test].start`, not the normal
-user launch path. The configured command must stay attached to the QA process
-so it can be terminated reliably after the smoke run.
+### Mode: `http` (default) — Live Endpoint Smoke Test
 
-### Steps:
+Start the app and verify all endpoints return valid responses. Use a QA-owned dev-server command
+from `[smoke-test].start`, not the normal user launch path. The configured command must stay
+attached to the QA process so it can be terminated reliably after the smoke run.
 
-1. **Read smoke config** from `[smoke-test]` in project.toml:
-   - `start` — command to start the server
-   - `base-url` — base URL for requests
-   - `endpoints` — list of endpoints to check
-
-   If no `[smoke-test]` config exists, skip this command and report that
-   smoke test configuration is needed.
-
-2. **Start the server** using the configured `start` command. Prefer a
-   foreground/stoppable dev command such as
-   `python app.py --console --no-open --port <port>`, then wait for the base
-   URL to be available (check the first endpoint or a health endpoint).
-
-3. **Hit every configured endpoint** and verify:
-   - HTTP status 200
-   - Valid JSON (or expected content type)
-   - Record response time
-
+1. **Read smoke config:** `start` (command to start the server), `base-url`, `endpoints`.
+2. **Start the server** using the configured `start` command. Prefer a foreground/stoppable dev
+   command such as `python app.py --console --no-open --port <port>`, then wait for the base URL to
+   be available (check the first endpoint or a health endpoint).
+3. **Hit every configured endpoint** and verify: HTTP status 200; valid JSON (or expected content
+   type); record response time.
 4. **Stop the server.**
-
 5. **Report results.** Table of endpoint, status, response time, and any errors.
 
-### Error handling:
-- If the server fails to start, report the error and skip endpoint checks.
-- If an endpoint returns non-200 or invalid response, mark it as FAIL and continue.
-- Always stop the server in the finally block.
+**Error handling:** if the server fails to start, report the error and skip endpoint checks; if an
+endpoint returns non-200 or invalid response, mark it FAIL and continue; always stop the server in
+the finally block.
+
+### Mode: `gui` — Desktop UI Smoke Test (provenance-gated)
+
+For a windowed app (no HTTP endpoints). This verifies an **already-deployed** artifact via UI
+Automation; it never builds, deploys, or releases (this skill verifies, it does not release).
+
+1. **Provenance gate first.** If `[smoke-test].verify` (or `[qa].provenance-verify`) is set, run it
+   and read its verdict:
+   - matches `verify-pass-pattern` (e.g. `RELEASE VERIFIED`) → release evidence; proceed.
+   - matches `verify-diagnostic-pattern` → proceed, but every result this run is **diagnostic, not
+     release evidence** — say so in the report.
+   - otherwise (FAIL / no match) → **stop**; report the verifier output. Do not smoke an unverified
+     target.
+2. **Target discipline.** The smoke target is `[smoke-test].target` (the deployed copy). If
+   `[qa].never-test-build-output = true`, refuse a target under the repo's build output
+   (`*/bin/*`, `bin/publish/*`, `*/obj/*`) and stop — testing stale build output is a false pass.
+3. **Run the UI smoke** via `[smoke-test].start` (e.g. a UI-Automation driver that launches the exe,
+   asserts the named controls exist, and screenshots the window). Treat the configured
+   `pass-pattern` (e.g. `SMOKE PASS`) as the success signal; a blank/black frame is a launch
+   failure, not a pass.
+4. **Record evidence.** Save/keep screenshots and the run log under `[smoke-test].evidence` (or
+   `[qa].evidence-dir`), scrubbed of any signed-in-session secrets (account ids, cookies, tokens,
+   auth/credential URLs). For a windowed app capture at a fractional DPI (e.g. 150%) when the driver
+   supports it — integer scales hide the rounding/clipping class of bug. A single-DPI capture
+   certifies only that DPI; other scales (e.g. 100/125%) stay `not run` until DPI/hardware switching
+   is available.
+5. **Report.** Identity block (version/build/commit from the verifier), the smoke pass/fail, the
+   evidence paths, and whether this counts as release evidence or diagnostic-only. Point the
+   operator at `[qa].checklist` (if set) for the manual rows this automated smoke does not cover.
+
+**Never** invoke anything in `[qa].forbidden-actions` (publish/deploy/retag/version-bump). If the
+deployed copy is missing, stale, or unverified, STOP and report — do not "fix" it by deploying.
+Destructive or induced-fault rows (e.g. corrupt-settings recovery, clear-data) run on a throwaway
+copy of the app data — point the driver at a scratch dir via `[smoke-test].data-root-env` (if set)
+— and need explicit owner consent first.
 
 ---
 
@@ -136,12 +178,14 @@ Analyze which source modules have test coverage and where gaps exist.
 ### Steps:
 
 1. **Build the source-to-test map.** Use the `[modules]` config from project.toml
-   to get the list of source files. For each source module, use the Grep tool
-   to find test files that import it (pattern: `import <module>|from <module>`,
-   search the test directory, output mode: `files_with_matches`).
+   to get the list of source files. For each source module, find its test files via the framework's
+   *test→source link* (see *Framework idioms*): for `pytest`/`jest`, Grep for imports
+   (`import <module>|from <module>`, output mode `files_with_matches`); for `dotnet`/xUnit, Grep for
+   the type name (source `Foo` ↔ test class/file `FooTests`).
    If no `[modules]` config, scan the project root for source files using Glob.
 
-2. **Count tests per file** using the test framework's collection mode:
+2. **Count tests per file** using the framework's *collect-and-count* idiom (see *Framework
+   idioms*) — e.g. for pytest:
    ```bash
    <test-command> <file> --co 2>&1 | tail -1
    ```
@@ -177,7 +221,9 @@ Diagnose current test failures with structured root cause analysis.
 
 ### Steps:
 
-1. **Run the full suite** with verbose output:
+1. **Run the full suite** with verbose output, using the framework's *verbose run* idiom (see
+   *Framework idioms*) — e.g. `<test-command> -v` (pytest) or
+   `<test-command> --logger "console;verbosity=detailed"` (dotnet):
    ```bash
    <test-command-verbose>
    ```

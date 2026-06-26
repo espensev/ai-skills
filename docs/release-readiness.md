@@ -16,6 +16,7 @@ the same way, so release readiness is tracked explicitly.
 | Package | Status | Notes |
 |---|---|---|
 | `wt-cli` | Source package only | Useful tooling for worktree orchestration, but not part of the model skill export bundle. |
+| `telemetry-live-ops` | Source-only machine-local skill | Kept under provider skill trees for this workstation's live `ollama-telemetry` deployment; intentionally excluded from install manifests and ready exports. |
 
 ## Export Flow
 

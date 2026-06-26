@@ -1,17 +1,35 @@
 # AI Skills
 
-**Portable, production-ready skill packages that give AI coding agents structured workflows for planning, testing, shipping, and multi-agent orchestration.**
+**Manifest-driven skill packages for AI coding agents: ready-to-export bundles for Claude Code, Codex, and Gemini CLI.**
 
-65 skills across three provider-specific packages — drop them into any project and your agents gain campaign planning, parallel worktree coordination, QA pipelines, and more.
+This repo curates reusable workflows for planning, testing, review, shipping,
+multi-agent worktree orchestration, docs/schema drift checks, telemetry-aware
+token and cost analysis, and local Ollama delegation. The shipping surface is
+deliberately explicit: `release-manifest.json` selects ready packages, and each
+package's `package/install-manifest.json` selects the skills, runtime files,
+contracts, and wrappers that are exported.
+
+81 install-ready skills ship across three provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 9 | Core campaign orchestration for Claude Code — planning, multi-agent management, QA, shipping |
-| **codex-skills** | 18 | Extended toolkit for Codex — adds API design, research, e2e testing, frontend/backend patterns |
-| **gemini-skills** | 38 | Full Gemini adapter with bootstrap installer, guardrails, and 30+ domain-specific skills |
+| **claude-skills** | 20 | Core campaign orchestration plus review/debug workflows, shared ops/analytics (build gates, health, docs sync, schema/truth validation, session & token analytics), and worktree guardrails for Claude Code |
+| **codex-skills** | 32 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, review/debug workflows, plus the full ops/analytics and verification suite |
+| **gemini-skills** | 29 | Gemini bootstrap adapter: campaign workflow, review/debug workflows, guardrails, the ops/analytics suite, and editor/refactor helpers |
 | **wt-cli** | — | TypeScript CLI for cross-platform worktree orchestration in parallel agent flows |
 
+> Counts reflect each package's `package/install-manifest.json`. The Gemini
+> count is the curated adapter set (skills that ship a `.gemini/commands`
+> wrapper); imported or source-only skills that are not manifest-listed stay as
+> reference material and do not ship in ready-package exports.
+
 ## Quick Start
+
+**Validate ready packages** and run an export smoke test:
+
+```powershell
+.\scripts\Test-ReadyPackages.ps1
+```
 
 **Export all ready packages** into a target folder:
 
@@ -29,33 +47,72 @@ The bootstrap script creates `.gemini/skills/` and `.gemini/commands/`, copies s
 
 ## What's Inside
 
-### Core Skills (shared across packages)
+### Core campaign skills (shared across packages)
 
 | Skill | Purpose |
 |---|---|
 | **planner** | Design structured multi-agent campaign plans with work decomposition and dependency mapping |
 | **manager** | Orchestrate parallel agents in worktrees — launch, merge, verify builds |
 | **discover** | Research a codebase before planning — map dependencies, assess feasibility, identify constraints |
-| **qa** | Run tests, check coverage, triage failures, smoke-test endpoints, generate regression tests |
+| **qa** | Run tests, check coverage, triage failures, smoke-test a configured app (HTTP or desktop/GUI), generate regression tests |
+| **diagnosing-bugs** | Build a tight red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or performance regressions |
+| **review** | Review branch, staged, or working-tree diffs against standards, specs, and regression risk, writing durable findings under `docs/reviews/` |
 | **ship** | Stage, commit, push validated work with campaign-aware commit grouping |
 | **observer** | Passive project intelligence — observe patterns over time without interfering |
 | **loop** | Run focused work loops with repeated inspect-edit-verify cycles |
 
-### Codex Extras
+### Ops & analytics suite (shared across packages)
 
-API design, backend/frontend patterns, deep research, Playwright e2e testing, documentation lookup, MCP server patterns, and more.
+| Skill | Purpose |
+|---|---|
+| **build-gate** | Validate multi-target build chains, artifact freshness, source-list drift, and target tests before merge |
+| **campaign-health** | Find stuck plans, orphaned agents, and stale worktrees, each with an actionable recovery command |
+| **smart-test** | Map changed files to the minimal useful test subset instead of the full suite (default-branch aware) |
+| **schema-validator** | Validate a schema is consumed correctly across data → API → test layers; report drift |
+| **truthpack-drift** | Detect drift between declared reusable "truth" facts and the current source |
+| **docs-sync** | Detect and fix drift between docs and code (versions, paths, conflict markers) |
+| **session-stats** | Session tool/agent/timeline analytics, with a telemetry-first measured tier |
+| **token-audit** | Token/cost/budget/forecast intelligence — uses real telemetry data when available, heuristic otherwise |
+| **agent-report** | Structured agent handoff and performance/cost reports |
+| **worktree-preflight** | Pre-launch conflict gate over branch/worktree/file-ownership (unified OK / WARNING / CONFLICT contract) |
 
-### Gemini Extras
+### Local-model delegation (new)
 
-Architecture decision records, codebase onboarding, forensic debugger, epic refactor, Django TDD, Rust/Go/Kotlin/C# patterns, security scanning, doc weaver, and a full guardrail system enforcing contract-first execution and scoped writes.
+| Skill | Purpose |
+|---|---|
+| **delegate** | Decide whether a narrow, well-scoped sub-task should go to a **local Ollama model** vs stay with the controller, and route it if so. Grounded in the local `ollama-telemetry` MCP delegation tools (`ollama_readiness` / `ollama_delegate` / `ollama_batch_delegate`), with a static-guidance fallback when the MCP server is unavailable. The controller always verifies the result. |
+| **delegation-eval** | Evaluate whether local model routing is worth keeping. Uses `ollama-telemetry` eval runs, judge packets, usage metrics, and `dispatch_recommendations` to compare helper models and propose reviewed `dispatch-rules.json` changes. |
+
+`token-audit` and `session-stats` also gained a **telemetry-first data tier**: when a local `ollama-telemetry` API is reachable (`http://127.0.0.1:8099`), they read real measured token/cost data instead of character-heuristic estimates, falling back silently when it is not.
+
+Telemetry integration is deliberately split by portability:
+
+- `delegate`, `delegation-eval`, `token-audit`, and `session-stats` are portable and depend on API/MCP contracts.
+- `telemetry-live-ops` is machine-local, points at a personal live deployment, and is not exported.
+- Deprecated/duplicative Claude-only skills (`refactor-planner`, `observer-test`, `worktree-manager`) remain in source for compatibility but are no longer in the curated install manifest.
+
+See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md) for the integration boundary.
+
+### Machine-local ops
+
+| Skill | Purpose |
+|---|---|
+| **telemetry-live-ops** | Machine-local skill that starts/verifies a live `ollama-telemetry` deployment over SSH. Retarget via `OLLAMA_TELEMETRY_*` env vars; not a portable skill. |
+
+`telemetry-live-ops` is kept in this source repo for this workstation only. It is intentionally excluded from the install manifests and ready-package export.
+
+### Gemini adapter extras
+
+`brief`, `edit`, `epic-refactor`, `forensic-debugger`, `guardrails`, `ui-test-engineer`, `doc-weaver` — plus the core campaign workflow and the shared ops/analytics suite above. Imported domain-specific skills are kept out of the installable adapter set so the adapter stays maintainable.
 
 ## Architecture
 
 Each package follows a **contract-first, read-all write-scoped** design:
 
-- Skills reference shared contracts (`planning-contract.md`, `system-map.md`) that define required plan elements and agent specs
+- Skills reference shared contracts (`planning-contract.md`) that define required plan elements and agent specs
 - Agents read the full repo for context but only write to explicitly scoped files
 - All material claims require source evidence (file path, line number, or command output)
+- Each skill keeps **identical executable behavior across Claude, Codex, and Gemini** — only frontmatter shape and the command prefix (`/` vs `$`) differ
 
 The export script reads `release-manifest.json` to determine which packages are ready and applies the correct export strategy — `portable-runtime` for Claude/Codex, `gemini-adapter` for Gemini.
 
@@ -72,4 +129,4 @@ docs/               Release notes and readiness tracking
 
 ## License
 
-[MIT](LICENSE) — Espen Severinsen
+[MIT](LICENSE) - Espen Severinsen

@@ -1,7 +1,9 @@
 ---
 name: review
 description: "Review a branch, pull request, worktree, staged diff, or fixed-point diff against repo standards, specs, and regression risk. Use when the user asks to review changes, audit work before merge, inspect a PR-style diff, or review since a commit/branch/tag."
+argument-hint: "[<fixed-point>] — branch | --working | --staged | --spec <path>"
 allowed-tools: Read, Glob, Grep, Bash, Write
+user-invocable: true
 ---
 
 # Review - Diff and Change Audit

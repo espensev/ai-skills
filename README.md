@@ -2,13 +2,13 @@
 
 **Portable, production-ready skill packages that give AI coding agents structured workflows for planning, testing, shipping, multi-agent orchestration, and cost-aware local-model delegation.**
 
-75 install-ready skills across three provider-specific packages — each package's install manifest lists exactly what ships. Drop them into any project and your agents gain campaign planning, parallel worktree coordination, QA pipelines, ops/analytics, and grounded model routing.
+78 install-ready skills across three provider-specific packages — each package's install manifest lists exactly what ships. Drop them into any project and your agents gain campaign planning, parallel worktree coordination, QA pipelines, review gates, ops/analytics, and grounded model routing.
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 18 | Core campaign orchestration plus the shared ops/analytics suite (build gates, health, docs sync, schema/truth validation, session & token analytics) and worktree guardrails for Claude Code |
-| **codex-skills** | 30 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, plus the full ops/analytics and verification suite |
-| **gemini-skills** | 27 | Gemini bootstrap adapter: campaign workflow, guardrails, the ops/analytics suite, and editor/refactor helpers |
+| **claude-skills** | 19 | Core campaign orchestration plus review, shared ops/analytics (build gates, health, docs sync, schema/truth validation, session & token analytics), and worktree guardrails for Claude Code |
+| **codex-skills** | 31 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, review, plus the full ops/analytics and verification suite |
+| **gemini-skills** | 28 | Gemini bootstrap adapter: campaign workflow, review, guardrails, the ops/analytics suite, and editor/refactor helpers |
 | **wt-cli** | — | TypeScript CLI for cross-platform worktree orchestration in parallel agent flows |
 
 > Counts reflect each package's `package/install-manifest.json`. The Gemini count is the curated adapter set (skills that ship a `.gemini/commands` wrapper); the Gemini tree also carries additional imported domain skills that are not part of the installable adapter.
@@ -39,6 +39,7 @@ The bootstrap script creates `.gemini/skills/` and `.gemini/commands/`, copies s
 | **manager** | Orchestrate parallel agents in worktrees — launch, merge, verify builds |
 | **discover** | Research a codebase before planning — map dependencies, assess feasibility, identify constraints |
 | **qa** | Run tests, check coverage, triage failures, smoke-test endpoints, generate regression tests |
+| **review** | Review branch, staged, or working-tree diffs against standards, specs, and regression risk, writing durable findings under `docs/reviews/` |
 | **ship** | Stage, commit, push validated work with campaign-aware commit grouping |
 | **observer** | Passive project intelligence — observe patterns over time without interfering |
 | **loop** | Run focused work loops with repeated inspect-edit-verify cycles |

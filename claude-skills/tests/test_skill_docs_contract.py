@@ -120,6 +120,7 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("ship", manifest["default_skills"])
         self.assertIn("delegate", manifest["optional_skills"])
         self.assertIn("delegation-eval", manifest["optional_skills"])
+        self.assertIn("review", manifest["optional_skills"])
         self.assertIn("session-stats", manifest["optional_skills"])
         self.assertIn("token-audit", manifest["optional_skills"])
         self.assertNotIn("observer-test", manifest["optional_skills"])

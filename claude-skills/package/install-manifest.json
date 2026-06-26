@@ -14,6 +14,7 @@
     "delegation-eval",
     "docs-sync",
     "observer",
+    "review",
     "schema-validator",
     "session-stats",
     "smart-test",

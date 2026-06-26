@@ -1,0 +1,1 @@
+prompt = "@{../../skills/review/SKILL.md} {{args}}"

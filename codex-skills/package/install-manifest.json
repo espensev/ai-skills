@@ -25,6 +25,7 @@
     "loop-master",
     "mcp-server-patterns",
     "observer",
+    "review",
     "schema-validator",
     "session-stats",
     "smart-test",

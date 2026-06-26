@@ -36,6 +36,7 @@ extracting a shared core.
 | `planner` | Produce `docs/planning-contract.md` from the discovery artifact |
 | `brief` | Extract exact context needed for a specific task-id |
 | `manager` | Coordinate the multi-agent loop by parsing the planning contract |
+| `review` | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | `ship` | Execute highly specific, tightly scoped coding tasks |
 | `qa` | Evaluate the completed work against the planning contract |
 | `loop` | Iteratively execute specific assigned sub-tasks |
@@ -112,7 +113,7 @@ The package should stay adapter-first until the shared runtime is extracted.
 ## Status
 
 - **v1.0 Ready**: The Gemini CLI multi-agent adapter is fully registered.
-- **27 Curated Adapter Skills**: All generic campaign skills, ops/analytics skills, delegation helpers, and Gemini super-skills in `package/install-manifest.json` are mapped and constrained.
+- **28 Curated Adapter Skills**: All generic campaign skills, ops/analytics skills, delegation helpers, and Gemini super-skills in `package/install-manifest.json` are mapped and constrained.
 - **Strict Guardrails**: Enforced via `GEMINI.md` and `allowed_tools` to prevent architectural drift.
 - **Shared-Core Friendly**: The package stays adapter-first so shared runtime extraction remains possible later.
 

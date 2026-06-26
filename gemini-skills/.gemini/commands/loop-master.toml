@@ -1,1 +1,1 @@
-prompt = "@{../../docs/instructions/loop-master.md} {{args}}"
+prompt = "@{../../skills/loop-master/SKILL.md} {{args}}"

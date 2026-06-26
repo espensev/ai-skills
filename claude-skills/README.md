@@ -42,6 +42,7 @@ vendor into their own `.claude/skills` runtime tree.
 | QA | `/qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
 | Ship | `/ship` | Stage, commit, and push with smart file classification |
 | Observer | `/observe` | Passive project intelligence — note patterns, drift, decisions over time |
+| Review | `/review` | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | Delegate | `/delegate` | Route one bounded, already-fetched transform to local Ollama when telemetry readiness allows it |
 | Delegation Eval | `/delegation-eval` | Compare local helper models using telemetry eval runs, judge packets, and dispatch recommendations |
 | Session Stats | `/session-stats` | Summarize session/tool activity, preferring measured telemetry data when available |
@@ -104,6 +105,7 @@ for d in \
   skills/delegation-eval \
   skills/docs-sync \
   skills/observer \
+  skills/review \
   skills/schema-validator \
   skills/session-stats \
   skills/smart-test \
@@ -147,6 +149,7 @@ for d in \
   skills/delegation-eval \
   skills/docs-sync \
   skills/observer \
+  skills/review \
   skills/schema-validator \
   skills/session-stats \
   skills/smart-test \

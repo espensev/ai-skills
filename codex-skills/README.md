@@ -63,6 +63,7 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Frontend Patterns | auto | Build React and Next.js UI work that respects existing design systems, accessibility, and compiler guidance |
 | MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
 | Observer | auto | Keep passive project intelligence in repo-owned artifacts such as observation logs, metrics, and synthesized health notes |
+| Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | Session Stats | auto | Summarize session/tool activity, preferring measured `ollama-telemetry` usage data when available |
 | Token Audit | auto | Analyze tokens, costs, budgets, and forecasts, preferring measured telemetry API data when available |
 | Verification Loop | auto | Run repo-appropriate build, lint, typecheck, test, and diff review before handoff |
@@ -128,6 +129,7 @@ for d in \
   skills/frontend-patterns \
   skills/mcp-server-patterns \
   skills/observer \
+  skills/review \
   skills/schema-validator \
   skills/session-stats \
   skills/smart-test \
@@ -183,6 +185,7 @@ for d in \
   skills/frontend-patterns \
   skills/mcp-server-patterns \
   skills/observer \
+  skills/review \
   skills/schema-validator \
   skills/session-stats \
   skills/smart-test \

@@ -1,19 +1,35 @@
 # AI Skills
 
-**Portable, production-ready skill packages that give AI coding agents structured workflows for planning, testing, shipping, multi-agent orchestration, and cost-aware local-model delegation.**
+**Manifest-driven skill packages for AI coding agents: ready-to-export bundles for Claude Code, Codex, and Gemini CLI.**
 
-78 install-ready skills across three provider-specific packages — each package's install manifest lists exactly what ships. Drop them into any project and your agents gain campaign planning, parallel worktree coordination, QA pipelines, review gates, ops/analytics, and grounded model routing.
+This repo curates reusable workflows for planning, testing, review, shipping,
+multi-agent worktree orchestration, docs/schema drift checks, telemetry-aware
+token and cost analysis, and local Ollama delegation. The shipping surface is
+deliberately explicit: `release-manifest.json` selects ready packages, and each
+package's `package/install-manifest.json` selects the skills, runtime files,
+contracts, and wrappers that are exported.
+
+81 install-ready skills ship across three provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 19 | Core campaign orchestration plus review, shared ops/analytics (build gates, health, docs sync, schema/truth validation, session & token analytics), and worktree guardrails for Claude Code |
-| **codex-skills** | 31 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, review, plus the full ops/analytics and verification suite |
-| **gemini-skills** | 28 | Gemini bootstrap adapter: campaign workflow, review, guardrails, the ops/analytics suite, and editor/refactor helpers |
+| **claude-skills** | 20 | Core campaign orchestration plus review/debug workflows, shared ops/analytics (build gates, health, docs sync, schema/truth validation, session & token analytics), and worktree guardrails for Claude Code |
+| **codex-skills** | 32 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, review/debug workflows, plus the full ops/analytics and verification suite |
+| **gemini-skills** | 29 | Gemini bootstrap adapter: campaign workflow, review/debug workflows, guardrails, the ops/analytics suite, and editor/refactor helpers |
 | **wt-cli** | — | TypeScript CLI for cross-platform worktree orchestration in parallel agent flows |
 
-> Counts reflect each package's `package/install-manifest.json`. The Gemini count is the curated adapter set (skills that ship a `.gemini/commands` wrapper); the Gemini tree also carries additional imported domain skills that are not part of the installable adapter.
+> Counts reflect each package's `package/install-manifest.json`. The Gemini
+> count is the curated adapter set (skills that ship a `.gemini/commands`
+> wrapper); imported or source-only skills that are not manifest-listed stay as
+> reference material and do not ship in ready-package exports.
 
 ## Quick Start
+
+**Validate ready packages** and run an export smoke test:
+
+```powershell
+.\scripts\Test-ReadyPackages.ps1
+```
 
 **Export all ready packages** into a target folder:
 
@@ -38,7 +54,8 @@ The bootstrap script creates `.gemini/skills/` and `.gemini/commands/`, copies s
 | **planner** | Design structured multi-agent campaign plans with work decomposition and dependency mapping |
 | **manager** | Orchestrate parallel agents in worktrees — launch, merge, verify builds |
 | **discover** | Research a codebase before planning — map dependencies, assess feasibility, identify constraints |
-| **qa** | Run tests, check coverage, triage failures, smoke-test endpoints, generate regression tests |
+| **qa** | Run tests, check coverage, triage failures, smoke-test a configured app (HTTP or desktop/GUI), generate regression tests |
+| **diagnosing-bugs** | Build a tight red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or performance regressions |
 | **review** | Review branch, staged, or working-tree diffs against standards, specs, and regression risk, writing durable findings under `docs/reviews/` |
 | **ship** | Stage, commit, push validated work with campaign-aware commit grouping |
 | **observer** | Passive project intelligence — observe patterns over time without interfering |

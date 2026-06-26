@@ -87,13 +87,15 @@ Run the test suite with clear reporting.
 
 ### Steps:
 
-1. **Resolve scope** to test file paths. If a bare module name is given (e.g.
-   `api`), map it to the matching test file. If a source module is given (e.g.
-   `collector`), find all test files that import it via Grep.
+1. **Resolve scope** to tests. If a bare module name is given (e.g. `api`), map it to the matching
+   test via the framework's *test→source link* (imports for pytest/jest; type name for dotnet/xUnit
+   — see *Framework idioms*).
 
-2. **Run the test command** from `[commands].test` in project.toml:
+2. **Run the test command** (`[commands].test`) using the framework's *scope / select* idiom — for
+   `pytest` that is appended file paths; for `dotnet` it is `--filter "<expr>"` (never appended
+   paths). See *Framework idioms*.
    ```bash
-   <test-command> [scoped files]
+   <test-command> [scoped files | --filter "<expr>"]
    ```
 
 3. **Report results.** Show:
@@ -176,12 +178,14 @@ Analyze which source modules have test coverage and where gaps exist.
 ### Steps:
 
 1. **Build the source-to-test map.** Use the `[modules]` config from project.toml
-   to get the list of source files. For each source module, use the Grep tool
-   to find test files that import it (pattern: `import <module>|from <module>`,
-   search the test directory, output mode: `files_with_matches`).
+   to get the list of source files. For each source module, find its test files via the framework's
+   *test→source link* (see *Framework idioms*): for `pytest`/`jest`, Grep for imports
+   (`import <module>|from <module>`, output mode `files_with_matches`); for `dotnet`/xUnit, Grep for
+   the type name (source `Foo` ↔ test class/file `FooTests`).
    If no `[modules]` config, scan the project root for source files using Glob.
 
-2. **Count tests per file** using the test framework's collection mode:
+2. **Count tests per file** using the framework's *collect-and-count* idiom (see *Framework
+   idioms*) — e.g. for pytest:
    ```bash
    <test-command> <file> --co 2>&1 | tail -1
    ```
@@ -217,7 +221,9 @@ Diagnose current test failures with structured root cause analysis.
 
 ### Steps:
 
-1. **Run the full suite** with verbose output:
+1. **Run the full suite** with verbose output, using the framework's *verbose run* idiom (see
+   *Framework idioms*) — e.g. `<test-command> -v` (pytest) or
+   `<test-command> --logger "console;verbosity=detailed"` (dotnet):
    ```bash
    <test-command-verbose>
    ```

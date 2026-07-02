@@ -40,6 +40,7 @@ This package repo stores the export surface in package-root paths such as:
 - `analysis-schema.md`
 - `project.toml.template`
 - `scripts/task_manager.py`
+- `scripts/memory_audit.py`
 - `scripts/analysis/`
 - `scripts/task_runtime/`
 - `skills/<skill>/SKILL.md`
@@ -56,6 +57,7 @@ After vendoring into a consumer repo, the runtime layout moves to target paths:
 - `.claude/skills/project.toml`
 - `.claude/skills/project.toml.template`
 - `scripts/task_manager.py`
+- `scripts/memory_audit.py`
 - `scripts/analysis/*.py`
 - `scripts/task_runtime/*.py`
 - `data/tasks.json`

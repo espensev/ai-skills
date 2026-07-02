@@ -14,6 +14,7 @@
     "delegation-eval",
     "diagnosing-bugs",
     "docs-sync",
+    "memory-management",
     "observer",
     "review",
     "schema-validator",
@@ -38,7 +39,8 @@
     "analysis-schema.md"
   ],
   "runtime_files": [
-    "scripts/task_manager.py"
+    "scripts/task_manager.py",
+    "scripts/memory_audit.py"
   ],
   "runtime_directories": [
     "scripts/analysis",

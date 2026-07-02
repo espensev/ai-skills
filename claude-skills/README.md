@@ -19,6 +19,7 @@ vendor into their own `.claude/skills` runtime tree.
 | `pyproject.toml` | Local validation and development tooling config |
 | `CLAUDE.md` | Package development conventions |
 | `scripts/task_manager.py` | Backend CLI copied into the target repo `scripts/` directory |
+| `scripts/memory_audit.py` | Memory audit CLI copied into the target repo `scripts/` directory |
 | `scripts/analysis/` | Analyzer provider runtime copied into the target repo `scripts/` directory |
 | `scripts/hooks/` | Optional Claude hook scripts and settings template copied into the target repo `scripts/` directory |
 | `scripts/task_runtime/` | Internal runtime support package copied into the target repo `scripts/` directory |
@@ -49,6 +50,7 @@ vendor into their own `.claude/skills` runtime tree.
 | Delegation Eval | `/delegation-eval` | Compare local helper models using telemetry eval runs, judge packets, and dispatch recommendations |
 | Session Stats | `/session-stats` | Summarize session/tool activity, preferring measured telemetry data when available |
 | Token Audit | `/token-audit` | Analyze token/cost/budget usage, preferring measured telemetry data when available |
+| Memory Management | `/memory-management` | Govern auto-memory: typed write schema, locality routing, index budget, and audits |
 
 ## Workflow
 
@@ -106,6 +108,7 @@ for d in \
   skills/delegate \
   skills/delegation-eval \
   skills/docs-sync \
+  skills/memory-management \
   skills/observer \
   skills/review \
   skills/schema-validator \
@@ -119,6 +122,7 @@ done
 
 cp planning-contract.md project.toml.template <project>/.claude/skills/
 cp scripts/task_manager.py <project>/scripts/
+cp scripts/memory_audit.py <project>/scripts/
 cp -r scripts/analysis <project>/scripts/
 cp -r scripts/task_runtime <project>/scripts/
 
@@ -150,6 +154,7 @@ for d in \
   skills/delegate \
   skills/delegation-eval \
   skills/docs-sync \
+  skills/memory-management \
   skills/observer \
   skills/review \
   skills/schema-validator \
@@ -249,6 +254,7 @@ After vendoring, the target repo should have this runtime layout:
 | `.claude/skills/planning-contract.md` | Shared planning contract |
 | `.claude/skills/project.toml` | Generated project-local config |
 | `scripts/task_manager.py` | Backend command surface |
+| `scripts/memory_audit.py` | Memory audit command surface |
 | `scripts/analysis/*.py` | Analyzer provider/runtime modules |
 | `scripts/task_runtime/*.py` | Internal runtime support modules used by `task_manager.py` |
 | `data/tasks.json` | Runtime task state |

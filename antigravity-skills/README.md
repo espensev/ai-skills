@@ -48,6 +48,7 @@ installed or exported.
 | `guardrails` | Scan the repo for rule violations without editing files |
 | `edit` | Apply scoped, surgical file edits |
 | `rules-distill` | Distill repeated project conventions into durable rules |
+| `memory-management` | Govern durable memory: typed write schema, locality routing, and index budget for AGENTS.md and rule files |
 
 ## Package Layout
 
@@ -74,7 +75,7 @@ manifest-listed entries only, and appends the global guardrails to `AGENTS.md`.
 
 ## Status
 
-- **Ready:** 29 curated skills and 29 workflows are manifest-listed.
+- **Ready:** 30 curated skills and 30 workflows are manifest-listed.
 - **Legacy path:** `gemini-skills` remains in this repo for Gemini CLI
   compatibility and historical review, but it is no longer the active
   consumer-facing Google package.

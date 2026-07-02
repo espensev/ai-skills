@@ -18,6 +18,15 @@ Main CLI entry point. All 20+ subcommands dispatch from here. Owns:
 - **Verify runtime** — `_verify_runtime()` runs configured compile/test/build commands
 - **Go orchestration** — `_go_runtime()` auto-advances through launch/merge/verify phases
 
+### `scripts/memory_audit.py` (~230 lines)
+
+Standalone memory-audit CLI for the memory-management skill. Owns:
+
+- **Dir resolution** — `resolve_memory_dir()`: `--dir` > `CLAUDE_MEMORY_DIR` > cwd-derived `~/.claude/projects/<slug>/memory`
+- **Per-file checks** — `audit_file()`: frontmatter, 4-type schema, Why-for-feedback, kebab naming
+- **Index checks** — `audit_index()`: broken/unindexed links (exact match), group overload, character-accurate budget
+- **Reporting** — per-file compliance formula, exit 0 report-only / exit 2 unusable input
+
 ### `scripts/task_runtime/`
 
 Internal runtime support package. No pip dependencies — stdlib only.

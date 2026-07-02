@@ -153,6 +153,15 @@
     "notes": ""
   },
   {
+    "id": "memory-management-basic-001",
+    "selected_skill": "memory-management",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "observer-basic-001",
     "selected_skill": "observer",
     "output": "",

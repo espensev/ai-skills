@@ -9,13 +9,13 @@ deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-81 install-ready skills ship across three provider-specific packages:
+84 install-ready skills ship across three provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 20 | Core campaign orchestration plus review/debug workflows, shared ops/analytics (build gates, health, docs sync, schema/truth validation, session & token analytics), and worktree guardrails for Claude Code |
-| **codex-skills** | 32 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, review/debug workflows, plus the full ops/analytics and verification suite |
-| **antigravity-skills** | 29 | Antigravity adapter: Agent Skills, workflows, guardrails, the ops/analytics suite, and editor/refactor helpers |
+| **claude-skills** | 21 | Core campaign orchestration plus review/debug workflows, shared ops/analytics (build gates, health, docs sync, schema/truth validation, memory hygiene, session & token analytics), and worktree guardrails for Claude Code |
+| **codex-skills** | 33 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, review/debug workflows, plus the full ops/analytics and verification suite |
+| **antigravity-skills** | 30 | Antigravity adapter: Agent Skills, workflows, guardrails, the ops/analytics suite, and editor/refactor helpers |
 | **wt-cli** | — | TypeScript CLI for cross-platform worktree orchestration in parallel agent flows |
 
 > Counts reflect each package's `package/install-manifest.json`. The legacy

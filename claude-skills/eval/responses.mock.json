@@ -217,5 +217,16 @@
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "memory-management-basic-001",
+    "selected_skill": "memory-management",
+    "output": "Mock eval response for memory-management. Wrote a memory file with a type and description in frontmatter, then re-ran the audit to confirm the MEMORY.md index stays within budget.",
+    "created_files": [],
+    "verification_commands": [
+      "python scripts/memory_audit.py"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
   }
 ]

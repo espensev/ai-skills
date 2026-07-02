@@ -252,5 +252,5 @@ $Rows | Sort-Object Provider, Target, Status, Kind, Path | Format-Table -AutoSiz
 
 $Blocking = @($Rows | Where-Object { $_.Status -in @("Missing", "Stale", "SourceMissing") })
 if ($FailOnMissingOrStale -and $Blocking.Count -gt 0) {
-    exit 1
+    throw "Local agent skill roots have $($Blocking.Count) missing or stale manifest-listed entries"
 }

@@ -65,6 +65,7 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Exa Search | auto | Use Exa as an optional accelerator for semantic web, code, company, or people search when Exa MCP is available |
 | Frontend Patterns | auto | Build React and Next.js UI work that respects existing design systems, accessibility, and compiler guidance |
 | MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
+| Memory Management | auto | Govern durable memory with a typed write schema, locality routing, and index budget discipline across AGENTS.md and repo-owned notes |
 | Observer | auto | Keep passive project intelligence in repo-owned artifacts such as observation logs, metrics, and synthesized health notes |
 | Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | Session Stats | auto | Summarize session/tool activity, preferring measured `ollama-telemetry` usage data when available |
@@ -131,6 +132,7 @@ for d in \
   skills/exa-search \
   skills/frontend-patterns \
   skills/mcp-server-patterns \
+  skills/memory-management \
   skills/observer \
   skills/review \
   skills/schema-validator \
@@ -187,6 +189,7 @@ for d in \
   skills/exa-search \
   skills/frontend-patterns \
   skills/mcp-server-patterns \
+  skills/memory-management \
   skills/observer \
   skills/review \
   skills/schema-validator \

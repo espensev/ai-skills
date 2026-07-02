@@ -1,6 +1,6 @@
 ---
 name: manager
-description: Orchestrate multiple parallel Claude Code agents for any project. Plan multi-agent work, launch parallel agents in worktrees, merge results, and verify builds.
+description: "Orchestrate multiple parallel Claude Code agents for any project. Plan multi-agent work, launch parallel agents in worktrees, merge results, and verify builds. Use when the user wants a multi-agent campaign, parallel worktree execution, managed merges, or campaign status."
 argument-hint: "<command> [args] — go | plan | run | merge | verify | status | analyze | review"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Edit, Write
 user-invocable: true

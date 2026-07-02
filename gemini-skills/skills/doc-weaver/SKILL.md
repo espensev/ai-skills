@@ -1,6 +1,6 @@
 ---
 name: doc-weaver
-description: Synchronize architecture docs and code-facing docs with source changes
+description: "Synchronize architecture docs and code-facing docs with source changes. Use when implementation changes require architecture, README, API, or code-facing documentation updates."
 ---
 
 # Doc Weaver Agent

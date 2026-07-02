@@ -1,6 +1,6 @@
 ---
 name: observer
-description: "Passive project intelligence — observe, note, query, scan, and synthesize patterns over time without interfering"
+description: "Maintain passive project intelligence by observing, noting, querying, scanning, and synthesizing patterns over time without interfering. Use when the user wants durable project memory, passive observation, drift notes, or repo health synthesis."
 argument-hint: "/observe [note|review|list|resolve|stale|scan|synthesize|status|briefing|check|cycle] — project observation system"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Edit, Write
 user-invocable: true
@@ -20,6 +20,11 @@ a richer backend (e.g., SQLite campaign DB) can configure `[observer].backend`
 in `project.toml` to use backend-specific commands instead.
 
 ## Invocation
+
+The installed skill name is `observer`. The `/observe ...` examples below are
+the Claude command-style invocation used by this package; if a consumer
+environment exposes only skill names, invoke `observer` with the same subcommand
+and arguments.
 
 ### Human Commands
 
@@ -269,7 +274,8 @@ Category must be one of:
 | `question` | Unresolved design questions |
 | `debt` | Technical debt accumulating |
 
-**Execution-scoped categories** (used by `/observe-test`, promoted after merge):
+**Execution-scoped categories** (used by worktree-local observation sessions,
+promoted after merge):
 
 | Category | What It Captures |
 |----------|-----------------|
@@ -685,7 +691,7 @@ the scan probes. The portable skill tracks git-derived metrics only.
 | `/manager merge` | Promotes worktree observations to project store | `/observe note --format json` (batch) |
 | `/manager verify` | Readiness gate for merge | `/observe check --format json` |
 | `/qa` | Coverage gap prioritization | `/observe list --category pattern --format json` |
-| `/observe-test` | Worktree observations promoted after merge | `/observe note --format json` (batch) |
+| Worktree-local observation sessions | Worktree observations promoted after merge | `/observe note --format json` (batch) |
 | Any agent | Start-of-session context | `/observe briefing --format json` |
 
 ---
@@ -739,7 +745,7 @@ Two hooks are **read-only** (`observe_session_briefing.py`, `observe_agent_stop.
 
 All hooks check for the existence of observation storage before acting:
 
-1. **Worktree-local:** `observations.jsonl` in cwd (for `/observe-test` sessions)
+1. **Worktree-local:** `observations.jsonl` in cwd (for per-worktree sessions)
 2. **Project-level:** `data/observations.jsonl` (for `/observe` sessions)
 3. **Neither exists:** hook exits silently (exit 0, no output)
 

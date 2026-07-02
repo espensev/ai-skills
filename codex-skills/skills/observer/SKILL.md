@@ -1,6 +1,6 @@
 ---
 name: observer
-description: "Maintain passive project intelligence in repo-owned artifacts so Codex can record risks, drift, recurring patterns, and recent decisions without changing product code."
+description: "Maintain passive project intelligence in repo-owned artifacts so Codex can record risks, drift, recurring patterns, and recent decisions without changing product code. Use when the user wants durable project memory, passive observation, drift notes, or repo health synthesis."
 ---
 
 # Observer

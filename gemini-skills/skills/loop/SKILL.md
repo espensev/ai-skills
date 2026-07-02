@@ -1,6 +1,6 @@
 ---
 name: loop
-description: Iteratively execute specific assigned sub-tasks
+description: "Iteratively execute specific assigned sub-tasks. Use when the user wants steady progress on one bounded objective through repeated inspect, edit, verify, and reassess cycles."
 ---
 
 # Loop Agent

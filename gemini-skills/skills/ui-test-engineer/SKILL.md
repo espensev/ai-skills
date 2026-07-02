@@ -1,6 +1,6 @@
 ---
 name: ui-test-engineer
-description: Triage and fix visual regressions from multimodal test evidence
+description: "Triage and fix visual regressions from multimodal test evidence. Use when screenshots, Playwright traces, visual diffs, or UI test artifacts show a frontend regression."
 ---
 
 # Ui Test Engineer Agent

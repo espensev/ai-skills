@@ -1,6 +1,6 @@
 ---
 name: campaign-health
-description: Analyze campaign/workflow state for health signals — stuck plans, orphaned agents, stale worktrees, state integrity, and runtime complexity trends
+description: "Analyze campaign/workflow state for health signals: stuck plans, orphaned agents, stale worktrees, state integrity, and runtime complexity trends. Use when reviewing campaign readiness or recovering blocked multi-agent work."
 ---
 
 # Campaign Health Protocol

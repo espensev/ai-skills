@@ -116,6 +116,46 @@ foreach ($Package in $Manifest.packages) {
             }
         }
 
+        "antigravity-adapter" {
+            $AntigravityManifestFile = Join-Path $SourceRoot "package\install-manifest.json"
+
+            New-Item -ItemType Directory -Path $PackageDest -Force | Out-Null
+            New-Item -ItemType Directory -Path (Join-Path $PackageDest "skills") -Force | Out-Null
+            New-Item -ItemType Directory -Path (Join-Path $PackageDest ".agents") -Force | Out-Null
+            New-Item -ItemType Directory -Path (Join-Path $PackageDest ".agent\workflows") -Force | Out-Null
+            New-Item -ItemType Directory -Path (Join-Path $PackageDest "scripts") -Force | Out-Null
+            New-Item -ItemType Directory -Path (Join-Path $PackageDest "docs") -Force | Out-Null
+            New-Item -ItemType Directory -Path (Join-Path $PackageDest "package") -Force | Out-Null
+
+            if (-Not (Test-Path $AntigravityManifestFile)) {
+                throw "Missing install manifest: $AntigravityManifestFile"
+            }
+
+            $AntigravityInstallManifest = Get-Content -Raw $AntigravityManifestFile | ConvertFrom-Json
+
+            foreach ($File in @($AntigravityInstallManifest.root_files) + @($AntigravityInstallManifest.docs_files) + @($AntigravityInstallManifest.script_files)) {
+                $SourceFile = Join-Path $SourceRoot ($File -replace "/", [System.IO.Path]::DirectorySeparatorChar)
+                $DestFile = Join-Path $PackageDest ($File -replace "/", [System.IO.Path]::DirectorySeparatorChar)
+
+                if (-Not (Test-Path $SourceFile)) {
+                    throw "Missing Antigravity package file: $SourceFile"
+                }
+
+                New-Item -ItemType Directory -Path (Split-Path -Parent $DestFile) -Force | Out-Null
+                Copy-Item -Path $SourceFile -Destination $DestFile -Force
+            }
+
+            foreach ($Skill in $AntigravityInstallManifest.skills) {
+                Copy-Item -Path (Join-Path $SourceRoot ("skills\" + $Skill)) -Destination (Join-Path $PackageDest "skills") -Recurse -Force
+            }
+
+            foreach ($Workflow in $AntigravityInstallManifest.workflows) {
+                Copy-Item -Path (Join-Path $SourceRoot (".agent\workflows\" + $Workflow)) -Destination (Join-Path $PackageDest ".agent\workflows\$Workflow") -Force
+            }
+
+            Copy-Item -Path $AntigravityManifestFile -Destination (Join-Path $PackageDest "package\install-manifest.json") -Force
+        }
+
         default {
             throw "Unsupported package strategy: $($Package.strategy)"
         }

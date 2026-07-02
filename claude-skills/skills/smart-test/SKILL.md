@@ -1,6 +1,6 @@
 ---
 name: smart-test
-description: "Map changed files to the minimal test subset instead of running the full suite. Reads source-to-test mappings from project.toml modules."
+description: "Map changed files to the minimal useful test subset instead of running the full suite. Use for fast feedback before full QA, commit, merge, or build validation."
 argument-hint: "<files|--diff|--map> — run targeted tests or show the source-to-test map"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true

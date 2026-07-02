@@ -1,6 +1,6 @@
 ---
 name: edit
-description: Apply scoped, surgical file edits under contract or user instruction
+description: "Apply scoped, surgical file edits under contract or user instruction. Use when a task has clear target files, explicit acceptance criteria, and no need for broader campaign orchestration."
 ---
 
 # Edit Agent

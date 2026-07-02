@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Evaluate the completed work against the planning contract
+description: "Evaluate completed work against the planning contract, tests, coverage, and smoke checks. Use when validating a change, triaging failures, or generating regression coverage."
 ---
 
 # QA Agent (Gemini Adapter)

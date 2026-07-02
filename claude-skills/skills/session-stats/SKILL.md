@@ -1,6 +1,6 @@
 ---
 name: session-stats
-description: "Analyze session tool usage, agent activity, and cost metrics from conversation transcripts and hooks logs."
+description: "Analyze session tool usage, agent activity, timing, and cost metrics from conversation transcripts, hooks logs, and telemetry where available. Use for cross-session comparisons or end-of-session summaries."
 argument-hint: "<summary|tools|agents|timeline|compare|export> — session usage analytics"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true

@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Stage, commit, and optionally push validated work. Handles multi-file campaigns, commit grouping, message drafting, and exclusion of temp/sensitive files.
+description: "Stage, commit, and optionally push validated work. Handles multi-file campaigns, commit grouping, message drafting, and exclusion of temp/sensitive files. Use when the user asks to commit, package, land, push, or prepare validated changes for delivery."
 ---
 
 # Ship — Commit & Deliver

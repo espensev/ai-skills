@@ -1,0 +1,522 @@
+{
+  "id": "workflow-sq-real-logging-restore-20260701",
+  "name": "sq-control-real-logging-restore-20260701",
+  "description": "Restore SQ real logging, validate log format, and directly compare SQ evidence to SVG-MB-style reference logs before fan-write/HIL handoff.",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "start-1",
+      "type": "start",
+      "name": "start-1",
+      "position": {
+        "x": 80,
+        "y": 260
+      },
+      "data": {
+        "label": "Start"
+      }
+    },
+    {
+      "id": "prompt-intake",
+      "type": "prompt",
+      "name": "prompt-intake",
+      "position": {
+        "x": 360,
+        "y": 240
+      },
+      "data": {
+        "label": "Resolve SQ logging profile",
+        "prompt": "Resolve the SQ-Control profile for this workflow. Repo root: {{sq_repo}}. Packet root: {{packet_root}}. SVG-MB runtime reference root: {{svg_mb_runtime}}. Read AGENTS.md, README.md, docs/BUILD_WORKFLOW.md, docs/RUNTIME_LOGGING_AND_INGEST.md, docs/ROADMAP.md, and this packet's plan.md. This is an execution packet, not a planning note: each gate must either attach real SQ logs/evidence and land tracked SQ-Control code/test/docs changes, or write a blocked note with exact missing proof. Agents collect evidence and recommend pass/block; the operator chooses every gate decision and final handoff. No gate may proceed from a verbal answer alone. Required end state is operator-authorized marker SQ-A-REAL-LOGGING-SHOT-PASSED, which is the only handoff that may unblock fan-write Workflow B. Emit the resolved paths, current operator boundary, reference-repo comparison targets, and safety boundary downstream. The workflow must validate generated workflow JSON format before execution and must validate produced SQ log formats with a direct SQ-vs-SVG-MB log-format comparison before any pass recommendation.",
+        "variables": {
+          "sq_repo": "D:/Development/Thermals/SQ-control",
+          "packet_root": "D:/Development/Ai-Skills/cc-workflow/workflows/sq-control-final-fan-control-2026-07-01",
+          "svg_mb_runtime": "D:/Development/Thermals/SVG-MB/SVG-MB-Control/release/runtime"
+        }
+      }
+    },
+    {
+      "id": "agent-preflight",
+      "type": "subAgent",
+      "name": "agent-preflight",
+      "position": {
+        "x": 680,
+        "y": 240
+      },
+      "data": {
+        "description": "Gate A0 baseline and safety preflight",
+        "agentDefinition": "Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns, search code for keywords, or answer questions about the codebase.",
+        "prompt": "Gate A0. In D:/Development/Thermals/SQ-control, run read-only preflight. Capture git status --short --branch, classify dirty/untracked files, identify the exact build/test entrypoints, and verify the 2026-07-01 safety boundary: production sq_engine is real-only, writes_enabled defaults false, sim backends are test/eval-only, and agents must not arm writes or touch legacy controllers. Stop only if the task would require live writes, service changes, scheduled-task changes, or legacy-controller actions; otherwise carry a concrete file-ownership and gate-evidence plan into A1.",
+        "builtInType": "explore",
+        "agentType": "claudeCode",
+        "outputPorts": 1
+      }
+    },
+    {
+      "id": "agent-inventory",
+      "type": "subAgent",
+      "name": "agent-inventory",
+      "position": {
+        "x": 1000,
+        "y": 240
+      },
+      "data": {
+        "description": "Gate A1 logging lane inventory",
+        "agentDefinition": "Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns, search code for keywords, or answer questions about the codebase.",
+        "prompt": "Gate A1. Inventory every SQ logging/evidence lane and capture the current available SQ log samples before any proceed decision: GPU CSV, chassis CSV, events JSONL, status JSON, SHM, health, current_state, command ack, pending_writes, manifests, ready markers, and optional ingest seed. For each lane mark implemented / possible-now-missing / roadmap / not-truthful-yet. Compare against local reference artifacts when available, especially D:/Development/Thermals/SVG-MB/SVG-MB-Control/release/runtime for chassis fan evidence and NVG-SmoothControl for GPU/control evidence; if a reference is unavailable, record that as a blocker or operator decision point. Explicitly inspect fan RPM/tach/duty/readback/control-expression percent fields in telemetry schema and row renderers, including fanN_rpm, fanN_tach_raw, fanN_tach_hi_raw, fanN_tach_lo_raw, fanN_tach_valid, fanN_duty_raw, fanN_duty_pct, fanN_fan_pct if present, fanN_mode_raw, channelN_setpoint_pct, channelN_controller_pwm_pct if present, GPU fan rpm/readback/target/output fields, command-channel ack fields, and pending-write journal fields. Mandatory output is a simple table: SQ field/artifact, reference field/artifact, match/delta, real source availability, test coverage, and exact gaps A2 must patch. Near-100% reference match is the pass bar; otherwise fail/block with deltas. Do not rely on memory or descriptions for the reference comparison: record the exact SQ sample paths and exact SVG-MB runtime paths that A2.5 must compare file-to-file, including control_runtime.json, current_state.json, pending_writes.json, control_health.json, logs/svg_mb_control_manifest.json, logs/svg_mb_control_events.jsonl, and the manifest-selected logs/archive/*.csv.",
+        "builtInType": "explore",
+        "agentType": "claudeCode",
+        "outputPorts": 1
+      }
+    },
+    {
+      "id": "ask-a1-scope",
+      "type": "askUserQuestion",
+      "name": "ask-a1-scope",
+      "position": {
+        "x": 1320,
+        "y": 240
+      },
+      "data": {
+        "questionText": "A1 inventory complete with current SQ logs and reference-repo deltas attached. Operator chooses how to proceed before any restore edits land.",
+        "options": [
+          {
+            "label": "Proceed A2",
+            "description": "Current logs and reference deltas are enough; patch the possible-now logging and fan-write evidence gaps.",
+            "id": "proceed"
+          },
+          {
+            "label": "Manual review",
+            "description": "Pause for operator review or scope edits before code changes.",
+            "id": "manual"
+          },
+          {
+            "label": "Blocked",
+            "description": "Stop because inventory found an unsafe boundary or unresolved source-of-truth gap.",
+            "id": "blocked"
+          }
+        ],
+        "multiSelect": false,
+        "useAiSuggestions": true,
+        "outputPorts": 3
+      }
+    },
+    {
+      "id": "agent-restore",
+      "type": "subAgent",
+      "name": "agent-restore",
+      "position": {
+        "x": 1640,
+        "y": 240
+      },
+      "data": {
+        "description": "Gate A2 restore possible logging lanes",
+        "agentDefinition": "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. Use this for code modifications, file creation/editing, and shell execution.",
+        "prompt": "Gate A2. Patch only the SQ logging/schema/status/evidence surfaces needed to restore possible-now-missing lanes. This gate may not close with inventory-only documentation when a truthful code/test patch is possible. Use schema-backed columns and structured sidecars; do not ad hoc append strings. Preserve the no-fake-data boundary: unavailable real values are blank/null with availability/validity context, never sim, never zero-fill. Prioritize near-100% reference match for chassis fan RPM/tach/duty/mode/readback and GPU fan RPM/readback/control fields, plus command ack and pending-write evidence needed to prove future fan writes. Match control-expression percent semantics down to setpoint/controller PWM/fan duty/readback percent naming and meaning. Keep README/docs synchronized if behavior or commands change. Do not set writes_enabled true. A2 output must include actual parseable SQ sample paths or fixtures that the A2.5 direct comparison gate can consume.",
+        "builtInType": "general-purpose",
+        "agentType": "claudeCode",
+        "outputPorts": 1
+      }
+    },
+    {
+      "id": "agent-format-compare",
+      "type": "subAgent",
+      "name": "agent-format-compare",
+      "position": {
+        "x": 1960,
+        "y": 240
+      },
+      "data": {
+        "description": "Gate A2.5 format validation and direct SVG-MB compare",
+        "agentDefinition": "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. Use this for code modifications, file creation/editing, and shell execution.",
+        "prompt": "Gate A2.5. Validate the restored SQ log format directly, using actual files. Parse the updated or fresh SQ GPU CSV, chassis CSV, events JSONL, status JSON, current_state, health, pending_writes, manifests, ready markers, and any generated fixtures. Then compare them directly against the SVG-MB runtime reference under D:/Development/Thermals/SVG-MB/SVG-MB-Control/release/runtime. Required reference files are control_runtime.json, current_state.json, pending_writes.json, control_health.json, logs/svg_mb_control_manifest.json, logs/svg_mb_control_events.jsonl, and the manifest-selected logs/archive/*.csv rather than the zero-byte latest CSV mirror. The comparison must be file-to-file, not prose-only: include paths, schema comment lines, header lists, type/nullability checks, required-field presence, row-count/time-window/session correlation, and a matrix of SQ field, SVG-MB field, match/delta, semantic meaning, and allowed difference. The SVG-MB CSV shape to match includes fanN_rpm, fanN_tach_raw, fanN_tach_valid, fanN_duty_raw, fanN_duty_pct, fanN_mode_raw, fanN_manual_override, fanN_write_allowed, fanN_policy_blocked, fanN_effective_write_allowed, channelN_setpoint_pct, channelN_feedforward_pct, channelN_correction_pct, channelN_controller_kind, channelN_response_source, channelN_write_reason, loop timing, active_profile, GPU telemetry, event schema, manifest schema, and pending_writes entries. Pass only if SQ is format-compatible or near-identical where the same hardware truth exists, with explicit documented deltas for SQ-only, GPU-only, and unavailable fields. Block if no fresh SQ sample exists, if the SVG-MB runtime files are unavailable and the operator has not accepted an alternate reference, if any unavailable value is zero-filled or fabricated, or if command ack, pending-write, or write-disabled evidence cannot be parsed. Write a tracked SQ-Control comparison artifact and pass/block recommendation before A3. Do not set writes_enabled true.",
+        "builtInType": "general-purpose",
+        "agentType": "claudeCode",
+        "outputPorts": 1
+      }
+    },
+    {
+      "id": "ask-a2-restore-review",
+      "type": "askUserQuestion",
+      "name": "ask-a2-restore-review",
+      "position": {
+        "x": 2280,
+        "y": 240
+      },
+      "data": {
+        "questionText": "A2 restore and A2.5 direct format comparison complete with updated SQ logs or fixtures, SVG-MB reference paths, and deltas attached. Operator chooses whether the restored format is ready for automated verification.",
+        "options": [
+          {
+            "label": "Proceed A3",
+            "description": "Restored logs and direct SQ-vs-SVG-MB format comparison are accepted; run automated verification.",
+            "id": "proceed"
+          },
+          {
+            "label": "Manual fix",
+            "description": "Pause for operator/manual review before tests.",
+            "id": "manual"
+          },
+          {
+            "label": "Blocked",
+            "description": "Stop because the restore, direct format comparison, or evidence is incomplete, unsafe, or not truthful.",
+            "id": "blocked"
+          }
+        ],
+        "multiSelect": false,
+        "useAiSuggestions": true,
+        "outputPorts": 3
+      }
+    },
+    {
+      "id": "agent-verify",
+      "type": "subAgent",
+      "name": "agent-verify",
+      "position": {
+        "x": 2600,
+        "y": 240
+      },
+      "data": {
+        "description": "Gate A3 automated verification",
+        "agentDefinition": "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. Use this for code modifications, file creation/editing, and shell execution.",
+        "prompt": "Gate A3. Hard automated verification evidence gate. Consume the tracked A2.5 comparison artifact; A3 cannot pass if direct SQ-vs-SVG-MB format comparison is missing or only prose-based. Add or extend tests that assert required CSV headers, sidecar/session correlation, no fabricated unavailable values, command ack visibility, pending-write visibility, writes-disabled runs producing no real write events, and near-100% reference-repo shape/semantic match down to control-expression percent fields. Run .\\build.ps1 -Test for C++/CMake/test changes and git diff --check. If the SQ test lane hits the known Windows temp PermissionError, create D:\\tmp\\sq-control-pytest-tmp, set TEMP and TMP to that directory for the rerun, then rerun .\\build.ps1 -Test. If release-facing scripts or registration changed, run .\\build-release.ps1. Write a tracked A3 evidence note with exact commands, pass/fail counts, log sample paths, reference comparison deltas, remaining blockers, and a pass/block recommendation. Do not advance the gate automatically; the operator decides in the next manual gate.",
+        "builtInType": "general-purpose",
+        "agentType": "claudeCode",
+        "outputPorts": 1
+      }
+    },
+    {
+      "id": "ask-a3-pass",
+      "type": "askUserQuestion",
+      "name": "ask-a3-pass",
+      "position": {
+        "x": 2920,
+        "y": 240
+      },
+      "data": {
+        "questionText": "A3 automated verification evidence is complete. Operator decision: did .\\build.ps1 -Test or the scoped equivalent pass, did git diff --check pass, were logs captured, and did the direct SQ-vs-SVG-MB format comparison pass down to field names, row shape, types/nullability, session correlation, and control-expression percent fields?",
+        "options": [
+          {
+            "label": "A3 passed",
+            "description": "Proceed to the operator readiness gate for the real-only log-shot.",
+            "id": "passed"
+          },
+          {
+            "label": "Manual rerun",
+            "description": "Pause for operator rerun, environment fix, or command review.",
+            "id": "manual"
+          },
+          {
+            "label": "A3 blocked",
+            "description": "Stop and record the failing command, missing test, or unresolved evidence gap.",
+            "id": "blocked"
+          }
+        ],
+        "multiSelect": false,
+        "useAiSuggestions": true,
+        "outputPorts": 3
+      }
+    },
+    {
+      "id": "ask-logshot-ready",
+      "type": "askUserQuestion",
+      "name": "ask-logshot-ready",
+      "position": {
+        "x": 3240,
+        "y": 240
+      },
+      "data": {
+        "questionText": "A0-A3 passed by operator decision with logs attached. Operator chooses whether to run the fresh real-only, writes-disabled log-shot gate A5 now. Agents must not flip writes_enabled, start/stop legacy controllers, or run live actuation.",
+        "options": [
+          {
+            "label": "Ready for log-shot",
+            "description": "Proceed to write/read the operator runbook and collect the real-only evidence bundle.",
+            "id": "ready"
+          },
+          {
+            "label": "Manual prep",
+            "description": "Pause for operator edits, environment setup, or artifact-path confirmation before the runbook.",
+            "id": "manual"
+          },
+          {
+            "label": "Blocked",
+            "description": "Stop and record the missing prerequisite or safety blocker.",
+            "id": "blocked"
+          }
+        ],
+        "multiSelect": false,
+        "useAiSuggestions": false,
+        "outputPorts": 3
+      }
+    },
+    {
+      "id": "prompt-logshot-runbook",
+      "type": "prompt",
+      "name": "prompt-logshot-runbook",
+      "position": {
+        "x": 3560,
+        "y": 160
+      },
+      "data": {
+        "label": "Gate A4/A5 operator log-shot",
+        "prompt": "Prepare the operator log-shot runbook and evidence checklist with copy-paste commands, expected artifact paths, and fail conditions. Required before any pass gate: fresh logs, not promises. Required artifacts: production sq_engine, writes_enabled=false for GPU and chassis, real-only status/probe/current_state proof, GPU CSV, chassis CSV, chassis manifest, events JSONL, status/health/current_state/pending_writes before/during/after, command ack evidence, binary/config hashes, row counts, time windows, and session-id cross-check. The run must prove correct logs and fan-write readiness while still writes-disabled: intent/readback/journal surfaces present, no pending writes, and no write events. The operator performs any live run. Agents do not arm writes. Repeat the direct SQ-vs-SVG-MB format comparison against the fresh log-shot bundle, not only against fixtures or older samples."
+      }
+    },
+    {
+      "id": "agent-logshot-report",
+      "type": "subAgent",
+      "name": "agent-logshot-report",
+      "position": {
+        "x": 3880,
+        "y": 160
+      },
+      "data": {
+        "description": "Gate A5 summarize and mark pass/fail",
+        "agentDefinition": "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. Use this for code modifications, file creation/editing, and shell execution.",
+        "prompt": "Gate A5. After the operator provides the fresh log-shot bundle, inspect it read-only. Pass can be recommended only if it proves real-only logging, session correlation, row counts/time windows, fan RPM/tach/duty/readback evidence where hardware reports it, GPU fan readback/control evidence where hardware reports it, command ack visibility, pending-write visibility, no sim backend/source, no unexpected pending writes, and no real write events. Compare the captured SQ logs against the local reference repos down to field names, row shape, semantics, and control-expression percent fields. Near-100% match is required; any mismatch becomes a failed/blocked item with exact deltas. Write a tracked SQ-Control A5 evidence note with a pass/block recommendation table. Do not write or claim SQ-A-REAL-LOGGING-SHOT-PASSED automatically; that marker is operator-authorized only after the next manual gate. Repeat the direct SQ-vs-SVG-MB format comparison on the fresh bundle and record exact accepted deltas; do not accept old fixture-only comparison as A5 proof.",
+        "builtInType": "general-purpose",
+        "agentType": "claudeCode",
+        "outputPorts": 1
+      }
+    },
+    {
+      "id": "ask-a5-marker",
+      "type": "askUserQuestion",
+      "name": "ask-a5-marker",
+      "position": {
+        "x": 4200,
+        "y": 160
+      },
+      "data": {
+        "questionText": "Operator decision: accept A5 as passed, including the fresh real-only log-shot and repeated direct SQ-vs-SVG-MB format comparison, authorize SQ-A-REAL-LOGGING-SHOT-PASSED, and allow Workflow B/fan-write implementation to start?",
+        "options": [
+          {
+            "label": "A5 passed",
+            "description": "You accept the evidence and authorize the pass marker/handoff.",
+            "id": "passed"
+          },
+          {
+            "label": "Manual review",
+            "description": "Pause for your manual review of the evidence bundle or status note.",
+            "id": "manual"
+          },
+          {
+            "label": "A5 blocked",
+            "description": "Stop before fan-write implementation and keep the blocked evidence gaps visible.",
+            "id": "blocked"
+          }
+        ],
+        "multiSelect": false,
+        "useAiSuggestions": false,
+        "outputPorts": 3
+      }
+    },
+    {
+      "id": "end-passed",
+      "type": "end",
+      "name": "end-passed",
+      "position": {
+        "x": 4520,
+        "y": 160
+      },
+      "data": {
+        "label": "Operator-authorized SQ-A-REAL-LOGGING-SHOT-PASSED"
+      }
+    },
+    {
+      "id": "end-manual",
+      "type": "end",
+      "name": "end-manual",
+      "position": {
+        "x": 3880,
+        "y": 500
+      },
+      "data": {
+        "label": "Manual operator pause"
+      }
+    },
+    {
+      "id": "end-blocked",
+      "type": "end",
+      "name": "end-blocked",
+      "position": {
+        "x": 3560,
+        "y": 500
+      },
+      "data": {
+        "label": "Blocked before real log-shot"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "c1",
+      "from": "start-1",
+      "to": "prompt-intake",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c2",
+      "from": "prompt-intake",
+      "to": "agent-preflight",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c3",
+      "from": "agent-preflight",
+      "to": "agent-inventory",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c4",
+      "from": "agent-inventory",
+      "to": "ask-a1-scope",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c5",
+      "from": "ask-a1-scope",
+      "to": "agent-restore",
+      "fromPort": "branch-0",
+      "toPort": "input"
+    },
+    {
+      "id": "c6",
+      "from": "ask-a1-scope",
+      "to": "end-manual",
+      "fromPort": "branch-1",
+      "toPort": "input"
+    },
+    {
+      "id": "c7",
+      "from": "ask-a1-scope",
+      "to": "end-blocked",
+      "fromPort": "branch-2",
+      "toPort": "input"
+    },
+    {
+      "id": "c8",
+      "from": "agent-restore",
+      "to": "agent-format-compare",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c8b",
+      "from": "agent-format-compare",
+      "to": "ask-a2-restore-review",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c9",
+      "from": "ask-a2-restore-review",
+      "to": "agent-verify",
+      "fromPort": "branch-0",
+      "toPort": "input"
+    },
+    {
+      "id": "c10",
+      "from": "ask-a2-restore-review",
+      "to": "end-manual",
+      "fromPort": "branch-1",
+      "toPort": "input"
+    },
+    {
+      "id": "c11",
+      "from": "ask-a2-restore-review",
+      "to": "end-blocked",
+      "fromPort": "branch-2",
+      "toPort": "input"
+    },
+    {
+      "id": "c12",
+      "from": "agent-verify",
+      "to": "ask-a3-pass",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c13",
+      "from": "ask-a3-pass",
+      "to": "ask-logshot-ready",
+      "fromPort": "branch-0",
+      "toPort": "input"
+    },
+    {
+      "id": "c14",
+      "from": "ask-a3-pass",
+      "to": "end-manual",
+      "fromPort": "branch-1",
+      "toPort": "input"
+    },
+    {
+      "id": "c15",
+      "from": "ask-a3-pass",
+      "to": "end-blocked",
+      "fromPort": "branch-2",
+      "toPort": "input"
+    },
+    {
+      "id": "c16",
+      "from": "ask-logshot-ready",
+      "to": "prompt-logshot-runbook",
+      "fromPort": "branch-0",
+      "toPort": "input"
+    },
+    {
+      "id": "c17",
+      "from": "ask-logshot-ready",
+      "to": "end-manual",
+      "fromPort": "branch-1",
+      "toPort": "input"
+    },
+    {
+      "id": "c18",
+      "from": "ask-logshot-ready",
+      "to": "end-blocked",
+      "fromPort": "branch-2",
+      "toPort": "input"
+    },
+    {
+      "id": "c19",
+      "from": "prompt-logshot-runbook",
+      "to": "agent-logshot-report",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c20",
+      "from": "agent-logshot-report",
+      "to": "ask-a5-marker",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c21",
+      "from": "ask-a5-marker",
+      "to": "end-passed",
+      "fromPort": "branch-0",
+      "toPort": "input"
+    },
+    {
+      "id": "c22",
+      "from": "ask-a5-marker",
+      "to": "end-manual",
+      "fromPort": "branch-1",
+      "toPort": "input"
+    },
+    {
+      "id": "c23",
+      "from": "ask-a5-marker",
+      "to": "end-blocked",
+      "fromPort": "branch-2",
+      "toPort": "input"
+    }
+  ],
+  "createdAt": "2026-07-01T00:00:00.000Z",
+  "updatedAt": "2026-07-01T14:30:48.990Z",
+  "subAgentFlows": []
+}

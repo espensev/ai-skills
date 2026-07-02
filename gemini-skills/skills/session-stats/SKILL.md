@@ -1,6 +1,6 @@
 ---
 name: session-stats
-description: Analyze session tool usage, agent activity, and timing from available data sources (telemetry API, hooks log, campaign state, git activity, observer data) for cross-session comparisons or end-of-session summaries
+description: "Analyze session tool usage, agent activity, and timing from available data sources such as telemetry API, hooks log, campaign state, git activity, and observer data. Use for cross-session comparisons or end-of-session summaries."
 ---
 
 # Session Stats Protocol

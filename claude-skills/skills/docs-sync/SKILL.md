@@ -1,6 +1,6 @@
 ---
 name: docs-sync
-description: "Detect cross-document contradictions, stale claims, and merge conflict markers across key documentation surfaces."
+description: "Detect cross-document contradictions, stale claims, path mismatches, and merge conflict markers across key documentation surfaces. Use when checking README, docs, status, or architecture consistency."
 argument-hint: "<check|surface|fix> — documentation consistency checker"
 allowed-tools: Read, Glob, Grep, Bash, Edit
 user-invocable: true

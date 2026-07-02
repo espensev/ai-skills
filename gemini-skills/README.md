@@ -46,6 +46,7 @@ extracting a shared core.
 | `campaign-health` | Find stale plans, orphaned agents, and stuck worktrees |
 | `delegate` | Route one bounded helper task to local Ollama when telemetry readiness allows it |
 | `delegation-eval` | Evaluate helper-model routing with telemetry evals and judge packets |
+| `diagnosing-bugs` | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | `docs-sync` | Detect drift between docs and code-facing facts |
 | `schema-validator` | Validate schema usage across data, API, and tests |
 | `session-stats` | Summarize session/tool activity from measured telemetry where available |
@@ -113,7 +114,10 @@ The package should stay adapter-first until the shared runtime is extracted.
 ## Status
 
 - **v1.0 Ready**: The Gemini CLI multi-agent adapter is fully registered.
-- **28 Curated Adapter Skills**: All generic campaign skills, ops/analytics skills, delegation helpers, and Gemini super-skills in `package/install-manifest.json` are mapped and constrained.
+- **Repo export status: legacy** — the root `release-manifest.json` keeps this
+  package out of the default ready export; the active Google-facing export is
+  `antigravity-skills` (see `docs/release-readiness.md`).
+- **29 Curated Adapter Skills**: All generic campaign skills, ops/analytics skills, delegation helpers, debug workflows, and Gemini super-skills in `package/install-manifest.json` are mapped and constrained.
 - **Strict Guardrails**: Enforced via `GEMINI.md` and `allowed_tools` to prevent architectural drift.
 - **Shared-Core Friendly**: The package stays adapter-first so shared runtime extraction remains possible later.
 

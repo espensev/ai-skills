@@ -1,0 +1,298 @@
+{
+  "id": "workflow-sq-write-readiness-20260701",
+  "name": "sq-control-write-readiness-20260701",
+  "description": "Qualify fan-write implementation by proving donor-style control-expression parity and load-shot pass-rate evidence before implementation starts.",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "start-1",
+      "type": "start",
+      "name": "start-1",
+      "position": {
+        "x": 80,
+        "y": 260
+      },
+      "data": {
+        "label": "Start"
+      }
+    },
+    {
+      "id": "prompt-entry-lock",
+      "type": "prompt",
+      "name": "prompt-entry-lock",
+      "position": {
+        "x": 360,
+        "y": 240
+      },
+      "data": {
+        "label": "Gate B0 write-readiness entry lock",
+        "prompt": "Verify that SQ-A-REAL-LOGGING-SHOT-PASSED exists in a tracked SQ-Control status or HIL note before write-readiness qualification starts. Resolve the operator acceptance thresholds before any pass decision: required_pass_rate_pct, required_load_pct, observation_window_minutes, and minimum_shots. If any threshold is missing, vague, or changed after evidence collection starts, block instead of guessing. Agents must not start fan-write implementation, arm writes, change services, or touch legacy-controller state in this readiness flow.",
+        "variables": {
+          "sq_repo": "D:/Development/Thermals/SQ-control",
+          "packet_root": "D:/Development/Ai-Skills/cc-workflow/workflows/sq-control-final-fan-control-2026-07-01",
+          "logging_marker": "SQ-A-REAL-LOGGING-SHOT-PASSED",
+          "readiness_marker": "SQ-B-WRITE-READINESS-PASSED",
+          "svg_mb_runtime": "D:/Development/Thermals/SVG-MB/SVG-MB-Control/release/runtime",
+          "nvg_repo": "D:/Development/Thermals/nvg-gpu/NVG-SmoothControl",
+          "required_pass_rate_pct": "operator-defined",
+          "required_load_pct": "operator-defined",
+          "observation_window_minutes": "operator-defined",
+          "minimum_shots": "operator-defined"
+        }
+      }
+    },
+    {
+      "id": "agent-reference-expression-parity",
+      "type": "subAgent",
+      "name": "agent-reference-expression-parity",
+      "position": {
+        "x": 700,
+        "y": 240
+      },
+      "data": {
+        "description": "Gate B1 donor control-expression parity",
+        "agentDefinition": "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. Use this for code modifications, file creation/editing, and shell execution.",
+        "prompt": "Gate B1. Build a file-backed control-expression parity matrix before implementation starts. Compare the SQ target contract against donor/reference behavior from SVG-MB runtime evidence and NVG-SmoothControl/SQ existing control code where available. First-round target is the same practical control expressions as the other repos: named mode/profile, active domain, setpoint percent, feedforward percent, correction percent, controller kind, response source, write reason, readback/duty percent, policy block, manual override, and pending-write/journal semantics. Output a tracked SQ-Control artifact with columns: expression or field, SQ target, donor/reference source path, semantic match/delta, allowed difference, implementation owner, and test evidence. Block on prose-only comparison or direct PWM shortcuts that bypass the control pipelines.",
+        "builtInType": "general-purpose",
+        "agentType": "claudeCode",
+        "outputPorts": 1
+      }
+    },
+    {
+      "id": "ask-expression-parity",
+      "type": "askUserQuestion",
+      "name": "ask-expression-parity",
+      "position": {
+        "x": 1040,
+        "y": 240
+      },
+      "data": {
+        "questionText": "B1 control-expression parity matrix is attached. Is it good enough to define load-shot qualification before implementation starts?",
+        "options": [
+          {
+            "label": "Accept parity",
+            "description": "Proceed to define the load-shot threshold contract from the file-backed parity matrix.",
+            "id": "accept"
+          },
+          {
+            "label": "Manual review",
+            "description": "Pause for operator review without starting implementation.",
+            "id": "manual"
+          },
+          {
+            "label": "Blocked",
+            "description": "Stop and record the missing donor/SQ expression evidence.",
+            "id": "blocked"
+          }
+        ],
+        "multiSelect": false,
+        "useAiSuggestions": true,
+        "outputPorts": 3
+      }
+    },
+    {
+      "id": "agent-threshold-contract",
+      "type": "subAgent",
+      "name": "agent-threshold-contract",
+      "position": {
+        "x": 1380,
+        "y": 160
+      },
+      "data": {
+        "description": "Gate B2 load-shot threshold contract",
+        "agentDefinition": "Plan-focused agent for designing implementation approaches, work breakdowns, and risk-managed technical plans.",
+        "prompt": "Gate B2. Write the exact load-shot acceptance contract as a tracked SQ-Control artifact before evidence is collected. Required values: required_pass_rate_pct, required_load_pct, observation_window_minutes, minimum_shots, eligible-shot definition, pass/fail formula, accepted load source, accepted time source, artifact paths, and abort conditions. A shot is eligible only when it is inside the observation window, at or above the required load threshold, uses real-only SQ evidence, correlates CSV/status/events/session ids, and contains the control-expression fields from B1. The AI pass recommendation may only be based on this numeric contract, not a subjective summary. Do not start implementation.",
+        "builtInType": "plan",
+        "agentType": "claudeCode",
+        "outputPorts": 1
+      }
+    },
+    {
+      "id": "prompt-load-shot-runbook",
+      "type": "prompt",
+      "name": "prompt-load-shot-runbook",
+      "position": {
+        "x": 1720,
+        "y": 160
+      },
+      "data": {
+        "label": "Gate B3 operator load-shot collection",
+        "prompt": "Prepare the operator load-shot runbook. The operator supplies the load window, shot count, duration, and bundle path. Agents do not generate load, arm writes, or start implementation. Required capture: command transcript, binary/config hashes, threshold artifact, parity artifact, status/health/current_state/pending_writes before/during/after, GPU and chassis CSVs, events JSONL, manifests, session ids, load source, time window, and every eligible shot boundary. If the run needs live writes, stop and require a separate operator HIL runbook."
+      }
+    },
+    {
+      "id": "agent-load-shot-evaluator",
+      "type": "subAgent",
+      "name": "agent-load-shot-evaluator",
+      "position": {
+        "x": 2060,
+        "y": 160
+      },
+      "data": {
+        "description": "Gate B4 AI load-shot evidence evaluation",
+        "agentDefinition": "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. Use this for code modifications, file creation/editing, and shell execution.",
+        "prompt": "Gate B4. Inspect the operator load-shot bundle read-only and compute the acceptance result from files. Parse the threshold contract, parity artifact, CSV/status/events/manifests, and load source. Count total shots, eligible shots, passing shots, failing shots, excluded shots, required_pass_rate_pct, actual_pass_rate_pct, required_load_pct, observed load range, observation_window_minutes, and actual time window. Pass recommendation is allowed only when actual_pass_rate_pct is at or above required_pass_rate_pct, the observation window satisfies the configured timeframe, the load threshold is met, the minimum shot count is met, and all B1 control-expression fields are present with accepted deltas. Block on missing thresholds, stale bundles, sim/fake data, prose-only evidence, unmatched sessions, or unresolved pending writes. Write a tracked SQ-Control evaluation artifact with the exact pass/block recommendation. Do not write SQ-B-WRITE-READINESS-PASSED automatically.",
+        "builtInType": "general-purpose",
+        "agentType": "claudeCode",
+        "outputPorts": 1
+      }
+    },
+    {
+      "id": "ask-readiness-pass",
+      "type": "askUserQuestion",
+      "name": "ask-readiness-pass",
+      "position": {
+        "x": 2400,
+        "y": 160
+      },
+      "data": {
+        "questionText": "B4 computed the load-shot pass rate over the configured timeframe. Accept SQ-B-WRITE-READINESS-PASSED and allow fan-write implementation to start?",
+        "options": [
+          {
+            "label": "Readiness passed",
+            "description": "Evidence meets the configured percentage, load, timeframe, and expression-parity contract; implementation may start.",
+            "id": "passed"
+          },
+          {
+            "label": "Manual review",
+            "description": "Pause before implementation while keeping the evidence bundle intact.",
+            "id": "manual"
+          },
+          {
+            "label": "Blocked",
+            "description": "Stop before implementation and record the failing threshold or missing evidence.",
+            "id": "blocked"
+          }
+        ],
+        "multiSelect": false,
+        "useAiSuggestions": true,
+        "outputPorts": 3
+      }
+    },
+    {
+      "id": "end-passed",
+      "type": "end",
+      "name": "end-passed",
+      "position": {
+        "x": 2760,
+        "y": 80
+      },
+      "data": {
+        "label": "SQ-B-WRITE-READINESS-PASSED"
+      }
+    },
+    {
+      "id": "end-manual",
+      "type": "end",
+      "name": "end-manual",
+      "position": {
+        "x": 2760,
+        "y": 220
+      },
+      "data": {
+        "label": "Manual review before implementation"
+      }
+    },
+    {
+      "id": "end-blocked",
+      "type": "end",
+      "name": "end-blocked",
+      "position": {
+        "x": 2760,
+        "y": 360
+      },
+      "data": {
+        "label": "Blocked before implementation"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "c1",
+      "from": "start-1",
+      "to": "prompt-entry-lock",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c2",
+      "from": "prompt-entry-lock",
+      "to": "agent-reference-expression-parity",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c3",
+      "from": "agent-reference-expression-parity",
+      "to": "ask-expression-parity",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c4",
+      "from": "ask-expression-parity",
+      "to": "agent-threshold-contract",
+      "fromPort": "branch-0",
+      "toPort": "input"
+    },
+    {
+      "id": "c5",
+      "from": "ask-expression-parity",
+      "to": "end-manual",
+      "fromPort": "branch-1",
+      "toPort": "input"
+    },
+    {
+      "id": "c6",
+      "from": "ask-expression-parity",
+      "to": "end-blocked",
+      "fromPort": "branch-2",
+      "toPort": "input"
+    },
+    {
+      "id": "c7",
+      "from": "agent-threshold-contract",
+      "to": "prompt-load-shot-runbook",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c8",
+      "from": "prompt-load-shot-runbook",
+      "to": "agent-load-shot-evaluator",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c9",
+      "from": "agent-load-shot-evaluator",
+      "to": "ask-readiness-pass",
+      "fromPort": "output",
+      "toPort": "input"
+    },
+    {
+      "id": "c10",
+      "from": "ask-readiness-pass",
+      "to": "end-passed",
+      "fromPort": "branch-0",
+      "toPort": "input"
+    },
+    {
+      "id": "c11",
+      "from": "ask-readiness-pass",
+      "to": "end-manual",
+      "fromPort": "branch-1",
+      "toPort": "input"
+    },
+    {
+      "id": "c12",
+      "from": "ask-readiness-pass",
+      "to": "end-blocked",
+      "fromPort": "branch-2",
+      "toPort": "input"
+    }
+  ],
+  "createdAt": "2026-07-01T00:00:00.000Z",
+  "updatedAt": "2026-07-01T14:38:56.594Z",
+  "subAgentFlows": []
+}

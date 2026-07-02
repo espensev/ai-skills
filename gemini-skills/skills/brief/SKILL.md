@@ -1,6 +1,6 @@
 ---
 name: brief
-description: Extract exact context needed for a specific task-id
+description: "Extract exact context needed for a specific task-id. Use when an agent needs a focused handoff brief, scoped task context, or source evidence before implementation."
 ---
 
 # Brief Agent

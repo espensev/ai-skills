@@ -1,13 +1,13 @@
 # AI Skills
 
-**Manifest-driven skill packages for AI coding agents: ready-to-export bundles for Claude Code, Codex, and Gemini CLI.**
+**Manifest-driven skill packages for AI coding agents — ready-to-export bundles for Claude Code, Codex, and Google Antigravity — plus the shared contracts, docs, and `wt-cli` worktree tooling that support them.**
 
 This repo curates reusable workflows for planning, testing, review, shipping,
 multi-agent worktree orchestration, docs/schema drift checks, telemetry-aware
 token and cost analysis, and local Ollama delegation. The shipping surface is
 deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
-contracts, and wrappers that are exported.
+contracts, workflows, and wrappers that are exported.
 
 81 install-ready skills ship across three provider-specific packages:
 
@@ -15,17 +15,25 @@ contracts, and wrappers that are exported.
 |---|:---:|---|
 | **claude-skills** | 20 | Core campaign orchestration plus review/debug workflows, shared ops/analytics (build gates, health, docs sync, schema/truth validation, session & token analytics), and worktree guardrails for Claude Code |
 | **codex-skills** | 32 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, review/debug workflows, plus the full ops/analytics and verification suite |
-| **gemini-skills** | 29 | Gemini bootstrap adapter: campaign workflow, review/debug workflows, guardrails, the ops/analytics suite, and editor/refactor helpers |
+| **antigravity-skills** | 29 | Antigravity adapter: Agent Skills, workflows, guardrails, the ops/analytics suite, and editor/refactor helpers |
 | **wt-cli** | — | TypeScript CLI for cross-platform worktree orchestration in parallel agent flows |
 
-> Counts reflect each package's `package/install-manifest.json`. The Gemini
-> count is the curated adapter set (skills that ship a `.gemini/commands`
-> wrapper); imported or source-only skills that are not manifest-listed stay as
-> reference material and do not ship in ready-package exports.
+> Counts reflect each package's `package/install-manifest.json`. The legacy
+> `gemini-skills` adapter remains in source for Gemini CLI enterprise/API-key
+> compatibility, but the ready Google-facing export is now `antigravity-skills`.
+> Imported or source-only skills that are not manifest-listed stay as reference
+> material and do not ship in ready-package exports.
 
 ## Quick Start
 
-**Validate ready packages** and run an export smoke test:
+**Run the release checklist**:
+
+```powershell
+.\scripts\Test-ReleaseReadiness.ps1
+```
+
+**Validate ready packages** with export, installer, and Antigravity bootstrap
+smoke checks:
 
 ```powershell
 .\scripts\Test-ReadyPackages.ps1
@@ -37,13 +45,28 @@ contracts, and wrappers that are exported.
 .\scripts\export-ready-skill-packages.ps1 -TargetDir ".\dist\ai-skills-ready-packages" -Force
 ```
 
-**Bootstrap Gemini skills** into another repo:
+**Make Codex and Claude skills available locally** from this workstation's
+agent skill roots:
 
 ```powershell
-.\gemini-skills\scripts\bootstrap.ps1 -TargetDir "C:\path\to\target-repo"
+.\scripts\Install-AgentSkills.ps1 -Provider Both -Force
 ```
 
-The bootstrap script creates `.gemini/skills/` and `.gemini/commands/`, copies skill wrappers, and injects multi-agent guardrails into `GEMINI.md`.
+Compare the installed Codex and Claude roots against the manifests:
+
+```powershell
+.\scripts\Compare-AgentSkillRoots.ps1 -Provider Both -FailOnMissingOrStale
+```
+
+**Bootstrap Antigravity skills** into another repo:
+
+```powershell
+.\antigravity-skills\scripts\bootstrap.ps1 -TargetDir "C:\path\to\target-repo"
+```
+
+The bootstrap script creates `.agents/skills/` and `.agent/workflows/`, copies
+manifest-listed skills and workflows, and injects multi-agent guardrails into
+`AGENTS.md`.
 
 ## What's Inside
 
@@ -101,7 +124,7 @@ See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md)
 
 `telemetry-live-ops` is kept in this source repo for this workstation only. It is intentionally excluded from the install manifests and ready-package export.
 
-### Gemini adapter extras
+### Antigravity adapter extras
 
 `brief`, `edit`, `epic-refactor`, `forensic-debugger`, `guardrails`, `ui-test-engineer`, `doc-weaver` — plus the core campaign workflow and the shared ops/analytics suite above. Imported domain-specific skills are kept out of the installable adapter set so the adapter stays maintainable.
 
@@ -112,16 +135,21 @@ Each package follows a **contract-first, read-all write-scoped** design:
 - Skills reference shared contracts (`planning-contract.md`) that define required plan elements and agent specs
 - Agents read the full repo for context but only write to explicitly scoped files
 - All material claims require source evidence (file path, line number, or command output)
-- Each skill keeps **identical executable behavior across Claude, Codex, and Gemini** — only frontmatter shape and the command prefix (`/` vs `$`) differ
+- Each skill keeps an **equivalent workflow contract across Claude, Codex, and Antigravity** — Claude and Codex ship the full portable runtime while Antigravity ships adapter skills plus workflows, so provider metadata, runtime wiring, invocation surface, and wording differ per package
 
-The export script reads `release-manifest.json` to determine which packages are ready and applies the correct export strategy — `portable-runtime` for Claude/Codex, `gemini-adapter` for Gemini.
+The export script reads `release-manifest.json` to determine which packages are
+ready and applies the correct export strategy: `portable-runtime` for
+Claude/Codex and `antigravity-adapter` for the active Google package. The
+`gemini-adapter` strategy remains available for the legacy Gemini source
+package but is not part of the default ready export.
 
 ## Repository Layout
 
 ```
 codex-skills/       Codex package — skills, contracts, Python runtime
 claude-skills/      Claude package — skills, contracts, Python runtime
-gemini-skills/      Gemini package — skills, commands, bootstrap, guardrails
+antigravity-skills/ Antigravity package — skills, workflows, bootstrap, guardrails
+gemini-skills/      Legacy Gemini package — skills, commands, bootstrap, guardrails
 wt-cli/             Worktree orchestration CLI (TypeScript)
 scripts/            Export automation
 docs/               Release notes and readiness tracking

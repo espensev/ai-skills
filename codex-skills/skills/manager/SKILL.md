@@ -1,6 +1,6 @@
 ---
 name: manager
-description: Orchestrate multiple parallel Codex agents for any project. Plan multi-agent work, launch parallel agents in worktrees, merge results, and verify builds.
+description: "Orchestrate multiple parallel Codex agents for any project. Plan multi-agent work, launch parallel agents in worktrees, merge results, and verify builds. Use when the user wants a multi-agent campaign, parallel worktree execution, managed merges, or campaign status."
 ---
 
 # Manager — Multi-Agent Orchestrator

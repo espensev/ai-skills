@@ -120,6 +120,7 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("ship", manifest["default_skills"])
         self.assertIn("delegate", manifest["optional_skills"])
         self.assertIn("delegation-eval", manifest["optional_skills"])
+        self.assertIn("diagnosing-bugs", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
         self.assertIn("session-stats", manifest["optional_skills"])
         self.assertIn("token-audit", manifest["optional_skills"])
@@ -127,8 +128,13 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertNotIn("refactor-planner", manifest["optional_skills"])
         self.assertNotIn("telemetry-live-ops", manifest["optional_skills"])
         self.assertNotIn("worktree-manager", manifest["optional_skills"])
+        self.assertIn("observer-test", manifest["source_only_skills"])
+        self.assertIn("refactor-planner", manifest["source_only_skills"])
+        self.assertIn("telemetry-live-ops", manifest["source_only_skills"])
+        self.assertIn("worktree-manager", manifest["source_only_skills"])
         self.assertIn("scripts/task_manager.py", manifest["runtime_files"])
         self.assertIn("scripts/analysis", manifest["runtime_directories"])
+        self.assertIn("scripts/hooks", manifest["runtime_directories"])
         self.assertIn("scripts/task_runtime", manifest["runtime_directories"])
 
     def test_current_docs_match_runtime_verify_surface(self):

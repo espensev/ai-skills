@@ -1,6 +1,6 @@
 ---
 name: campaign-health
-description: "Analyze campaign/workflow state for health signals: stuck plans, orphaned agents, stale worktrees, state integrity, and complexity trends."
+description: "Analyze campaign/workflow state for health signals: stuck plans, orphaned agents, stale worktrees, state integrity, and complexity trends. Use when reviewing campaign readiness or recovering blocked multi-agent work."
 argument-hint: "<status|stuck|complexity|full> — workflow health check"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true

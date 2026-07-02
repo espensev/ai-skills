@@ -1,6 +1,6 @@
 ---
 name: observer-test
-description: "Short-lived worktree observer — capture test results, build errors, and agent behavior during execution"
+description: "Short-lived worktree observer — capture test results, build errors, and agent behavior during execution. Use when observing an agent worktree during a campaign run, recording blockers or workarounds as they happen, or exporting worktree observations for promotion after merge."
 argument-hint: "/observe-test [start|note|report|export] — worktree observation during agent runs"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true

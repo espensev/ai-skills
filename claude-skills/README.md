@@ -20,6 +20,7 @@ vendor into their own `.claude/skills` runtime tree.
 | `CLAUDE.md` | Package development conventions |
 | `scripts/task_manager.py` | Backend CLI copied into the target repo `scripts/` directory |
 | `scripts/analysis/` | Analyzer provider runtime copied into the target repo `scripts/` directory |
+| `scripts/hooks/` | Optional Claude hook scripts and settings template copied into the target repo `scripts/` directory |
 | `scripts/task_runtime/` | Internal runtime support package copied into the target repo `scripts/` directory |
 | `scripts/task_models.py` | TypedDict contracts used by tests and local tooling |
 | `scripts/task_constants.py` | Shared status constants and symbols for local tooling/tests |
@@ -42,6 +43,7 @@ vendor into their own `.claude/skills` runtime tree.
 | QA | `/qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
 | Ship | `/ship` | Stage, commit, and push with smart file classification |
 | Observer | `/observe` | Passive project intelligence — note patterns, drift, decisions over time |
+| Diagnosing Bugs | `/diagnosing-bugs` | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | Review | `/review` | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | Delegate | `/delegate` | Route one bounded, already-fetched transform to local Ollama when telemetry readiness allows it |
 | Delegation Eval | `/delegation-eval` | Compare local helper models using telemetry eval runs, judge packets, and dispatch recommendations |

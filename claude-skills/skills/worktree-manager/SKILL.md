@@ -1,6 +1,6 @@
 ---
 name: worktree-manager
-description: Create, list, merge, and teardown git worktrees for parallel AI agent development. Handles port allocation, scope assignment, dependency bootstrap, and smallest-diff-first merge coordination.
+description: Create, list, merge, and teardown git worktrees for parallel AI agent development. Handles port allocation, scope assignment, dependency bootstrap, and smallest-diff-first merge coordination. Use when spawning isolated worktrees for parallel agents, assigning ports or file scopes, coordinating merges, or tearing down completed work.
 argument-hint: "<command> [args] — spawn | list | merge | teardown | scope | ports | diff"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write, Agent
 user-invocable: true

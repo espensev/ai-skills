@@ -1,6 +1,6 @@
 ---
 name: guardrails
-description: Scan the full repo for rule violations without editing files
+description: "Scan the full repo for rule violations without editing files. Use when checking workspace rules, provider guidance, safety constraints, or multi-agent lane discipline."
 ---
 
 # Guardrails Agent

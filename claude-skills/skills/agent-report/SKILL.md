@@ -1,6 +1,6 @@
 ---
 name: agent-report
-description: "Analyze agent and subagent performance: tool usage per agent, duration, success rates, model efficiency, and cross-campaign trends."
+description: "Analyze agent and subagent performance: tool usage per agent, duration, success rates, model efficiency, and cross-campaign trends. Use when reviewing how a campaign performed, comparing agents, or planning model selection for future work."
 argument-hint: "<summary|detail|efficiency|trends> — agent performance metrics"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true

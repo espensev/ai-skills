@@ -58,8 +58,9 @@ artifacts into a consumer repository:
 1. Copy the relevant `skills/<skill>/` folders.
 2. Copy `planning-contract.md` and `project.toml.template` into the consumer
    `.claude/skills/` directory.
-3. Copy `scripts/task_manager.py`, `scripts/analysis/`, and
-   `scripts/task_runtime/` into the consumer repo `scripts/` directory.
+3. Copy `scripts/task_manager.py`, `scripts/memory_audit.py`,
+   `scripts/analysis/`, and `scripts/task_runtime/` into the consumer
+   repo `scripts/` directory.
 4. Run `python scripts/task_manager.py init --force` inside the consumer repo.
 5. Keep consumer-specific config, plans, and tracker artifacts in the consumer
    repo only.
@@ -69,6 +70,7 @@ artifacts into a consumer repository:
 | Path | What changes here usually mean |
 |---|---|
 | `scripts/task_manager.py` | Backend CLI or plan/state behavior changed |
+| `scripts/memory_audit.py` | Memory audit CLI behavior changed |
 | `scripts/analysis/*.py` | Analyzer provider/runtime behavior changed |
 | `scripts/task_runtime/*.py` | Internal runtime helper behavior changed |
 | `tests/test_plan_lifecycle.py` | Plan approval, execution, and validation gates changed |

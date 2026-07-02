@@ -1,6 +1,6 @@
 # AI Skills
 
-**Manifest-driven skill packages for AI coding agents: ready-to-export bundles for Claude Code, Codex, and Google Antigravity.**
+**Manifest-driven skill packages for AI coding agents — ready-to-export bundles for Claude Code, Codex, and Google Antigravity — plus the shared contracts, docs, and `wt-cli` worktree tooling that support them.**
 
 This repo curates reusable workflows for planning, testing, review, shipping,
 multi-agent worktree orchestration, docs/schema drift checks, telemetry-aware

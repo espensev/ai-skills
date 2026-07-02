@@ -352,5 +352,16 @@
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "memory-management-basic-001",
+    "selected_skill": "memory-management",
+    "output": "Mock eval response for memory-management. Wrote a memory file with a type and description in frontmatter, then confirmed the always-loaded AGENTS.md surface stays within budget.",
+    "created_files": [],
+    "verification_commands": [
+      "python scripts/memory_audit.py"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
   }
 ]

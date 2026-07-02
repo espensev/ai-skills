@@ -194,9 +194,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: memory directory does not exist: {memory_dir}", file=sys.stderr)
         return 2
 
-    files = sorted(p for p in memory_dir.glob("*.md") if p.name != INDEX_NAME and not p.name.startswith("."))
-    reports = [audit_file(p) for p in files]
-    index_report = audit_index(memory_dir / INDEX_NAME, {p.name for p in files})
+    try:
+        files = sorted(p for p in memory_dir.glob("*.md") if p.name != INDEX_NAME and not p.name.startswith("."))
+        reports = [audit_file(p) for p in files]
+        index_report = audit_index(memory_dir / INDEX_NAME, {p.name for p in files})
+    except OSError as exc:
+        print(f"error: cannot read memory directory: {exc}", file=sys.stderr)
+        return 2
 
     total = len(reports)
     clean = sum(1 for r in reports if not r.hard)

@@ -40,7 +40,7 @@ reports 0 files at 100% compliance.
 
 ## Compliance
 
-`compliance = 100 × (files with zero hard violations) / max(total files, 1)`
+`compliance = 100 × (files with zero hard violations) / max(total files, 1)` (an empty directory reports 100%)
 — per-file boolean, so one bad file counts once.
 
 | Band | Meaning |

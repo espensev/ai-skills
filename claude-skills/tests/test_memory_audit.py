@@ -50,6 +50,19 @@ def test_empty_dir_reports_zero_files_and_full_compliance(tmp_path: Path, capsys
     assert "100%" in out
 
 
+def test_unreadable_file_during_audit_exits_2(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    write_memory(tmp_path, "share-topology.md")
+
+    def _raise(path: Path) -> memory_audit.FileReport:
+        raise OSError("permission denied")
+
+    monkeypatch.setattr(memory_audit, "audit_file", _raise)
+    assert memory_audit.main(["--dir", str(tmp_path)]) == 2
+    assert "cannot read memory directory" in capsys.readouterr().err
+
+
 def test_env_var_beats_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CLAUDE_MEMORY_DIR", str(tmp_path))
     assert memory_audit.resolve_memory_dir(None) == tmp_path

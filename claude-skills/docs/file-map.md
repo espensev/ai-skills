@@ -18,7 +18,7 @@ Main CLI entry point. All 20+ subcommands dispatch from here. Owns:
 - **Verify runtime** — `_verify_runtime()` runs configured compile/test/build commands
 - **Go orchestration** — `_go_runtime()` auto-advances through launch/merge/verify phases
 
-### `scripts/memory_audit.py` (~260 lines)
+### `scripts/memory_audit.py` (~230 lines)
 
 Standalone memory-audit CLI for the memory-management skill. Owns:
 

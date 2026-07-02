@@ -373,5 +373,23 @@
       ],
       "must_create": []
     }
+  },
+  {
+    "id": "memory-management-basic-001",
+    "skill": "memory-management",
+    "prompt": "Record the lesson from this debugging session into durable memory and check the index stays within budget.",
+    "checks": {
+      "must_mention": [
+        "type",
+        "description",
+        "index"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini"
+      ],
+      "verification_any_of": [],
+      "must_create": []
+    }
   }
 ]

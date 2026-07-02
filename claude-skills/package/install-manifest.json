@@ -12,6 +12,7 @@
     "campaign-health",
     "delegate",
     "delegation-eval",
+    "diagnosing-bugs",
     "docs-sync",
     "observer",
     "review",
@@ -35,6 +36,7 @@
   ],
   "runtime_directories": [
     "scripts/analysis",
+    "scripts/hooks",
     "scripts/task_runtime"
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: loop-master
-description: Orchestrate high-level campaign lifecycle and continuous verification
+description: "Orchestrate high-level campaign lifecycle and continuous verification. Use when a larger objective needs repeated loops, planning handoffs, QA checkpoints, or structured multi-round execution."
 ---
 
 # Loop Master Agent

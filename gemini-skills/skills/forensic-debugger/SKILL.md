@@ -1,6 +1,6 @@
 ---
 name: forensic-debugger
-description: Produce an incident RCA and patch proposal from large artifacts
+description: "Produce an incident RCA and patch proposal from large artifacts. Use when debugging production incidents, logs, traces, dumps, screenshots, or other forensic evidence."
 ---
 
 # Forensic Debugger Agent

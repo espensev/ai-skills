@@ -65,7 +65,7 @@ Added `review` to:
 - `claude-skills/package/install-manifest.json`
 - `gemini-skills/package/install-manifest.json`
 
-Updated root and provider READMEs. Shipped skill count is now 78:
+Updated root and provider READMEs. Shipped skill count at that time was 78:
 
 - `claude-skills`: 19
 - `codex-skills`: 31

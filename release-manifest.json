@@ -20,10 +20,18 @@
     {
       "name": "gemini-skills",
       "path": "gemini-skills",
-      "status": "ready",
+      "status": "legacy",
       "strategy": "gemini-adapter",
       "audience": "Gemini",
-      "notes": "Bootstrap adapter with skills, command wrappers, and guardrails."
+      "notes": "Legacy Gemini CLI adapter retained for enterprise/API-key compatibility; not exported by default."
+    },
+    {
+      "name": "antigravity-skills",
+      "path": "antigravity-skills",
+      "status": "ready",
+      "strategy": "antigravity-adapter",
+      "audience": "Antigravity",
+      "notes": "Antigravity adapter with Agent Skills, workflows, bootstrap script, and guardrails."
     },
     {
       "name": "wt-cli",

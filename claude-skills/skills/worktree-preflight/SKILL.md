@@ -1,6 +1,6 @@
 ---
 name: worktree-preflight
-description: "Before launching multi-agent campaigns, validate that no agent file ownership overlaps with dirty worktrees, missing worktrees, stale branches, or uncommitted changes."
+description: "Validate planned agent file ownership against dirty worktrees, missing worktrees, stale branches, uncommitted changes, and parallel-agent overlaps. Use before launching a multi-agent campaign or assigning parallel work."
 argument-hint: "<check|plan|dirty> — pre-launch conflict detection"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true

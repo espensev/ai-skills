@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: Decide whether a narrow, well-scoped sub-task should go to a LOCAL Ollama model vs stay with the controller, and route it if so — grounded in the ollama-telemetry MCP delegation tools with a static-guidance fallback
+description: "Decide whether a narrow, well-scoped sub-task should go to a LOCAL Ollama model vs stay with the controller, and route it if so. Use when offloading a bounded transform on material the controller already fetched."
 ---
 
 # Delegate Protocol

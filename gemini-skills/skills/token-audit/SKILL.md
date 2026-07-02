@@ -1,6 +1,6 @@
 ---
 name: token-audit
-description: Track token consumption, cost attribution, budget management, and rate-limit forecasting across sessions
+description: "Track token consumption, cost attribution, budget management, and rate-limit forecasting across sessions. Use when reviewing session cost, setting budgets, or forecasting rate-limit pressure."
 ---
 
 # Token Audit Protocol

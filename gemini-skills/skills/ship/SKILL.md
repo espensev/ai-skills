@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Execute highly specific, tightly scoped coding tasks
+description: "Stage, commit, and prepare validated changes for delivery. Use when the user asks to commit, package, land, push, or prepare a completed change."
 ---
 
 # Ship Agent

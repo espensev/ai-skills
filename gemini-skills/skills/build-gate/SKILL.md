@@ -1,6 +1,6 @@
 ---
 name: build-gate
-description: Validate multi-target build chains, verify artifacts, and run target-specific tests before merge or release
+description: "Validate multi-target build chains, verify artifacts, and run target-specific tests before merge or release. Use when project.toml defines build-gate targets or coordinated build/test validation is needed."
 ---
 
 # Build Gate Protocol

@@ -1,6 +1,6 @@
 ---
 name: token-audit
-description: "Track token consumption, cost attribution, budget management, and rate-limit forecasting across sessions."
+description: "Track token consumption, cost attribution, budget management, and rate-limit forecasting across sessions. Use when reviewing session cost, setting budgets, or forecasting rate-limit pressure."
 argument-hint: "<status|breakdown|budget|forecast|history> — token & cost intelligence"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true

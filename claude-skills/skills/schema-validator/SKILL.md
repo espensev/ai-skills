@@ -1,6 +1,6 @@
 ---
 name: schema-validator
-description: "Validate that schema/data-model changes are reflected across all consuming layers. Cross-language and cross-layer contract checking."
+description: "Validate that schema/data-model changes are reflected across all consuming layers. Cross-language and cross-layer contract checking. Use when schema changes might leak to data access, API, or test layers."
 argument-hint: "<check|drift|report> — validate cross-layer schema contracts"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true

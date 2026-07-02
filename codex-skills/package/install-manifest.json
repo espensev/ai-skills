@@ -15,6 +15,7 @@
     "deep-research",
     "delegate",
     "delegation-eval",
+    "diagnosing-bugs",
     "dmux-workflows",
     "docs-sync",
     "documentation-lookup",
@@ -43,7 +44,9 @@
     "analysis-schema.md"
   ],
   "runtime_files": [
-    "scripts/task_manager.py"
+    "scripts/task_manager.py",
+    "scripts/observe_to_eval.py",
+    "scripts/skill_feedback_loop.py"
   ],
   "runtime_directories": [
     "scripts/analysis",

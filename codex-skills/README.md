@@ -19,6 +19,8 @@ vendor into their own `.codex/skills` runtime tree.
 | `pyproject.toml` | Local validation and development tooling config |
 | `AGENTS.md` | Package development conventions |
 | `scripts/task_manager.py` | Backend CLI copied into the target repo `scripts/` directory |
+| `scripts/observe_to_eval.py` | Optional observer-to-eval promotion helper copied into the target repo `scripts/` directory |
+| `scripts/skill_feedback_loop.py` | Optional skill feedback prioritization helper copied into the target repo `scripts/` directory |
 | `scripts/analysis/` | Analyzer provider runtime copied into the target repo `scripts/` directory |
 | `scripts/task_runtime/` | Internal runtime support package copied into the target repo `scripts/` directory |
 | `scripts/task_models.py` | TypedDict contracts used by tests and local tooling |
@@ -56,6 +58,7 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Deep Research | auto | Run current, cited research workflows using built-in web search first and optional MCP accelerators when available |
 | Delegate | auto | Route one bounded, already-fetched transform to local Ollama via the `ollama-telemetry` MCP tools when readiness and task class allow it |
 | Delegation Eval | auto | Run and judge local-model helper evals from `ollama-telemetry`, then compare measured results against dispatch rules |
+| Diagnosing Bugs | auto | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | dmux Workflows | auto | Coordinate safe parallel or delegated work with clear ownership, integration order, and optional dmux or worktree orchestration |
 | Documentation Lookup | auto | Fetch current framework and library docs before answering library-specific questions |
 | E2E Testing | auto | Build and debug Playwright E2E suites using stable selectors, app-aware setup, and artifact review |

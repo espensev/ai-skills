@@ -1,6 +1,6 @@
 ---
 name: manager
-description: Coordinate the multi-agent loop by parsing the planning contract
+description: "Coordinate the multi-agent loop by parsing the planning contract. Use when the user wants a multi-agent campaign, parallel worktree execution, managed merges, or campaign status."
 ---
 
 # Manager Agent

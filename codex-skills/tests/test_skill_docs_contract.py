@@ -139,6 +139,7 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("deep-research", manifest["optional_skills"])
         self.assertIn("delegate", manifest["optional_skills"])
         self.assertIn("delegation-eval", manifest["optional_skills"])
+        self.assertIn("diagnosing-bugs", manifest["optional_skills"])
         self.assertIn("dmux-workflows", manifest["optional_skills"])
         self.assertIn("documentation-lookup", manifest["optional_skills"])
         self.assertIn("e2e-testing", manifest["optional_skills"])
@@ -152,6 +153,8 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("verification-loop", manifest["optional_skills"])
         self.assertNotIn("telemetry-live-ops", manifest["optional_skills"])
         self.assertIn("scripts/task_manager.py", manifest["runtime_files"])
+        self.assertIn("scripts/observe_to_eval.py", manifest["runtime_files"])
+        self.assertIn("scripts/skill_feedback_loop.py", manifest["runtime_files"])
         self.assertIn("scripts/analysis", manifest["runtime_directories"])
         self.assertIn("scripts/task_runtime", manifest["runtime_directories"])
 

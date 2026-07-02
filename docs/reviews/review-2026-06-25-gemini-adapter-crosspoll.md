@@ -38,7 +38,7 @@
 
 - `python -m pytest claude-skills/tests/test_skill_docs_contract.py -q` - pass (9 passed)
 - `python -m pytest codex-skills/tests/test_skill_docs_contract.py -q` - pass (9 passed)
-- Manifest skill counts vs README (78 = 19 + 31 + 28) - pass (claude 19, codex 31, gemini 28)
+- Manifest skill counts vs README at that time (78 = 19 + 31 + 28) - pass (claude 19, codex 31, gemini 28)
 - `scripts/bootstrap.ps1` into a temp target, then filesystem path-resolution check - confirmed the High finding (shipped path missing, `../skills/` path present)
 - Post-fix re-bootstrap into a fresh temp target - pass (28/28 wrappers install, each resolving to its real skill; source tree retains `../../`)
 - Cross-poll parity sweep - pass: command-contract check on `delegate` / `token-audit` / `worktree-preflight` (all documented commands present) + leak-class grep over `gemini-skills/skills/` for `.claude`/`.codex` paths, `$`-prefix (Codex) command refs, and `@{` includes (no matches)

@@ -9,16 +9,24 @@ the same way, so release readiness is tracked explicitly.
 |---|---|---|---|
 | `codex-skills` | Ready | Portable runtime package | Ships skill docs, contracts, and Python runtime modules. |
 | `claude-skills` | Ready | Portable runtime package | Ships skill docs, contracts, and Python runtime modules. |
-| `gemini-skills` | Ready | Bootstrap adapter package | Ships Gemini skills, Gemini command wrappers, bootstrap script, and guardrails. |
+| `antigravity-skills` | Ready | Antigravity adapter package | Ships Agent Skills, workflows, bootstrap script, and guardrails. |
 
 ## Not Part Of Skill Export
 
 | Package | Status | Notes |
 |---|---|---|
+| `gemini-skills` | Legacy source package | Retained for Gemini CLI enterprise/API-key compatibility and historical review; not exported by default. |
 | `wt-cli` | Source package only | Useful tooling for worktree orchestration, but not part of the model skill export bundle. |
 | `telemetry-live-ops` | Source-only machine-local skill | Kept under provider skill trees for this workstation's live `ollama-telemetry` deployment; intentionally excluded from install manifests and ready exports. |
 
 ## Export Flow
+
+Validate the ready-package manifests, source-only exclusions, Antigravity
+workflow targets, and export smoke first:
+
+```powershell
+.\scripts\Test-ReadyPackages.ps1
+```
 
 Use the root export script to gather the ready packages into one destination:
 

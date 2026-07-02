@@ -5,6 +5,14 @@ Thumbs.db
 # Editors
 .idea/
 .vscode/
+# Track the send-back CC Workflow Studio canvas without exposing editor state.
+cc-workflow/*
+!cc-workflow/.vscode/
+cc-workflow/.vscode/*
+!cc-workflow/.vscode/workflows/
+cc-workflow/.vscode/workflows/*
+!cc-workflow/.vscode/workflows/sq-control-real-logging-restore-20260701.json
+!cc-workflow/.vscode/workflows/sq-control-write-readiness-20260701.json
 *.swp
 
 # Python
@@ -33,6 +41,8 @@ coverage/
 **/.codex/
 **/.gemini/run-state.json
 **/.claude/settings.local.json
+.antigravitycli/
+claude-skills/observations.jsonl
 
 # Logs
 *.log
@@ -40,6 +50,7 @@ coverage/
 # Reference material (not part of the monorepo)
 everything-claude-code-main/
 gemini-skills/everything-claude-code/
+/skills/
 
 # ECC ecosystem mirror under gemini-skills/ — a drifted copy of the gitignored
 # everything-claude-code/ upstream. The package ports capabilities into the

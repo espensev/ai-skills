@@ -1,6 +1,6 @@
 ---
 name: worktree-preflight
-description: "Validate planned agent file ownership against dirty worktrees, missing worktrees, stale branches, uncommitted changes, and parallel-agent overlaps before launching a multi-agent campaign."
+description: "Validate planned agent file ownership against dirty worktrees, missing worktrees, stale branches, uncommitted changes, and parallel-agent overlaps. Use before launching a multi-agent campaign or assigning parallel work."
 ---
 
 # Worktree Preflight - Pre-Launch Conflict Prevention

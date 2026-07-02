@@ -35,6 +35,15 @@ Refresh existing manifest-listed entries as well:
 .\scripts\Install-AgentSkills.ps1 -Provider Both -Force
 ```
 
+Compare installed files against the package manifests:
+
+```powershell
+.\scripts\Compare-AgentSkillRoots.ps1 -Provider Both -FailOnMissingOrStale
+```
+
+Pass `-IncludeExtra` only when auditing unrelated local skills in the same
+roots; extras are intentionally ignored by the default compare.
+
 The script copies only the skills, support files, runtime files, and runtime
 directories listed in each provider's `package/install-manifest.json`. It does
 not delete unrelated local skills, and it does not copy source-only package

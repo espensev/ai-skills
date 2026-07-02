@@ -35,6 +35,9 @@
     "verification-loop",
     "worktree-preflight"
   ],
+  "source_only_skills": [
+    "telemetry-live-ops"
+  ],
   "contract_files": [
     "planning-contract.md",
     "project.toml.template"

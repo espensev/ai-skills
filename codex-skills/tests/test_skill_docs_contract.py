@@ -152,6 +152,7 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("token-audit", manifest["optional_skills"])
         self.assertIn("verification-loop", manifest["optional_skills"])
         self.assertNotIn("telemetry-live-ops", manifest["optional_skills"])
+        self.assertIn("telemetry-live-ops", manifest["source_only_skills"])
         self.assertIn("scripts/task_manager.py", manifest["runtime_files"])
         self.assertIn("scripts/observe_to_eval.py", manifest["runtime_files"])
         self.assertIn("scripts/skill_feedback_loop.py", manifest["runtime_files"])

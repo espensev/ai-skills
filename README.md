@@ -26,7 +26,14 @@ contracts, workflows, and wrappers that are exported.
 
 ## Quick Start
 
-**Validate ready packages** and run an export smoke test:
+**Run the release checklist**:
+
+```powershell
+.\scripts\Test-ReleaseReadiness.ps1
+```
+
+**Validate ready packages** with export, installer, and Antigravity bootstrap
+smoke checks:
 
 ```powershell
 .\scripts\Test-ReadyPackages.ps1
@@ -43,6 +50,12 @@ agent skill roots:
 
 ```powershell
 .\scripts\Install-AgentSkills.ps1 -Provider Both -Force
+```
+
+Compare the installed Codex and Claude roots against the manifests:
+
+```powershell
+.\scripts\Compare-AgentSkillRoots.ps1 -Provider Both -FailOnMissingOrStale
 ```
 
 **Bootstrap Antigravity skills** into another repo:

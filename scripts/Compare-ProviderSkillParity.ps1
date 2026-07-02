@@ -56,6 +56,34 @@ function Get-ContentHash {
     return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.Substring(0, 12)
 }
 
+function Get-PortableRelativePath {
+    param (
+        [string]$BasePath,
+        [string]$TargetPath
+    )
+
+    $BaseFull = [System.IO.Path]::GetFullPath($BasePath).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    )
+    $TargetFull = [System.IO.Path]::GetFullPath($TargetPath)
+
+    try {
+        $RelativePath = [System.IO.Path]::GetRelativePath($BaseFull, $TargetFull)
+    } catch {
+        $BaseWithSeparator = $BaseFull + [System.IO.Path]::DirectorySeparatorChar
+        if ($TargetFull.Equals($BaseFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $RelativePath = "."
+        } elseif ($TargetFull.StartsWith($BaseWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $RelativePath = $TargetFull.Substring($BaseWithSeparator.Length)
+        } else {
+            $RelativePath = $TargetFull
+        }
+    }
+
+    return $RelativePath -replace "\\", "/"
+}
+
 $ReleaseManifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json
 $Records = @()
 
@@ -85,7 +113,7 @@ foreach ($Package in $ReleaseManifest.packages) {
             Package = $Package.name
             Description = Get-SkillDescription $SkillPath
             Hash = Get-ContentHash $SkillPath
-            Path = [System.IO.Path]::GetRelativePath($RepoRoot, $SkillPath) -replace "\\", "/"
+            Path = Get-PortableRelativePath -BasePath $RepoRoot -TargetPath $SkillPath
         }
     }
 }

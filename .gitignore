@@ -49,6 +49,7 @@ claude-skills/observations.jsonl
 
 # Reference material (not part of the monorepo)
 everything-claude-code-main/
+claude-memory-manager/
 gemini-skills/everything-claude-code/
 /skills/
 

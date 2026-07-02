@@ -85,6 +85,34 @@ function Add-Row {
     }) | Out-Null
 }
 
+function Get-PortableRelativePath {
+    param (
+        [string]$BasePath,
+        [string]$TargetPath
+    )
+
+    $BaseFull = [System.IO.Path]::GetFullPath($BasePath).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    )
+    $TargetFull = [System.IO.Path]::GetFullPath($TargetPath)
+
+    try {
+        $RelativePath = [System.IO.Path]::GetRelativePath($BaseFull, $TargetFull)
+    } catch {
+        $BaseWithSeparator = $BaseFull + [System.IO.Path]::DirectorySeparatorChar
+        if ($TargetFull.Equals($BaseFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $RelativePath = "."
+        } elseif ($TargetFull.StartsWith($BaseWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $RelativePath = $TargetFull.Substring($BaseWithSeparator.Length)
+        } else {
+            $RelativePath = $TargetFull
+        }
+    }
+
+    return $RelativePath -replace "\\", "/"
+}
+
 function Test-FileMatch {
     param (
         [string]$ProviderName,
@@ -138,13 +166,13 @@ function Test-DirectoryMatch {
 
     $SourceFiles = @(Get-ChildItem -LiteralPath $SourceDir -Recurse -File -Force)
     foreach ($SourceFile in $SourceFiles) {
-        $RelativeFile = [System.IO.Path]::GetRelativePath($SourceRoot, $SourceFile.FullName) -replace "\\", "/"
+        $RelativeFile = Get-PortableRelativePath -BasePath $SourceRoot -TargetPath $SourceFile.FullName
         Test-FileMatch -ProviderName $ProviderName -TargetRoot $TargetRoot -SourceRoot $SourceRoot -RelativePath $RelativeFile -Kind $Kind
     }
 
     $TargetFiles = @(Get-ChildItem -LiteralPath $TargetDir -Recurse -File -Force)
     foreach ($TargetFile in $TargetFiles) {
-        $RelativeFile = [System.IO.Path]::GetRelativePath($TargetRoot, $TargetFile.FullName) -replace "\\", "/"
+        $RelativeFile = Get-PortableRelativePath -BasePath $TargetRoot -TargetPath $TargetFile.FullName
         $SourcePath = Join-Path $SourceRoot ($RelativeFile -replace "/", [System.IO.Path]::DirectorySeparatorChar)
         if (-not (Test-Path $SourcePath)) {
             Add-Row $ProviderName $TargetRoot $Kind $RelativeFile "ExtraFile"

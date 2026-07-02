@@ -1,6 +1,6 @@
 ---
 name: telemetry-live-ops
-description: "MACHINE-LOCAL ops skill (not a portable skill): start, verify, and inspect the live ollama-telemetry deployment spanning observer_hub on MAINDESK and host_agent on snd-host. Retarget it with the OLLAMA_TELEMETRY_* env overrides. Use when tasks mention snd-host, observer_hub, MachineTelemetryHostStack, live telemetry deployment, remote telemetry health, or machine-wide telemetry verification. Prefer the bundled scripts to restart the remote scheduled task over SSH and run the full live verification pass without extra repo-local prompting."
+description: "MACHINE-LOCAL ops skill (not a portable skill): start, verify, and inspect the live ollama-telemetry deployment spanning observer_hub on MAINDESK and host_agent on snd-host. Retarget it with the OLLAMA_TELEMETRY_* env overrides. Use when tasks mention snd-host, observer_hub, MachineTelemetryHostStack, live telemetry deployment, remote telemetry health, or machine-wide telemetry verification."
 ---
 
 # Telemetry Live Ops

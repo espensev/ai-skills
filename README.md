@@ -135,7 +135,7 @@ Each package follows a **contract-first, read-all write-scoped** design:
 - Skills reference shared contracts (`planning-contract.md`) that define required plan elements and agent specs
 - Agents read the full repo for context but only write to explicitly scoped files
 - All material claims require source evidence (file path, line number, or command output)
-- Each skill keeps **identical executable behavior across Claude, Codex, and Antigravity** — only provider metadata, runtime wiring, and invocation surface differ
+- Each skill keeps an **equivalent workflow contract across Claude, Codex, and Antigravity** — Claude and Codex ship the full portable runtime while Antigravity ships adapter skills plus workflows, so provider metadata, runtime wiring, invocation surface, and wording differ per package
 
 The export script reads `release-manifest.json` to determine which packages are
 ready and applies the correct export strategy: `portable-runtime` for

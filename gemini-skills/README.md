@@ -114,6 +114,9 @@ The package should stay adapter-first until the shared runtime is extracted.
 ## Status
 
 - **v1.0 Ready**: The Gemini CLI multi-agent adapter is fully registered.
+- **Repo export status: legacy** — the root `release-manifest.json` keeps this
+  package out of the default ready export; the active Google-facing export is
+  `antigravity-skills` (see `docs/release-readiness.md`).
 - **29 Curated Adapter Skills**: All generic campaign skills, ops/analytics skills, delegation helpers, debug workflows, and Gemini super-skills in `package/install-manifest.json` are mapped and constrained.
 - **Strict Guardrails**: Enforced via `GEMINI.md` and `allowed_tools` to prevent architectural drift.
 - **Shared-Core Friendly**: The package stays adapter-first so shared runtime extraction remains possible later.

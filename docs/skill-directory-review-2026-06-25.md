@@ -1,5 +1,11 @@
 # Skill Directory Review - 2026-06-25
 
+> **Historical record (2026-06-25).** Counts and verification notes below
+> reflect the repo at review time: the shipped total was 78 before the
+> Antigravity package landed (now tracked in `README.md`), and
+> `quick_validate.py` was a local helper that never landed in this repo. The
+> current validation entry point is `scripts/Test-ReleaseReadiness.ps1`.
+
 ## Scope
 
 Reviewed the shipped provider packages and the imported reference skill tree:

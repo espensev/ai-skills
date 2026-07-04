@@ -3,18 +3,19 @@
 **Manifest-driven skill packages for AI coding agents — ready-to-export bundles for Claude Code, Codex, and Google Antigravity — plus the shared contracts, docs, and `wt-cli` worktree tooling that support them.**
 
 This repo curates reusable workflows for planning, testing, review, shipping,
-multi-agent worktree orchestration, docs/schema drift checks, telemetry-aware
-token and cost analysis, and local Ollama delegation. The shipping surface is
+multi-agent worktree orchestration, lightweight Codex sidecar routing,
+docs/schema drift checks, telemetry-aware token and cost analysis, and local
+Ollama delegation. The shipping surface is
 deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-84 install-ready skills ship across three provider-specific packages:
+85 install-ready skills ship across three provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
 | **claude-skills** | 21 | Core campaign orchestration plus review/debug workflows, shared ops/analytics (build gates, health, docs sync, schema/truth validation, memory hygiene, session & token analytics), and worktree guardrails for Claude Code |
-| **codex-skills** | 33 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, review/debug workflows, plus the full ops/analytics and verification suite |
+| **codex-skills** | 34 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, lightweight parallel sidecar routing, review/debug workflows, plus the full ops/analytics and verification suite |
 | **antigravity-skills** | 30 | Antigravity adapter: Agent Skills, workflows, guardrails, the ops/analytics suite, and editor/refactor helpers |
 | **wt-cli** | — | TypeScript CLI for cross-platform worktree orchestration in parallel agent flows |
 
@@ -98,6 +99,12 @@ manifest-listed skills and workflows, and injects multi-agent guardrails into
 | **token-audit** | Token/cost/budget/forecast intelligence — uses real telemetry data when available, heuristic otherwise |
 | **agent-report** | Structured agent handoff and performance/cost reports |
 | **worktree-preflight** | Pre-launch conflict gate over branch/worktree/file-ownership (unified OK / WARNING / CONFLICT contract) |
+
+### Lightweight Codex parallelism
+
+| Skill | Purpose |
+|---|---|
+| **parallel-agents-light** | Route Codex work between the local controller loop, bounded sidecar subagents, split implementation, and full `$manager` campaigns. Use it for Claude-style parallel subagent requests when the full campaign runtime would be too heavy. |
 
 ### Local-model delegation (new)
 

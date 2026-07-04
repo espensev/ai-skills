@@ -27,6 +27,7 @@
     "mcp-server-patterns",
     "memory-management",
     "observer",
+    "parallel-agents-light",
     "review",
     "schema-validator",
     "session-stats",

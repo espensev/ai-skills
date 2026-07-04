@@ -67,6 +67,7 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
 | Memory Management | auto | Govern durable memory with a typed write schema, locality routing, and index budget discipline across AGENTS.md and repo-owned notes |
 | Observer | auto | Keep passive project intelligence in repo-owned artifacts such as observation logs, metrics, and synthesized health notes |
+| Parallel Agents Light | auto | Route Codex work between local execution, bounded sidecar subagents, split implementation, and full manager campaigns |
 | Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | Session Stats | auto | Summarize session/tool activity, preferring measured `ollama-telemetry` usage data when available |
 | Token Audit | auto | Analyze tokens, costs, budgets, and forecasts, preferring measured telemetry API data when available |
@@ -134,6 +135,7 @@ for d in \
   skills/mcp-server-patterns \
   skills/memory-management \
   skills/observer \
+  skills/parallel-agents-light \
   skills/review \
   skills/schema-validator \
   skills/session-stats \
@@ -191,6 +193,7 @@ for d in \
   skills/mcp-server-patterns \
   skills/memory-management \
   skills/observer \
+  skills/parallel-agents-light \
   skills/review \
   skills/schema-validator \
   skills/session-stats \

@@ -147,6 +147,7 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("frontend-patterns", manifest["optional_skills"])
         self.assertIn("mcp-server-patterns", manifest["optional_skills"])
         self.assertIn("observer", manifest["optional_skills"])
+        self.assertIn("parallel-agents-light", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
         self.assertIn("session-stats", manifest["optional_skills"])
         self.assertIn("token-audit", manifest["optional_skills"])

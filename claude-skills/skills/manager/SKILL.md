@@ -431,7 +431,7 @@ state directly.
 - **Same-group agents** — manual merge, keep both contributions.
 - **Never silently drop changes** — report every conflict and resolution.
 
-### Observer-test promotion
+### Observation promotion
 
 After merging worktrees, check each merged worktree path for `observations.jsonl`.
 If present, promote observations to the project-level log:

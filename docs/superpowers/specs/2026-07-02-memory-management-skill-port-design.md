@@ -1,8 +1,12 @@
 # Design: `memory-management` skill port (jau123/claude-memory-manager → three runtime packages)
 
 **Date:** 2026-07-02
-**Status:** Approved design, pending implementation plan
+**Status:** Historical design; implemented, then superseded by the 2026-08-09 provider cleanup
 **Upstream:** <https://github.com/jau123/claude-memory-manager> @ `c766942` (MIT, © 2026 jau123), local clone at `D:\Development\Ai-Skills\claude-memory-manager` (reference-only; all edits happen in this repo)
+
+> The three-provider paths and local clone location below describe the July
+> implementation context. The current ready surface contains only Claude and
+> Codex packages.
 
 ## 1. Context and intent
 

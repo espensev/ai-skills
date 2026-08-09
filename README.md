@@ -1,6 +1,6 @@
 # AI Skills
 
-**Manifest-driven skill packages for AI coding agents — ready-to-export bundles for Claude Code, Codex, and Google Antigravity — plus the shared contracts, docs, and `wt-cli` worktree tooling that support them.**
+**Manifest-driven skill packages for AI coding agents — ready-to-export bundles for Claude Code and Codex, plus the shared contracts and validation tooling that support them.**
 
 This repo curates reusable workflows for planning, testing, review, shipping,
 multi-agent worktree orchestration, lightweight Codex sidecar routing,
@@ -10,20 +10,16 @@ deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-85 install-ready skills ship across three provider-specific packages:
+59 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 21 | Core campaign orchestration plus review/debug workflows, shared ops/analytics (build gates, health, docs sync, schema/truth validation, memory hygiene, session & token analytics), and worktree guardrails for Claude Code |
-| **codex-skills** | 34 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, lightweight parallel sidecar routing, review/debug workflows, plus the full ops/analytics and verification suite |
-| **antigravity-skills** | 30 | Antigravity adapter: Agent Skills, workflows, guardrails, the ops/analytics suite, and editor/refactor helpers |
-| **wt-cli** | — | TypeScript CLI for cross-platform worktree orchestration in parallel agent flows |
+| **claude-skills** | 23 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
+| **codex-skills** | 36 | Extended toolkit for Codex: API/engineering patterns, gated audits, deep research, Playwright e2e, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
 
-> Counts reflect each package's `package/install-manifest.json`. The legacy
-> `gemini-skills` adapter remains in source for Gemini CLI enterprise/API-key
-> compatibility, but the ready Google-facing export is now `antigravity-skills`.
-> Imported or source-only skills that are not manifest-listed stay as reference
-> material and do not ship in ready-package exports.
+> Counts reflect each ready package's `package/install-manifest.json`.
+> Explicit `source_only_skills` entries and unmanifested imported material stay as
+> reference surfaces and do not ship in ready-package exports.
 
 ## Quick Start
 
@@ -33,8 +29,7 @@ contracts, workflows, and wrappers that are exported.
 .\scripts\Test-ReleaseReadiness.ps1
 ```
 
-**Validate ready packages** with export, installer, and Antigravity bootstrap
-smoke checks:
+**Validate ready packages** with manifest, export, and installer smoke checks:
 
 ```powershell
 .\scripts\Test-ReadyPackages.ps1
@@ -58,16 +53,6 @@ Compare the installed Codex and Claude roots against the manifests:
 ```powershell
 .\scripts\Compare-AgentSkillRoots.ps1 -Provider Both -FailOnMissingOrStale
 ```
-
-**Bootstrap Antigravity skills** into another repo:
-
-```powershell
-.\antigravity-skills\scripts\bootstrap.ps1 -TargetDir "C:\path\to\target-repo"
-```
-
-The bootstrap script creates `.agents/skills/` and `.agent/workflows/`, copies
-manifest-listed skills and workflows, and injects multi-agent guardrails into
-`AGENTS.md`.
 
 ## What's Inside
 
@@ -96,6 +81,8 @@ manifest-listed skills and workflows, and injects multi-agent guardrails into
 | **truthpack-drift** | Detect drift between declared reusable "truth" facts and the current source |
 | **docs-sync** | Detect and fix drift between docs and code (versions, paths, conflict markers) |
 | **session-stats** | Session tool/agent/timeline analytics, with a telemetry-first measured tier |
+| **deep-audit** | Run evidence-backed, resumable runtime-efficiency audits with explicit safety and evidence boundaries |
+| **skill-authoring** | Create or revise Agent Skills with focused discovery metadata, progressive disclosure, support files, and package wiring |
 | **token-audit** | Token/cost/budget/forecast intelligence — uses real telemetry data when available, heuristic otherwise |
 | **agent-report** | Structured agent handoff and performance/cost reports |
 | **worktree-preflight** | Pre-launch conflict gate over branch/worktree/file-ownership (unified OK / WARNING / CONFLICT contract) |
@@ -119,7 +106,9 @@ Telemetry integration is deliberately split by portability:
 
 - `delegate`, `delegation-eval`, `token-audit`, and `session-stats` are portable and depend on API/MCP contracts.
 - `telemetry-live-ops` is machine-local, points at a personal live deployment, and is not exported.
-- Deprecated/duplicative Claude-only skills (`refactor-planner`, `observer-test`, `worktree-manager`) remain in source for compatibility but are no longer in the curated install manifest.
+- Deprecated Claude-only aliases `refactor-planner`, `observer-test`, and
+  `worktree-manager` were removed; their behavior is covered by
+  `planner --mode refactor`, `observer`, and `manager` with its task runtime.
 
 See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md) for the integration boundary.
 
@@ -131,33 +120,23 @@ See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md)
 
 `telemetry-live-ops` is kept in this source repo for this workstation only. It is intentionally excluded from the install manifests and ready-package export.
 
-### Antigravity adapter extras
-
-`brief`, `edit`, `epic-refactor`, `forensic-debugger`, `guardrails`, `ui-test-engineer`, `doc-weaver` — plus the core campaign workflow and the shared ops/analytics suite above. Imported domain-specific skills are kept out of the installable adapter set so the adapter stays maintainable.
-
 ## Architecture
 
-Each package follows a **contract-first, read-all write-scoped** design:
+Each ready package follows a **contract-first, read-all write-scoped** design:
 
 - Skills reference shared contracts (`planning-contract.md`) that define required plan elements and agent specs
 - Agents read the full repo for context but only write to explicitly scoped files
 - All material claims require source evidence (file path, line number, or command output)
-- Each skill keeps an **equivalent workflow contract across Claude, Codex, and Antigravity** — Claude and Codex ship the full portable runtime while Antigravity ships adapter skills plus workflows, so provider metadata, runtime wiring, invocation surface, and wording differ per package
+- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ.
 
 The export script reads `release-manifest.json` to determine which packages are
-ready and applies the correct export strategy: `portable-runtime` for
-Claude/Codex and `antigravity-adapter` for the active Google package. The
-`gemini-adapter` strategy remains available for the legacy Gemini source
-package but is not part of the default ready export.
+ready and applies the `portable-runtime` strategy to Claude and Codex.
 
 ## Repository Layout
 
 ```
 codex-skills/       Codex package — skills, contracts, Python runtime
 claude-skills/      Claude package — skills, contracts, Python runtime
-antigravity-skills/ Antigravity package — skills, workflows, bootstrap, guardrails
-gemini-skills/      Legacy Gemini package — skills, commands, bootstrap, guardrails
-wt-cli/             Worktree orchestration CLI (TypeScript)
 scripts/            Export automation
 docs/               Release notes and readiness tracking
 ```

@@ -28,7 +28,7 @@ function Invoke-Step {
 Set-Location $RepoRoot
 
 Invoke-Step "Ready package validation" {
-    & (Join-Path $ScriptRoot "Test-ReadyPackages.ps1")
+    & (Join-Path $ScriptRoot "Test-ReadyPackages.ps1") -StrictSkillManifest
 }
 
 Invoke-Step "README manifest counts" {

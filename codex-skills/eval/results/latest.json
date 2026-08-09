@@ -1,9 +1,9 @@
 {
-  "cases": "D:\\Development\\Ai-Skills\\codex-skills\\eval\\cases\\light-skill-cases.json",
-  "responses": "D:\\Development\\Ai-Skills\\codex-skills\\eval\\responses.mock.json",
+  "cases": "D:\\Development\\AI-related\\Ai-Skills\\codex-skills\\eval\\cases\\light-skill-cases.json",
+  "responses": "D:\\Development\\AI-related\\Ai-Skills\\codex-skills\\eval\\responses.mock.json",
   "summary": {
-    "total_cases": 30,
-    "passed": 30,
+    "total_cases": 39,
+    "passed": 39,
     "failed": 0,
     "average_score": 5.0,
     "by_skill": {
@@ -12,9 +12,19 @@
         "passed": 1,
         "average_score": 5.0
       },
+      "audit-gated-subagents": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
       "backend-patterns": {
         "count": 1,
         "passed": 1,
+        "average_score": 5.0
+      },
+      "deep-audit": {
+        "count": 3,
+        "passed": 3,
         "average_score": 5.0
       },
       "deep-research": {
@@ -27,14 +37,14 @@
         "passed": 1,
         "average_score": 5.0
       },
-      "discover": {
-        "count": 3,
-        "passed": 3,
-        "average_score": 5.0
-      },
-      "dmux-workflows": {
+      "diagnosing-bugs": {
         "count": 1,
         "passed": 1,
+        "average_score": 5.0
+      },
+      "discover": {
+        "count": 4,
+        "passed": 4,
         "average_score": 5.0
       },
       "documentation-lookup": {
@@ -68,11 +78,16 @@
         "average_score": 5.0
       },
       "manager": {
-        "count": 2,
-        "passed": 2,
+        "count": 3,
+        "passed": 3,
         "average_score": 5.0
       },
       "mcp-server-patterns": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
+      "memory-management": {
         "count": 1,
         "passed": 1,
         "average_score": 5.0
@@ -92,9 +107,19 @@
         "passed": 3,
         "average_score": 5.0
       },
+      "review": {
+        "count": 1,
+        "passed": 1,
+        "average_score": 5.0
+      },
       "ship": {
         "count": 2,
         "passed": 2,
+        "average_score": 5.0
+      },
+      "skill-authoring": {
+        "count": 1,
+        "passed": 1,
         "average_score": 5.0
       },
       "verification-loop": {
@@ -122,8 +147,72 @@
       "notes": "Deterministic mock response for package eval."
     },
     {
+      "id": "audit-gated-subagents-basic-001",
+      "skill": "audit-gated-subagents",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for audit-gated-subagents."
+    },
+    {
       "id": "backend-patterns-basic-001",
       "skill": "backend-patterns",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "deep-audit-basic-001",
+      "skill": "deep-audit",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "deep-audit-profile-safety-003",
+      "skill": "deep-audit",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "deep-audit-resume-002",
+      "skill": "deep-audit",
       "scores": {
         "trigger": 1.0,
         "contract": 1.0,
@@ -170,6 +259,22 @@
       "notes": "Deterministic mock response for package eval."
     },
     {
+      "id": "diagnosing-bugs-deep-audit-boundary-001",
+      "skill": "diagnosing-bugs",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic boundary mock response."
+    },
+    {
       "id": "discover-ambiguous-002",
       "skill": "discover",
       "scores": {
@@ -202,7 +307,7 @@
       "notes": "Deterministic mock response for package eval."
     },
     {
-      "id": "discover-edge-003",
+      "id": "discover-deep-audit-boundary-001",
       "skill": "discover",
       "scores": {
         "trigger": 1.0,
@@ -215,11 +320,11 @@
       "max_total": 5.0,
       "pass": true,
       "failures": [],
-      "notes": "Deterministic mock response for package eval."
+      "notes": "Deterministic boundary mock response."
     },
     {
-      "id": "dmux-workflows-basic-001",
-      "skill": "dmux-workflows",
+      "id": "discover-edge-003",
+      "skill": "discover",
       "scores": {
         "trigger": 1.0,
         "contract": 1.0,
@@ -362,6 +467,22 @@
       "notes": "Deterministic mock response for package eval."
     },
     {
+      "id": "manager-deep-audit-boundary-001",
+      "skill": "manager",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic boundary mock response."
+    },
+    {
       "id": "manager-edge-002",
       "skill": "manager",
       "scores": {
@@ -380,6 +501,22 @@
     {
       "id": "mcp-server-patterns-basic-001",
       "skill": "mcp-server-patterns",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "memory-management-basic-001",
+      "skill": "memory-management",
       "scores": {
         "trigger": 1.0,
         "contract": 1.0,
@@ -538,6 +675,22 @@
       "notes": "Deterministic mock response for package eval."
     },
     {
+      "id": "review-deep-audit-boundary-001",
+      "skill": "review",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic boundary mock response."
+    },
+    {
       "id": "ship-basic-001",
       "skill": "ship",
       "scores": {
@@ -568,6 +721,22 @@
       "pass": true,
       "failures": [],
       "notes": "Deterministic mock response for package eval."
+    },
+    {
+      "id": "skill-authoring-basic-001",
+      "skill": "skill-authoring",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock response for skill-authoring."
     },
     {
       "id": "verification-loop-basic-001",

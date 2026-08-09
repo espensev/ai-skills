@@ -37,8 +37,9 @@ explicitly a lesson to save.
 
 ## Discipline Core
 
-> Mirrored section: this core is kept identical in the claude-skills,
-> codex-skills, and antigravity-skills packages. Change all three together.
+> These principles are provider-portable, but Claude and Codex memory mechanics
+> intentionally differ. Review the sibling package when changing this section;
+> do not copy provider-specific paths or write contracts blindly.
 
 ### 1. Decide whether it is worth recording
 
@@ -237,4 +238,5 @@ the package checkout with `--dir`.
 - Update before create; no new index groups once grouping is frozen.
 - Descriptions carry scenario keywords + conclusion, ≤ 160 chars.
 - The audit tool is read-only; violations are reported, never auto-fixed.
-- The Discipline Core section is mirrored across the three provider packages — change all three together.
+- Keep provider-neutral discipline aligned where applicable, while preserving
+  each provider's distinct memory authority and write surface.

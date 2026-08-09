@@ -1,13 +1,13 @@
 ---
 name: observer
-description: "Maintain passive project intelligence in repo-owned artifacts so Codex can record risks, drift, recurring patterns, and recent decisions without changing product code. Use when the user wants durable project memory, passive observation, drift notes, or repo health synthesis."
+description: "Maintain explicitly requested, optional project intelligence in repo-owned artifacts so Codex can track risks, drift, recurring patterns, and recent decisions without changing product code or native memory. Use when the user wants observation, drift notes, or repo health synthesis."
 ---
 
 # Observer
 
-Use this skill when the user wants durable project memory: notes, drift checks,
-risk tracking, or a synthesized project-health view that survives across
-sessions.
+Use this skill when the user wants repo-owned project intelligence: drift
+checks, risk tracking, or a synthesized project-health view that survives
+across sessions. This is not the user's cross-workspace memory store.
 
 ## Scope
 
@@ -53,6 +53,14 @@ Each observation should capture:
 - status: `open`, `resolved`, or `stale`
 - severity: `info`, `warning`, or `critical`
 - confidence when inference is uncertain
+
+For machine-sensitive observations, also capture `machine_scope`, the verified
+`controller_machine_id`, explicit `target_machine_ids`, and `transport`. Never
+infer a machine from paths, repository history, or peer snapshot filenames.
+Stop before writing a machine-sensitive observation if the controller or any
+target identity cannot be verified. Do not substitute a hostname, alias,
+username, path, or prose mention for a verified machine ID. Use `unknown` only
+for clearly labelled legacy data.
 
 ## Workflow
 
@@ -100,6 +108,7 @@ only when it is evidence-backed and likely to change future behavior.
 - Do not claim hooks, agents, or slash commands exist unless they are actually
   present in the current package.
 - Do not auto-record speculative observations from weak signals.
+- Do not use observer artifacts as a parallel Codex native-memory store.
 - Do not replace `discover`, `planner`, `manager`, or `qa`; enrich them.
 - When a finding is really a blocking bug or regression, say so explicitly
   rather than burying it in a vague summary.

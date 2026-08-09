@@ -25,8 +25,9 @@ Choose the lightest mode that can finish the task safely:
 4. **Full campaign**: escalate to `$manager` when the work needs durable plan
    artifacts, worktrees, dependency groups, managed merges, or more than three
    write lanes.
-5. **External orchestration**: use `$dmux-workflows` when the user explicitly
-   wants dmux, tmux, panes, or terminal-session orchestration.
+5. **External terminal orchestration**: when the user explicitly wants dmux,
+   tmux, panes, or separate terminal sessions, apply the same ownership and
+   integration rules here and use only tooling that is actually available.
 
 ## Preflight
 
@@ -37,7 +38,7 @@ Before launching workers:
   vague prompt.
 - State or internally record the roster: objective, owned files or read-only
   concern, expected output, and verification.
-- Prefer 2 workers by default. Use 3-4 only when the file boundaries are clean.
+- Prefer 2 workers by default. Use 3 only when the file boundaries are clean.
 - Avoid parallel writes to package manifests, startup entrypoints, shared
   schemas, generated files, and global config unless one worker owns the file
   and the others are read-only.

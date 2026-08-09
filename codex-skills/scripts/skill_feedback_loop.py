@@ -23,7 +23,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OBS = ROOT / "data" / "observations.jsonl"
 DEFAULT_EVAL = ROOT / "eval" / "results" / "latest.json"
@@ -266,8 +265,8 @@ def generate_recommendations(health: SkillHealth) -> list[str]:
 
     if health.coverage_gaps:
         recs.append(
-            f"No eval cases exist for this skill — add baseline cases to "
-            f"eval/cases/light-skill-cases.json"
+            "No eval cases exist for this skill — add baseline cases to "
+            "eval/cases/light-skill-cases.json"
         )
 
     if health.eval_cases > 0:
@@ -328,7 +327,10 @@ def format_report_markdown(ranked: list[SkillHealth]) -> str:
     lines.append("## Next Steps")
     lines.append("")
     lines.append("1. Fix regressions and blockers first (highest priority)")
-    lines.append("2. Run `python scripts/observe_to_eval.py --merge eval/cases/light-skill-cases.json` to capture regressions as eval cases")
+    lines.append(
+        "2. Run `python scripts/observe_to_eval.py --merge "
+        "eval/cases/light-skill-cases.json` to capture regressions as eval cases"
+    )
     lines.append("3. Add baseline eval cases for uncovered skills")
     lines.append("4. Address drift by updating SKILL.md specs to match actual behavior")
     lines.append("5. Refresh `docs/observer/project-intelligence.md` after improvements when observer artifacts are in use")

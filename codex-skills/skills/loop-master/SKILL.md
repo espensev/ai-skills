@@ -1,53 +1,26 @@
 ---
 name: loop-master
-description: Supervise multi-round Codex execution for a larger objective. Use when the user wants you to coordinate repeated loops, route work between discover/planner/manager/qa/ship, or structure safe parallel work across multiple rounds.
+description: Backward-compatible alias for multi-round orchestration. Routes to loop for the immediate bounded step and to planner/manager for durable multi-agent campaigns. Use when older references invoke loop-master; do not implement separate orchestration logic here.
 ---
 
-# Loop Master
+# Loop Master - Alias
 
-Use this skill when the work is too large or ambiguous for a single local loop but does not yet justify ad hoc orchestration.
+`loop-master` no longer carries its own orchestration body. It remains only so
+older references keep resolving.
 
-## Responsibilities
+Route the request to the narrow owning skill:
 
-- Define the current round objective and done condition.
-- Decide what stays local versus what should be delegated or researched.
-- Keep the immediate blocker on the coordinator path.
-- Limit parallel work to a small number of disjoint tracks.
-- Reconcile results between rounds before launching the next one.
+- **Immediate bounded step** - follow `loop` for one inspect-edit-verify objective.
+- **Bounded unknown before planning or editing** - follow `discover`.
+- **Durable multi-agent campaign design** - follow `planner` (add
+  `--mode refactor` for phased refactors or migrations).
+- **Executing an approved campaign plan** - follow `manager`.
+- **Round-end validation and regression checks** - follow `qa`.
+- **Staging or packaging finished work** - follow `ship`.
 
-## Routing Guidance
+## Parallelism
 
-- Use `loop` for the coordinator's immediate implementation step.
-- Use `discover` for bounded unknowns that should be answered before planning or editing.
-- Use `planner` when the repo needs a durable multi-agent campaign design.
-- Use `manager` when the project already uses `scripts/task_manager.py` and the plan should be executed through that runtime.
-- Use `qa` for round-end validation and regression checks.
-- Use `ship` when validated work needs staging or commit packaging.
-
-## Parallelism Rules
-
-- Keep the immediate critical-path task local.
-- Spawn sidecar work only when scopes are disjoint and materially useful.
-- Prefer two through four workstreams at most.
-- Collapse overlapping work instead of creating competing owners.
-
-## Round Structure
-
-For each round:
-
-1. State the objective.
-2. Identify the local blocker.
-3. Assign optional sidecar workstreams.
-4. Define validation gates.
-5. Decide whether to continue, replan, or stop.
-
-## Output Contract
-
-Produce a short round plan with:
-
-- objective
-- local_blocker
-- delegated_workstreams
-- ownership
-- validation_gates
-- stop_condition
+Keep the immediate critical-path task local. Spawn sidecar work only when scopes
+are disjoint and materially useful, normally with two to four workstreams at
+most. For anything larger, hand off to `planner` and `manager` rather than
+coordinating here.

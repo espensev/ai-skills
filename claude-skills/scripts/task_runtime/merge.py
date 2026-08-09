@@ -62,8 +62,37 @@ def run_git_runtime(args: list[str], *, root: Path, timeout: int = 30) -> subpro
 
 def git_worktree_inventory(*, root: Path) -> dict:
     try:
-        result = run_git_runtime(["worktree", "list", "--porcelain"], root=root)
+        top_level_result = run_git_runtime(["rev-parse", "--show-toplevel"], root=root)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return {"available": False, "error": str(exc), "worktrees": []}
+
+    if top_level_result.returncode != 0:
+        detail = (top_level_result.stderr or top_level_result.stdout or "").strip()
+        return {"available": False, "error": detail, "worktrees": []}
+
+    top_level_text = (top_level_result.stdout or "").strip()
+    if not top_level_text:
+        return {"available": False, "error": "git did not report a repository top level", "worktrees": []}
+
+    try:
+        configured_root = root.resolve()
+        repository_root = Path(top_level_text).resolve()
     except OSError as exc:
+        return {"available": False, "error": str(exc), "worktrees": []}
+
+    if repository_root != configured_root:
+        return {
+            "available": False,
+            "error": (
+                f"configured root {configured_root} is nested inside Git repository "
+                f"{repository_root}; refusing parent-repository operations"
+            ),
+            "worktrees": [],
+        }
+
+    try:
+        result = run_git_runtime(["worktree", "list", "--porcelain"], root=root)
+    except (OSError, subprocess.TimeoutExpired) as exc:
         return {"available": False, "error": str(exc), "worktrees": []}
 
     if result.returncode != 0:

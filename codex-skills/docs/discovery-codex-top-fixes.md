@@ -5,6 +5,10 @@
 **Status:** complete
 **Recommended next:** `$planner Fix Codex runtime path portability and installed-runtime bootstrap consistency (see docs/discovery-codex-top-fixes.md)`
 
+> Historical note (2026-08-09): the Gemini adapter discussed in this March
+> discovery was later removed. The Codex runtime findings remain as
+> point-in-time evidence.
+
 ---
 
 ## Questions

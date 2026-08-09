@@ -4,11 +4,11 @@
 **Scope:** root README positioning, package manifests, ready-package boundaries, and high-signal upgrade candidates.
 **Verdict:** PASS with one low-risk packaging hygiene follow-up.
 
-## Current Update
+## Historical Status
 
-This review was superseded later on 2026-06-26 by the Antigravity split:
-`antigravity-skills` is now the active Google-facing ready package, and
-`gemini-skills` is retained as legacy source material.
+This review was first superseded by the 2026-06-26 Antigravity split. Both the
+Antigravity and Gemini packages were subsequently removed on 2026-08-09; the
+body below remains point-in-time evidence.
 
 ## What's Good
 

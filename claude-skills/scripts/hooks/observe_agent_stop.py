@@ -16,7 +16,7 @@ def find_worktree_observations(cwd: str) -> list[str]:
     """Find all observations.jsonl files in worktree locations."""
     paths = []
 
-    # Direct (agent was running in a worktree with observer-test)
+    # Direct worktree-local observation log
     direct = os.path.join(cwd, "observations.jsonl")
     if os.path.isfile(direct):
         paths.append(direct)

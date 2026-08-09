@@ -2,10 +2,12 @@
 
 **Goal:** Review what is useful in this repo and suggest upgrades.
 **Date:** 2026-06-26
-**Status:** complete
-**Recommended next:** live-verify the Antigravity workflow layout when
-Antigravity CLI is available; only reconcile legacy Gemini wrapper drift if the
-legacy package is reactivated for a release.
+**Status:** historical; superseded 2026-08-09
+**Recommended next:** none for the Google-provider adapters; both Antigravity
+and Gemini packages were subsequently retired from this repository.
+
+> The provider counts, package paths, and follow-up recommendations below are a
+> point-in-time record of the June upgrade pass, not current release guidance.
 
 ## Implementation Note - 2026-06-26
 

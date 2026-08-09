@@ -9,14 +9,15 @@
   "optional_skills": [
     "agent-report",
     "api-design",
+    "audit-gated-subagents",
     "backend-patterns",
     "build-gate",
     "campaign-health",
+    "deep-audit",
     "deep-research",
     "delegate",
     "delegation-eval",
     "diagnosing-bugs",
-    "dmux-workflows",
     "docs-sync",
     "documentation-lookup",
     "e2e-testing",
@@ -31,6 +32,7 @@
     "review",
     "schema-validator",
     "session-stats",
+    "skill-authoring",
     "smart-test",
     "token-audit",
     "truthpack-drift",
@@ -38,6 +40,7 @@
     "worktree-preflight"
   ],
   "source_only_skills": [
+    "codebase-review-prompts",
     "telemetry-live-ops"
   ],
   "contract_files": [

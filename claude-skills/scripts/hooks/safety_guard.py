@@ -12,10 +12,8 @@ Input:  JSON on stdin (Claude Code PreToolUse hook payload)
 Output: exit 0 to allow, exit 2 + stderr message to block
 """
 import json
-import os
 import re
 import sys
-
 
 # --- Dangerous Bash command patterns ---
 # Each tuple: (compiled regex, human-readable reason)

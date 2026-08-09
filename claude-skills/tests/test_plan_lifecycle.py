@@ -547,11 +547,12 @@ class PlanLifecycleEnforcementTests(unittest.TestCase):
 
     def test_merge_backup_field_present(self):
         """_merge_runtime result dict should always include 'backup_method'."""
-        with self._patch_env():
+        with self._patch_env(), mock.patch.object(task_manager, "_run_git_runtime") as run_git:
             payload = task_manager._merge_runtime()
 
+        run_git.assert_not_called()
         self.assertIn("backup_method", payload)
-        self.assertIn(payload["backup_method"], {"git_stash", "file_copy", "none"})
+        self.assertEqual(payload["backup_method"], "file_copy")
 
 
 if __name__ == "__main__":

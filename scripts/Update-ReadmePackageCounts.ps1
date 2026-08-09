@@ -43,12 +43,6 @@ foreach ($Package in $ReleaseManifest.packages) {
         "portable-runtime" {
             $SkillCount = @($InstallManifest.default_skills).Count + @($InstallManifest.optional_skills).Count
         }
-        "gemini-adapter" {
-            $SkillCount = @($InstallManifest.skills).Count
-        }
-        "antigravity-adapter" {
-            $SkillCount = @($InstallManifest.skills).Count
-        }
         default {
             throw "$($Package.name) uses unsupported count strategy: $($Package.strategy)"
         }

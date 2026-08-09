@@ -1,8 +1,5 @@
 param (
     [Parameter(Mandatory=$false)]
-    [switch]$IncludeLegacy,
-
-    [Parameter(Mandatory=$false)]
     [switch]$ShowAll,
 
     [Parameter(Mandatory=$false)]
@@ -20,17 +17,9 @@ if (-not (Test-Path $ManifestPath)) {
 }
 
 function Get-ManifestSkillNames {
-    param (
-        [object]$Package,
-        [object]$InstallManifest
-    )
+    param ([object]$InstallManifest)
 
-    switch ($Package.strategy) {
-        "portable-runtime" { return @($InstallManifest.default_skills) + @($InstallManifest.optional_skills) }
-        "gemini-adapter" { return @($InstallManifest.skills) }
-        "antigravity-adapter" { return @($InstallManifest.skills) }
-        default { return @() }
-    }
+    return @($InstallManifest.default_skills) + @($InstallManifest.optional_skills)
 }
 
 function Get-SkillDescription {
@@ -88,10 +77,10 @@ $ReleaseManifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json
 $Records = @()
 
 foreach ($Package in $ReleaseManifest.packages) {
-    if ($Package.status -ne "ready" -and -not $IncludeLegacy) {
+    if ($Package.status -ne "ready") {
         continue
     }
-    if ($Package.strategy -notin @("portable-runtime", "gemini-adapter", "antigravity-adapter")) {
+    if ($Package.strategy -ne "portable-runtime") {
         continue
     }
 
@@ -102,7 +91,7 @@ foreach ($Package in $ReleaseManifest.packages) {
     }
 
     $InstallManifest = Get-Content -Raw $InstallManifestPath | ConvertFrom-Json
-    foreach ($Skill in @(Get-ManifestSkillNames -Package $Package -InstallManifest $InstallManifest)) {
+    foreach ($Skill in @(Get-ManifestSkillNames -InstallManifest $InstallManifest)) {
         $SkillPath = Join-Path $PackageRoot "skills\$Skill\SKILL.md"
         if (-not (Test-Path $SkillPath)) {
             continue

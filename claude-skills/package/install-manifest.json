@@ -10,6 +10,7 @@
     "agent-report",
     "build-gate",
     "campaign-health",
+    "deep-audit",
     "delegate",
     "delegation-eval",
     "diagnosing-bugs",
@@ -19,16 +20,14 @@
     "review",
     "schema-validator",
     "session-stats",
+    "skill-authoring",
     "smart-test",
     "token-audit",
     "truthpack-drift",
     "worktree-preflight"
   ],
   "source_only_skills": [
-    "observer-test",
-    "refactor-planner",
-    "telemetry-live-ops",
-    "worktree-manager"
+    "telemetry-live-ops"
   ],
   "contract_files": [
     "planning-contract.md",

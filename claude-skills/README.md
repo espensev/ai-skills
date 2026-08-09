@@ -51,6 +51,8 @@ vendor into their own `.claude/skills` runtime tree.
 | Session Stats | `/session-stats` | Summarize session/tool activity, preferring measured telemetry data when available |
 | Token Audit | `/token-audit` | Analyze token/cost/budget usage, preferring measured telemetry data when available |
 | Memory Management | `/memory-management` | Govern auto-memory: typed write schema, locality routing, index budget, and audits |
+| Deep Audit | `/deep-audit` | Run evidence-first, resumable runtime-efficiency audits while keeping product code read-only by default |
+| Skill Authoring | `/skill-authoring` | Create and revise Agent Skills with focused discovery metadata, progressive disclosure, and package wiring |
 
 ## Workflow
 
@@ -105,14 +107,17 @@ for d in \
   skills/agent-report \
   skills/build-gate \
   skills/campaign-health \
+  skills/deep-audit \
   skills/delegate \
   skills/delegation-eval \
+  skills/diagnosing-bugs \
   skills/docs-sync \
   skills/memory-management \
   skills/observer \
   skills/review \
   skills/schema-validator \
   skills/session-stats \
+  skills/skill-authoring \
   skills/smart-test \
   skills/token-audit \
   skills/truthpack-drift \
@@ -151,14 +156,17 @@ for d in \
   skills/agent-report \
   skills/build-gate \
   skills/campaign-health \
+  skills/deep-audit \
   skills/delegate \
   skills/delegation-eval \
+  skills/diagnosing-bugs \
   skills/docs-sync \
   skills/memory-management \
   skills/observer \
   skills/review \
   skills/schema-validator \
   skills/session-stats \
+  skills/skill-authoring \
   skills/smart-test \
   skills/token-audit \
   skills/truthpack-drift \

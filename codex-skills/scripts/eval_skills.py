@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CASES = ROOT / "eval" / "cases" / "light-skill-cases.json"
 DEFAULT_TEMPLATE = ROOT / "eval" / "responses.template.json"

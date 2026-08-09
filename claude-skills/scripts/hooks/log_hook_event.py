@@ -15,7 +15,6 @@ import os
 import sys
 from datetime import datetime, timezone
 
-
 LOG_SUBDIR = os.path.join(".claude", "hooks", "logs")
 LOG_FILE = "hooks-log.jsonl"
 

@@ -4,6 +4,9 @@
 **Surface:** ready skill packages, legacy Gemini adapter, and local Codex/Claude skill roots
 **Verdict:** PASS
 
+> **Historical record.** The Gemini surface described below was removed on
+> 2026-08-09. Findings remain valid only for the June audit state.
+
 ## Findings
 
 ### High

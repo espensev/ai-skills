@@ -145,68 +145,6 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "observer-test-basic-001",
-    "selected_skill": "observer-test",
-    "output": "Mock eval response for observer-test. observation. worktree. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "observations.jsonl",
-      "report"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "refactor-planner-basic-001",
-    "selected_skill": "refactor-planner",
-    "output": "Mock eval response for refactor-planner. phase. contract. seam. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "test",
-      "verify",
-      "pytest"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "refactor-planner-edge-002",
-    "selected_skill": "refactor-planner",
-    "output": "Mock eval response for refactor-planner. phase. extraction. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "test",
-      "verify"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "worktree-manager-basic-001",
-    "selected_skill": "worktree-manager",
-    "output": "Mock eval response for worktree-manager. worktree. branch. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "git worktree",
-      "git branch"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "worktree-manager-merge-002",
-    "selected_skill": "worktree-manager",
-    "output": "Mock eval response for worktree-manager. merge. worktree. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "git",
-      "diff",
-      "merge"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
     "id": "delegate-basic-001",
     "selected_skill": "delegate",
     "output": "Mock eval response for delegate. delegate. controller. readiness. ollama.",
@@ -228,5 +166,96 @@
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "deep-audit-basic-001",
+    "selected_skill": "deep-audit",
+    "output": "Deep Audit discovery: establish runtime frequency and cardinality, label every material claim by evidence class, preserve remaining uncertainty, and end with the exact next mode.",
+    "created_files": [],
+    "verification_commands": [
+      "trace",
+      "measure"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "deep-audit-resume-002",
+    "selected_skill": "deep-audit",
+    "output": "Load audit state, capture the current revision and dirty tree, then revalidate stale evidence before continuing the highest-priority item.",
+    "created_files": [],
+    "verification_commands": [
+      "git status",
+      "git diff"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "deep-audit-profile-safety-003",
+    "selected_skill": "deep-audit",
+    "output": "Create a measurement plan with a baseline, confirmation and rejection threshold, confounder controls, and an explicit safety and authorization gate.",
+    "created_files": [],
+    "verification_commands": [
+      "measurement plan"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "review-deep-audit-boundary-001",
+    "selected_skill": "review",
+    "output": "Review the fixed-point diff and report each finding with concrete evidence and merge impact.",
+    "created_files": [],
+    "verification_commands": [
+      "git diff"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic boundary mock response."
+  },
+  {
+    "id": "diagnosing-bugs-deep-audit-boundary-001",
+    "selected_skill": "diagnosing-bugs",
+    "output": "Reproduce the regression, isolate the root cause, implement the smallest fix, and protect it with a focused test.",
+    "created_files": [],
+    "verification_commands": [
+      "reproduce",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic boundary mock response."
+  },
+  {
+    "id": "discover-deep-audit-boundary-001",
+    "selected_skill": "discover",
+    "output": "Inspect the dependencies and constraints, then produce evidence-backed feasibility findings before planning.",
+    "created_files": [],
+    "verification_commands": [
+      "rg"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic boundary mock response."
+  },
+  {
+    "id": "manager-deep-audit-boundary-001",
+    "selected_skill": "manager",
+    "output": "Coordinate parallel lanes with explicit approval gates, implement only approved fixes, and verify them with tests.",
+    "created_files": [],
+    "verification_commands": [
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic boundary mock response."
+  },
+  {
+    "id": "skill-authoring-basic-001",
+    "selected_skill": "skill-authoring",
+    "output": "Create SKILL.md with focused frontmatter and discovery metadata, wire the package manifest, then validate the package.",
+    "created_files": [],
+    "verification_commands": [
+      "Test-ReadyPackages validate"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for skill-authoring."
   }
 ]

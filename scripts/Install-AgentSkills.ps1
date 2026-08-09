@@ -21,6 +21,59 @@ $ErrorActionPreference = "Stop"
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptRoot
 
+function Test-GeneratedPackageArtifact {
+    param ([string]$Path)
+
+    return ($Path -match '(^|[\\/])__pycache__([\\/]|$)' -or $Path -match '\.py[co]$')
+}
+
+function Get-PathIdentity {
+    param ([string]$Path)
+
+    $FullPath = [System.IO.Path]::GetFullPath($Path)
+    $Item = Get-Item -LiteralPath $FullPath -Force -ErrorAction SilentlyContinue
+    if ($Item -and $Item.LinkType -and $Item.Target) {
+        return [System.IO.Path]::GetFullPath([string]@($Item.Target)[0])
+    }
+
+    $ParentPath = Split-Path -Parent $FullPath
+    $ParentItem = Get-Item -LiteralPath $ParentPath -Force -ErrorAction SilentlyContinue
+    if ($ParentItem -and $ParentItem.LinkType -and $ParentItem.Target) {
+        return Join-Path ([string]@($ParentItem.Target)[0]) (Split-Path -Leaf $FullPath)
+    }
+
+    return $FullPath
+}
+
+function Copy-CleanDirectory {
+    param (
+        [string]$SourcePath,
+        [string]$TargetPath
+    )
+
+    New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
+    $SourcePrefix = [System.IO.Path]::GetFullPath($SourcePath).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    ) + [System.IO.Path]::DirectorySeparatorChar
+    Get-ChildItem -LiteralPath $SourcePath -Recurse -File -Force |
+        Where-Object { -not (Test-GeneratedPackageArtifact $_.FullName) } |
+        ForEach-Object {
+            $RelativeFile = $_.FullName.Substring($SourcePrefix.Length)
+            $TargetFile = Join-Path $TargetPath $RelativeFile
+            New-Item -ItemType Directory -Path (Split-Path -Parent $TargetFile) -Force | Out-Null
+            Copy-Item -LiteralPath $_.FullName -Destination $TargetFile -Force
+        }
+
+    Get-ChildItem -LiteralPath $TargetPath -Recurse -File -Force -ErrorAction SilentlyContinue |
+        Where-Object { Test-GeneratedPackageArtifact $_.FullName } |
+        Remove-Item -Force
+    Get-ChildItem -LiteralPath $TargetPath -Recurse -Directory -Force -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -eq "__pycache__" } |
+        Sort-Object FullName -Descending |
+        Remove-Item -Recurse -Force
+}
+
 function Get-UniquePaths {
     param ([string[]]$Paths)
 
@@ -34,7 +87,7 @@ function Get-UniquePaths {
 
         $Expanded = [Environment]::ExpandEnvironmentVariables($Path)
         $FullPath = [System.IO.Path]::GetFullPath($Expanded)
-        $Key = $FullPath.ToLowerInvariant()
+        $Key = (Get-PathIdentity $FullPath).ToLowerInvariant()
         if (-not $Seen.ContainsKey($Key)) {
             $Seen[$Key] = $true
             $Result += $FullPath
@@ -130,10 +183,7 @@ function Copy-SkillDirectory {
         return "would-copy"
     }
 
-    New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
-    Get-ChildItem -LiteralPath $SourcePath -Force | ForEach-Object {
-        Copy-Item -LiteralPath $_.FullName -Destination $TargetPath -Recurse -Force
-    }
+    Copy-CleanDirectory -SourcePath $SourcePath -TargetPath $TargetPath
 
     if (Test-Path $TargetPath) {
         return "copied"
@@ -167,10 +217,7 @@ function Copy-ManifestDirectory {
         return "would-copy"
     }
 
-    New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
-    Get-ChildItem -LiteralPath $SourcePath -Force | ForEach-Object {
-        Copy-Item -LiteralPath $_.FullName -Destination $TargetPath -Recurse -Force
-    }
+    Copy-CleanDirectory -SourcePath $SourcePath -TargetPath $TargetPath
 
     if (Test-Path $TargetPath) {
         return "copied"

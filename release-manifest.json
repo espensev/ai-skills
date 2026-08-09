@@ -16,30 +16,6 @@
       "strategy": "portable-runtime",
       "audience": "Claude",
       "notes": "Portable skill package with runtime modules and contracts."
-    },
-    {
-      "name": "gemini-skills",
-      "path": "gemini-skills",
-      "status": "legacy",
-      "strategy": "gemini-adapter",
-      "audience": "Gemini",
-      "notes": "Legacy Gemini CLI adapter retained for enterprise/API-key compatibility; not exported by default."
-    },
-    {
-      "name": "antigravity-skills",
-      "path": "antigravity-skills",
-      "status": "ready",
-      "strategy": "antigravity-adapter",
-      "audience": "Antigravity",
-      "notes": "Antigravity adapter with Agent Skills, workflows, bootstrap script, and guardrails."
-    },
-    {
-      "name": "wt-cli",
-      "path": "wt-cli",
-      "status": "tooling",
-      "strategy": "source-only",
-      "audience": "All",
-      "notes": "Local worktree orchestration tool, not part of the skill export bundle."
     }
   ]
 }

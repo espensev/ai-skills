@@ -89,7 +89,7 @@
   {
     "id": "observer-basic-001",
     "selected_skill": "observer",
-    "output": "Mock eval response for observer. observation. evidence. project-intelligence. Verification coverage is listed in verification_commands.",
+    "output": "Use repo-owned project-intelligence artifacts for the evidence-backed observation, labelled with controller_machine_id and target_machine_ids. This does not write Codex native memory.",
     "created_files": [],
     "verification_commands": [
       "observations.jsonl",
@@ -263,18 +263,6 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "dmux-workflows-basic-001",
-    "selected_skill": "dmux-workflows",
-    "output": "Mock eval response for dmux-workflows. ownership. parallel. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "merge",
-      "verify"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
     "id": "documentation-lookup-basic-001",
     "selected_skill": "documentation-lookup",
     "output": "Mock eval response for documentation-lookup. documentation. current.",
@@ -356,12 +344,115 @@
   {
     "id": "memory-management-basic-001",
     "selected_skill": "memory-management",
-    "output": "Mock eval response for memory-management. Wrote a memory file with a type and description in frontmatter, then confirmed the always-loaded AGENTS.md surface stays within budget.",
+    "output": "Mock eval response for memory-management. Classified the explicit request by type, submitted one pending update note under extensions/ad_hoc/notes with a verified controller_machine_id and target_machine_ids: [], and left generated MEMORY.md read-only. The always-loaded AGENTS.md surface remains within budget.",
     "created_files": [],
     "verification_commands": [
-      "python scripts/memory_audit.py"
+      "inspect MEMORY.md registry",
+      "check AGENTS.md budget"
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "deep-audit-basic-001",
+    "selected_skill": "deep-audit",
+    "output": "Deep Audit discovery: establish runtime frequency and cardinality, label every material claim by evidence class, preserve remaining uncertainty, and end with the exact next mode.",
+    "created_files": [],
+    "verification_commands": [
+      "trace",
+      "measure"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "deep-audit-resume-002",
+    "selected_skill": "deep-audit",
+    "output": "Load audit state, capture the current revision and dirty tree, then revalidate stale evidence before continuing the highest-priority item.",
+    "created_files": [],
+    "verification_commands": [
+      "git status",
+      "git diff"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "deep-audit-profile-safety-003",
+    "selected_skill": "deep-audit",
+    "output": "Create a measurement plan with a baseline, confirmation and rejection threshold, confounder controls, and an explicit safety and authorization gate.",
+    "created_files": [],
+    "verification_commands": [
+      "measurement plan"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for package eval."
+  },
+  {
+    "id": "review-deep-audit-boundary-001",
+    "selected_skill": "review",
+    "output": "Review the fixed-point diff and report each finding with concrete evidence and merge impact.",
+    "created_files": [],
+    "verification_commands": [
+      "git diff"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic boundary mock response."
+  },
+  {
+    "id": "diagnosing-bugs-deep-audit-boundary-001",
+    "selected_skill": "diagnosing-bugs",
+    "output": "Reproduce the regression, isolate the root cause, implement the smallest fix, and protect it with a focused test.",
+    "created_files": [],
+    "verification_commands": [
+      "reproduce",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic boundary mock response."
+  },
+  {
+    "id": "discover-deep-audit-boundary-001",
+    "selected_skill": "discover",
+    "output": "Inspect the dependencies and constraints, then produce evidence-backed feasibility findings before planning.",
+    "created_files": [],
+    "verification_commands": [
+      "rg"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic boundary mock response."
+  },
+  {
+    "id": "manager-deep-audit-boundary-001",
+    "selected_skill": "manager",
+    "output": "Coordinate parallel lanes with explicit approval gates, implement only approved fixes, and verify them with tests.",
+    "created_files": [],
+    "verification_commands": [
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic boundary mock response."
+  },
+  {
+    "id": "audit-gated-subagents-basic-001",
+    "selected_skill": "audit-gated-subagents",
+    "output": "Start with PASS 0, define lane ownership, require independent review, and stop at each gate before remediation.",
+    "created_files": [],
+    "verification_commands": [
+      "review"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for audit-gated-subagents."
+  },
+  {
+    "id": "skill-authoring-basic-001",
+    "selected_skill": "skill-authoring",
+    "output": "Create SKILL.md with focused frontmatter and discovery metadata, wire the package manifest, then validate the package.",
+    "created_files": [],
+    "verification_commands": [
+      "Test-ReadyPackages validate"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for skill-authoring."
   }
 ]

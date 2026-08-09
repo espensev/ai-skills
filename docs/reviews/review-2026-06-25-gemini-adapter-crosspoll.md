@@ -1,5 +1,9 @@
 # Review - Gemini Adapter + Cross-Poll Branch WIP
 
+> **Historical record.** This review describes the Gemini adapter as it existed
+> on 2026-06-25. The entire adapter was removed on 2026-08-09 after the user
+> confirmed it had no remaining relevant consumer.
+
 **Date:** 2026-06-25
 **Surface:** branch WIP on `feature/ops-skills-eval-crosspoll` (committed `main..HEAD` = 3 commits + uncommitted working tree)
 **Spec source:** user request ("review, suggest improvements, implement, export") + `docs/skill-directory-review-2026-06-25.md`

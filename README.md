@@ -120,6 +120,13 @@ See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md)
 
 `telemetry-live-ops` is kept in this source repo for this workstation only. It is intentionally excluded from the install manifests and ready-package export.
 
+### Machine-local Codex lifecycle hooks
+
+The source authority for the DevHome safety and Remember-compatibility hooks is
+[`codex-skills/local-hooks/devhome-lifecycle`](codex-skills/local-hooks/devhome-lifecycle/README.md).
+It installs explicitly into `D:\DevHome\state\codex`, supports a read-only drift
+check, and remains outside the portable ready-package manifests.
+
 ## Architecture
 
 Each ready package follows a **contract-first, read-all write-scoped** design:

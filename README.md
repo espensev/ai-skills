@@ -124,8 +124,21 @@ See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md)
 
 The source authority for the DevHome safety and Remember-compatibility hooks is
 [`codex-skills/local-hooks/devhome-lifecycle`](codex-skills/local-hooks/devhome-lifecycle/README.md).
-It installs explicitly into `D:\DevHome\state\codex`, supports a read-only drift
-check, and remains outside the portable ready-package manifests.
+It remains outside the portable ready-package manifests and is available as the
+`devhome-lifecycle` choice in the repository's local **AI Skills** Codex
+marketplace. Its sync-only plugin hook keeps the verified
+`D:\DevHome\state\codex` projection current without registering the safety or
+Remember behavior twice.
+
+```powershell
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+```
+
+Re-run that command after source updates. It hash-checks the materialized plugin
+cache and refreshes it only when needed; `-Force` requests an explicit reinstall.
+This machine-specific choice pins its Codex state to
+`D:\DevHome\state\codex`; an alternate `CODEX_HOME` does not relocate the
+lifecycle plugin or its runtime hook projection.
 
 ## Architecture
 

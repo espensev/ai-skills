@@ -1,0 +1,20 @@
+{
+  "name": "ai-skills",
+  "interface": {
+    "displayName": "AI Skills (local)"
+  },
+  "plugins": [
+    {
+      "name": "devhome-lifecycle",
+      "source": {
+        "source": "local",
+        "path": "./codex-skills/local-hooks/devhome-lifecycle"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

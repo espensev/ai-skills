@@ -15,6 +15,7 @@ the same way, so release readiness is tracked explicitly.
 | Package | Status | Notes |
 |---|---|---|
 | `telemetry-live-ops` | Source-only machine-local skill | Kept under provider skill trees for this workstation's live `ollama-telemetry` deployment; intentionally excluded from install manifests and ready exports. |
+| `devhome-lifecycle` | Source-only local Codex plugin | Offered through the `ai-skills` repository marketplace; excluded from portable manifests and verified with source/runtime plus source/cache contracts. |
 
 ## Release Checklist
 
@@ -25,7 +26,8 @@ Run the full local release gate before shipping:
 ```
 
 The wrapper runs ready-package validation, README manifest count checks, Codex
-and Claude contract tests, provider parity reporting, and git whitespace checks.
+and Claude contract tests, the machine-local lifecycle source/cache tests,
+provider parity reporting, and git whitespace checks.
 Use `-IncludeLiveRootCompare` after syncing local Codex and Claude skill roots.
 
 Individual checks are also available when narrowing a failure:

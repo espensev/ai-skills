@@ -4,6 +4,31 @@ Describe 'DevHome Codex lifecycle hooks' {
         $script:HookScript = Join-Path $script:PackageRoot 'hooks\Invoke-DevHomeHook.ps1'
         $script:HooksConfig = Join-Path $script:PackageRoot 'hooks.json'
         $script:Installer = Join-Path $script:PackageRoot 'Install-DevHomeCodexHooks.ps1'
+        $script:Synchronizer = Join-Path $script:PackageRoot 'Sync-DevHomeCodexHooks.ps1'
+        $script:PluginManifest = Join-Path $script:PackageRoot '.codex-plugin\plugin.json'
+        $script:PluginHooksConfig = Join-Path $script:PackageRoot 'hooks\hooks.json'
+        $script:PluginSkill = Join-Path $script:PackageRoot 'skills\devhome-lifecycle\SKILL.md'
+        $script:RepoRoot = [System.IO.Path]::GetFullPath((Join-Path $script:PackageRoot '..\..\..'))
+        $script:AgentSkillInstaller = Join-Path $script:RepoRoot 'scripts\Install-AgentSkills.ps1'
+        $script:PhysicalCodexHome = 'D:\DevHome\state\codex'
+
+        function New-CapturingInstallerPackage {
+            $root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+            $null = New-Item -ItemType Directory -Path $root -Force
+            @'
+[CmdletBinding()]
+param(
+    [string] $TargetRoot,
+    [switch] $Check,
+    [string] $VerifierPath,
+    [string] $ExpectedMachineId,
+    [string] $ExpectedInstallationId
+)
+Add-Content -LiteralPath $env:FAKE_RUNTIME_TARGET_MARKER -Value $TargetRoot
+[pscustomobject]@{ Status = if ($Check) { 'CURRENT' } else { 'UNCHANGED' } }
+'@ | Set-Content -LiteralPath (Join-Path $root 'Install-DevHomeCodexHooks.ps1') -Encoding utf8NoBOM
+            return $root
+        }
 
         function Invoke-HookProcess {
             param(
@@ -306,12 +331,139 @@ enabled = false
             $installerText | Should -Not -Match 'common_development\\common_dev\\Get-VerifiedMachineIdentity\.ps1'
         }
 
+        It 'keeps the direct installer default on physical DevHome despite ambient CODEX_HOME' {
+            $tokens = $null
+            $parseErrors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+                $script:Installer,
+                [ref]$tokens,
+                [ref]$parseErrors
+            )
+            $parseErrors | Should -HaveCount 0
+            $targetParameter = @(
+                $ast.ParamBlock.Parameters |
+                    Where-Object { $_.Name.VariablePath.UserPath -ceq 'TargetRoot' }
+            )
+            $targetParameter | Should -HaveCount 1
+
+            $hadCodexHome = Test-Path Env:CODEX_HOME
+            $previousCodexHome = $env:CODEX_HOME
+            try {
+                $env:CODEX_HOME = Join-Path $TestDrive 'AppData\Local\Codex'
+                $defaultTarget = & ([scriptblock]::Create(
+                    $targetParameter[0].DefaultValue.Extent.Text
+                ))
+            }
+            finally {
+                if ($hadCodexHome) {
+                    $env:CODEX_HOME = $previousCodexHome
+                }
+                else {
+                    Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue
+                }
+            }
+
+            $defaultTarget | Should -BeExactly $script:PhysicalCodexHome
+        }
+
+        It 'rejects an AppData direct-installer target before verifier drift or writes' {
+            $alternateRoot = Join-Path $TestDrive 'AppData\Local\Codex'
+            $null = New-Item -ItemType Directory -Path $alternateRoot -Force
+            $sentinel = Join-Path $alternateRoot 'sentinel.txt'
+            Set-Content -LiteralPath $sentinel -Value 'unchanged' -Encoding ascii
+            $verifierMarker = Join-Path $TestDrive 'direct-installer-verifier-called.txt'
+            $verifier = Join-Path $TestDrive 'direct-installer-verifier.ps1'
+            @"
+Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
+[pscustomobject]@{
+    status = 'VERIFIED'
+    machineId = 'snd-desk'
+    instanceId = 'ca96d510-7d87-4cec-8e1a-bd8fc3866903'
+}
+"@ | Set-Content -LiteralPath $verifier -Encoding utf8NoBOM
+
+            {
+                & $script:Installer `
+                    -TargetRoot $alternateRoot `
+                    -VerifierPath $verifier `
+                    -Check
+            } | Should -Throw '*physical DevHome Codex root*test-only*'
+
+            Test-Path -LiteralPath $verifierMarker | Should -BeFalse
+            (Get-Content -Raw -LiteralPath $sentinel).Trim() | Should -BeExactly 'unchanged'
+            Test-Path -LiteralPath (Join-Path $alternateRoot 'hooks.json') | Should -BeFalse
+            Test-Path -LiteralPath (Join-Path $alternateRoot 'hooks') | Should -BeFalse
+        }
+
+        It 'pins ambient AppData CODEX_HOME to the physical startup runtime target' {
+            $fakePackage = New-CapturingInstallerPackage
+            $marker = Join-Path $TestDrive 'captured-runtime-target.txt'
+            $ambientCodexHome = Join-Path $TestDrive 'AppData\Local\Codex'
+            $hadCodexHome = Test-Path Env:CODEX_HOME
+            $previousCodexHome = $env:CODEX_HOME
+            $env:FAKE_RUNTIME_TARGET_MARKER = $marker
+            try {
+                $env:CODEX_HOME = $ambientCodexHome
+                @(
+                    & $script:Synchronizer `
+                        -SourcePackageRoot $fakePackage `
+                        -Check `
+                        -Quiet
+                ).Count | Should -Be 0
+            }
+            finally {
+                Remove-Item Env:FAKE_RUNTIME_TARGET_MARKER -ErrorAction SilentlyContinue
+                if ($hadCodexHome) {
+                    $env:CODEX_HOME = $previousCodexHome
+                }
+                else {
+                    Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue
+                }
+            }
+
+            (Get-Content -LiteralPath $marker -Tail 1) | Should -BeExactly $script:PhysicalCodexHome
+        }
+
+        It 'rejects an alternate runtime target before invoking the source installer' {
+            $fakePackage = New-CapturingInstallerPackage
+            $marker = Join-Path $TestDrive 'rejected-runtime-target.txt'
+            $env:FAKE_RUNTIME_TARGET_MARKER = $marker
+            try {
+                {
+                    & $script:Synchronizer `
+                        -SourcePackageRoot $fakePackage `
+                        -TargetRoot (Join-Path $TestDrive 'alternate-codex-home') `
+                        -Check `
+                        -Quiet
+                } | Should -Throw '*physical DevHome Codex root*test-only*'
+            }
+            finally {
+                Remove-Item Env:FAKE_RUNTIME_TARGET_MARKER -ErrorAction SilentlyContinue
+            }
+
+            Test-Path -LiteralPath $marker | Should -BeFalse
+        }
+
+        It 'makes Install-AgentSkills pass the physical Codex root explicitly' {
+            $installerText = Get-Content -Raw -LiteralPath $script:AgentSkillInstaller
+
+            $installerText | Should -Match '(?s)\$PluginSyncParameters\s*=\s*@\{.*CodexHome\s*=\s*"D:\\DevHome\\state\\codex"'
+        }
+
         It 'installs the closed hook set and proves it has no drift' {
             Test-Path -LiteralPath $script:Installer -PathType Leaf | Should -BeTrue
             $targetRoot = Join-Path $TestDrive 'codex-home'
 
-            & $script:Installer -TargetRoot $targetRoot | Out-Null
-            { & $script:Installer -TargetRoot $targetRoot -Check } | Should -Not -Throw
+            & $script:Installer `
+                -TargetRoot $targetRoot `
+                -AllowTestOnlyTargetRootOverride |
+                Out-Null
+            {
+                & $script:Installer `
+                    -TargetRoot $targetRoot `
+                    -AllowTestOnlyTargetRootOverride `
+                    -Check
+            } | Should -Not -Throw
 
             $expectedFiles = @(
                 'hooks.json',
@@ -333,12 +485,110 @@ enabled = false
 
         It 'detects installed hook drift without repairing it in check mode' {
             $targetRoot = Join-Path $TestDrive 'drifted-codex-home'
-            & $script:Installer -TargetRoot $targetRoot | Out-Null
+            & $script:Installer `
+                -TargetRoot $targetRoot `
+                -AllowTestOnlyTargetRootOverride |
+                Out-Null
             $driftedPath = Join-Path $targetRoot 'hooks\Invoke-DevHomeHook.ps1'
             Add-Content -LiteralPath $driftedPath -Value '# drift probe'
 
-            { & $script:Installer -TargetRoot $targetRoot -Check } | Should -Throw '*drift*'
+            {
+                & $script:Installer `
+                    -TargetRoot $targetRoot `
+                    -AllowTestOnlyTargetRootOverride `
+                    -Check
+            } | Should -Throw '*drift*'
             (Get-Content -LiteralPath $driftedPath -Tail 1) | Should -BeExactly '# drift probe'
+        }
+
+        It 'quietly repairs runtime drift through the plugin synchronizer' {
+            Test-Path -LiteralPath $script:Synchronizer -PathType Leaf | Should -BeTrue
+            $targetRoot = Join-Path $TestDrive 'synchronized-codex-home'
+
+            @(
+                & $script:Synchronizer `
+                    -TargetRoot $targetRoot `
+                    -AllowTestOnlyTargetRootOverride `
+                    -Quiet
+            ).Count | Should -Be 0
+            {
+                & $script:Synchronizer `
+                    -TargetRoot $targetRoot `
+                    -AllowTestOnlyTargetRootOverride `
+                    -Check `
+                    -Quiet
+            } | Should -Not -Throw
+
+            $driftedPath = Join-Path $targetRoot 'hooks\Invoke-DevHomeHook.ps1'
+            Add-Content -LiteralPath $driftedPath -Value '# synchronizer drift probe'
+
+            @(
+                & $script:Synchronizer `
+                    -TargetRoot $targetRoot `
+                    -AllowTestOnlyTargetRootOverride `
+                    -Quiet
+            ).Count | Should -Be 0
+            {
+                & $script:Installer `
+                    -TargetRoot $targetRoot `
+                    -AllowTestOnlyTargetRootOverride `
+                    -Check
+            } | Should -Not -Throw
+            (Get-Content -LiteralPath $driftedPath -Tail 1) | Should -Not -BeExactly '# synchronizer drift probe'
+        }
+
+        It 'uses the canonical source package when invoked from a stale plugin cache' {
+            $cachedRoot = Join-Path $TestDrive 'stale-plugin-cache'
+            New-Item -ItemType Directory -Path $cachedRoot -Force | Out-Null
+            Copy-Item -LiteralPath $script:Synchronizer -Destination $cachedRoot
+            $cachedSynchronizer = Join-Path $cachedRoot 'Sync-DevHomeCodexHooks.ps1'
+            $targetRoot = Join-Path $TestDrive 'source-delegated-codex-home'
+
+            {
+                & $cachedSynchronizer `
+                    -SourcePackageRoot $script:PackageRoot `
+                    -TargetRoot $targetRoot `
+                    -AllowTestOnlyTargetRootOverride `
+                    -Quiet
+            } | Should -Not -Throw
+            {
+                & $script:Installer `
+                    -TargetRoot $targetRoot `
+                    -AllowTestOnlyTargetRootOverride `
+                    -Check
+            } | Should -Not -Throw
+        }
+    }
+
+    Context 'Ai-Skills plugin package' {
+        It 'declares the lifecycle plugin and bundled operator skill' {
+            $manifest = Get-Content -Raw -LiteralPath $script:PluginManifest | ConvertFrom-Json
+
+            $manifest.name | Should -BeExactly 'devhome-lifecycle'
+            $manifest.version | Should -Match '^\d+\.\d+\.\d+$'
+            $manifest.hooks | Should -BeExactly './hooks/hooks.json'
+            $manifest.skills | Should -BeExactly './skills/'
+            Test-Path -LiteralPath $script:PluginSkill -PathType Leaf | Should -BeTrue
+            (Get-Content -Raw -LiteralPath $script:PluginSkill) | Should -Match '(?m)^name: devhome-lifecycle$'
+        }
+
+        It 'registers one reconciliation hook without duplicating behavior hooks' {
+            $pluginHooks = Get-Content -Raw -LiteralPath $script:PluginHooksConfig | ConvertFrom-Json
+            $eventNames = @($pluginHooks.hooks.PSObject.Properties.Name)
+
+            $eventNames | Should -HaveCount 1
+            $eventNames[0] | Should -BeExactly 'SessionStart'
+            $definitions = @($pluginHooks.hooks.SessionStart)
+            $definitions | Should -HaveCount 1
+            $definitions[0].matcher | Should -BeExactly 'startup|resume'
+
+            $commands = @($definitions[0].hooks)
+            $commands | Should -HaveCount 1
+            $commands[0].command | Should -Match '\$\{PLUGIN_ROOT\}/Sync-DevHomeCodexHooks\.ps1'
+            $commands[0].command | Should -Match '-SourcePackageRoot.+Ai-Skills/codex-skills/local-hooks/devhome-lifecycle'
+            $commands[0].commandWindows | Should -BeExactly $commands[0].command
+            $commands[0].command | Should -Not -Match 'Invoke-RememberAdapter|Invoke-DevHomeHook'
+            $commands[0].command | Should -Not -Match 'AllowTestOnly'
         }
     }
 }

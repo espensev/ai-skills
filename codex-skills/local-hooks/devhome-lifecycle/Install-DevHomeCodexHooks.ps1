@@ -1,14 +1,10 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [Parameter(Mandatory = $false)]
-    [string] $TargetRoot = $(
-        if ([string]::IsNullOrWhiteSpace($env:CODEX_HOME)) {
-            'D:\DevHome\state\codex'
-        }
-        else {
-            $env:CODEX_HOME
-        }
-    ),
+    [string] $TargetRoot = 'D:\DevHome\state\codex',
+
+    [Parameter(Mandatory = $false)]
+    [switch] $AllowTestOnlyTargetRootOverride,
 
     [Parameter(Mandatory = $false)]
     [switch] $Check,
@@ -134,6 +130,20 @@ $targetPathRoot = [System.IO.Path]::GetPathRoot($ResolvedTargetRoot).TrimEnd(
 )
 if ($ResolvedTargetRoot -ceq $targetPathRoot) {
     throw "Refusing to use a filesystem root as the Codex target: $ResolvedTargetRoot"
+}
+$resolvedDefaultRuntimeRoot = [System.IO.Path]::GetFullPath($DefaultRuntimeRoot).TrimEnd(
+    [System.IO.Path]::DirectorySeparatorChar,
+    [System.IO.Path]::AltDirectorySeparatorChar
+)
+if (
+    -not [string]::Equals(
+        $ResolvedTargetRoot,
+        $resolvedDefaultRuntimeRoot,
+        [System.StringComparison]::OrdinalIgnoreCase
+    ) -and
+    -not $AllowTestOnlyTargetRootOverride
+) {
+    throw "Refusing alternate hook target '$ResolvedTargetRoot'; lifecycle hooks are pinned to the physical DevHome Codex root '$resolvedDefaultRuntimeRoot'. Use the test-only override only for isolated tests."
 }
 
 $ExpectedConfig = Get-ExpectedHooksConfig -ResolvedTargetRoot $ResolvedTargetRoot

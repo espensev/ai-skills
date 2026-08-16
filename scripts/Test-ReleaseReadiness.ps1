@@ -36,10 +36,21 @@ Invoke-Step "README manifest counts" {
 }
 
 if (-not $SkipUnitTests) {
-    Invoke-Step "Codex and Claude package contract tests" {
-        python -m unittest codex-skills.tests.test_skill_docs_contract claude-skills.tests.test_skill_docs_contract
+    Invoke-Step "Codex, Claude, and local plugin contract tests" {
+        python -m unittest codex-skills.tests.test_skill_docs_contract codex-skills.tests.test_local_plugin_contract claude-skills.tests.test_skill_docs_contract
         if ($LASTEXITCODE -ne 0) {
             throw "Package contract tests failed"
+        }
+    }
+
+    Invoke-Step "DevHome lifecycle source and plugin-cache contracts" {
+        $LifecycleTestPaths = @(
+            (Join-Path $RepoRoot "codex-skills\local-hooks\devhome-lifecycle\tests\DevHome-Hooks.Tests.ps1"),
+            (Join-Path $RepoRoot "codex-skills\local-hooks\devhome-lifecycle\tests\DevHome-PluginSync.Tests.ps1")
+        )
+        $LifecycleResult = Invoke-Pester -Path $LifecycleTestPaths -Output Normal -PassThru
+        if ($LifecycleResult.FailedCount -ne 0) {
+            throw "DevHome lifecycle contracts failed: $($LifecycleResult.FailedCount)"
         }
     }
 }

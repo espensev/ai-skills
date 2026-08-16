@@ -48,3 +48,22 @@ The script copies only the skills, support files, runtime files, and runtime
 directories listed in each provider's `package/install-manifest.json`. It does
 not delete unrelated local skills, and it does not copy source-only package
 material such as `telemetry-live-ops`.
+
+## Local Codex plugin choice
+
+Machine-local components remain outside those portable manifests. Register the
+repository marketplace separately when `devhome-lifecycle` should appear as an
+AI Skills plugin choice:
+
+```powershell
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+```
+
+The plugin contributes one operator skill and one startup reconciliation hook.
+It does not duplicate the installed DevHome behavior hooks. Re-run the command
+after updating this checkout: it hashes the closed source/cache payload and
+refreshes stale plugin material explicitly. A restart alone is not treated as a
+cache-update mechanism. The trusted cached reconciler delegates to the canonical
+Ai-Skills source, then updates the verified runtime projection if needed.
+Unlike portable skill-copy targets, this machine-specific plugin is pinned to
+`D:\DevHome\state\codex`; `CODEX_HOME` cannot redirect it into AppData.

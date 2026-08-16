@@ -10,6 +10,10 @@ param (
     [string[]]$ClaudeTargets,
 
     [Parameter(Mandatory=$false)]
+    [ValidateSet("None", "DevHomeLifecycle")]
+    [string]$CodexLocalPlugin = "None",
+
+    [Parameter(Mandatory=$false)]
     [switch]$Force,
 
     [Parameter(Mandatory=$false)]
@@ -20,6 +24,10 @@ $ErrorActionPreference = "Stop"
 
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptRoot
+
+if ($Provider -eq "Claude" -and $CodexLocalPlugin -ne "None") {
+    throw "CodexLocalPlugin requires Provider Codex or Both"
+}
 
 function Test-GeneratedPackageArtifact {
     param ([string]$Path)
@@ -317,10 +325,29 @@ if (-not $ClaudeTargets) {
 }
 
 $AllRows = @()
+$LocalPluginResult = $null
 
 if ($Provider -eq "Both" -or $Provider -eq "Codex") {
     foreach ($Row in Sync-ProviderPackage -ProviderName "Codex" -PackageDirectory "codex-skills" -TargetRoots $CodexTargets) {
         $AllRows += $Row
+    }
+
+    if ($CodexLocalPlugin -eq "DevHomeLifecycle") {
+        $PluginSyncPath = Join-Path $RepoRoot "codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1"
+        if (-not (Test-Path -LiteralPath $PluginSyncPath -PathType Leaf)) {
+            throw "DevHome lifecycle plugin synchronizer is missing: $PluginSyncPath"
+        }
+
+        $PluginSyncParameters = @{
+            CodexHome = "D:\DevHome\state\codex"
+        }
+        if ($DryRun) {
+            $PluginSyncParameters.Check = $true
+        }
+        elseif ($Force) {
+            $PluginSyncParameters.Force = $true
+        }
+        $LocalPluginResult = & $PluginSyncPath @PluginSyncParameters
     }
 }
 
@@ -333,6 +360,12 @@ if ($Provider -eq "Both" -or $Provider -eq "Claude") {
 Write-Output "Local Agent Skill Sync"
 Write-Output ""
 $AllRows | Format-Table -AutoSize
+
+if ($null -ne $LocalPluginResult) {
+    Write-Output ""
+    Write-Output "Local Codex Plugin Sync"
+    $LocalPluginResult | Format-List
+}
 
 if ($DryRun) {
     Write-Output ""

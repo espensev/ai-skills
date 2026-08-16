@@ -1,0 +1,25 @@
+{
+  "name": "devhome-lifecycle",
+  "version": "0.1.0",
+  "description": "Keep the verified DevHome Codex safety and Remember hooks synchronized.",
+  "author": {
+    "name": "espensev"
+  },
+  "repository": "https://github.com/espensev/ai-skills",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "devhome",
+    "hooks",
+    "remember"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "DevHome Lifecycle",
+    "shortDescription": "Synchronize DevHome safety and Remember hooks",
+    "longDescription": "Maintains the verified snd-desk Codex lifecycle-hook projection from the Ai-Skills source package.",
+    "developerName": "espensev",
+    "category": "Productivity"
+  }
+}

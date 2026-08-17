@@ -1,6 +1,7 @@
 {
-  "description": "Ownership manifest for the single-source skill layer. Skills listed in generated_skills are authored once in skills-src/<skill>/SKILL.src.md (plus optional verbatim support files under skills-src/<skill>/files/) and regenerated into both provider packages by scripts/Build-ProviderSkillPackages.ps1. Every skill not listed in generated_skills is provider-owned; the generator must not touch it.",
+  "description": "Ownership manifest for the single-source skill layer. Skills listed in generated_skills are authored once in skills-src/<skill>/SKILL.src.md (plus optional verbatim support files under skills-src/<skill>/files/ for both providers and skills-src/<skill>/files-claude/ or skills-src/<skill>/files-codex/ for one) and regenerated into both provider packages by scripts/Build-ProviderSkillPackages.ps1. Every skill not listed in generated_skills is provider-owned; the generator must not touch it.",
   "generated_skills": [
+    "agent-report",
     "build-gate",
     "campaign-health",
     "deep-audit",
@@ -9,24 +10,26 @@
     "diagnosing-bugs",
     "discover",
     "docs-sync",
-    "review",
-    "schema-validator",
-    "ship",
-    "skill-authoring",
-    "smart-test",
-    "truthpack-drift",
-    "worktree-preflight"
-  ],
-  "provider_owned_shared_skills": [
-    "agent-report",
     "manager",
     "memory-management",
     "observer",
     "planner",
     "qa",
+    "review",
+    "schema-validator",
     "session-stats",
-    "telemetry-live-ops",
-    "token-audit"
+    "ship",
+    "skill-authoring",
+    "smart-test",
+    "token-audit",
+    "truthpack-drift",
+    "worktree-preflight"
   ],
-  "notes": "provider_owned_shared_skills exist in both provider packages and are kept to one workflow contract per pair (only provider-mechanical differences); parity is reported by scripts/Compare-ProviderSkillParity.ps1. telemetry-live-ops is machine-local and intentionally keeps per-provider presentations. A later pass may migrate reconciled pairs into skills-src."
+  "provider_owned_shared_skills": [
+    "telemetry-live-ops"
+  ],
+  "notes": "Generated skills are parity-enforced by construction: scripts/Build-ProviderSkillPackages.ps1 -Check byte-verifies both provider copies against the canon, so any per-provider difference must be an explicit conditional block or token in SKILL.src.md. provider_owned_shared_skills are pairs that ship in both packages but are still authored per provider; each needs an entry in declared_provider_forks stating why, and scripts/Compare-ProviderSkillParity.ps1 -FailOnUndeclaredFork fails the release gate on any undeclared fork.",
+  "declared_provider_forks": {
+    "telemetry-live-ops": "Machine-local ops skill and a declared whole-document fork: the Claude and Codex presentations are intentionally different documents, not one workflow contract. Revisit only if the pair is ever reconciled."
+  }
 }

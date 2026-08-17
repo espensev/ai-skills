@@ -28,6 +28,12 @@ $TokenValues = [ordered]@{
     "{{dash}}"           = @(([string][char]0x2014), "-")
     "{{arrow}}"          = @(([string][char]0x2192), "->")
     "{{bidir}}"          = @(([string][char]0x2194), "<->")
+    "{{Model-low}}"      = @("Haiku", "Mini")
+    "{{Model-mid}}"      = @("Sonnet", "Standard")
+    "{{Model-high}}"     = @("Opus", "Max")
+    "{{model-low-lc}}"   = @("haiku", "mini")
+    "{{model-mid-lc}}"   = @("sonnet", "standard")
+    "{{model-high-lc}}"  = @("opus", "max")
 }
 
 function Expand-SkillSource {
@@ -152,6 +158,9 @@ foreach ($Skill in $GeneratedSkills) {
         }
     }
 
+    # files/ ships verbatim to both providers; files-claude/ and files-codex/
+    # ship verbatim to that provider only (a support file one provider has no
+    # runtime for, e.g. a Claude-only tool reference).
     $FilesDir = Join-Path $SkillSourceDir "files"
     if (Test-Path $FilesDir) {
         foreach ($SupportFile in @(Get-ChildItem -LiteralPath $FilesDir -Recurse -File)) {
@@ -162,6 +171,20 @@ foreach ($Skill in $GeneratedSkills) {
                     TargetPath = Join-Path $Provider.PackageRoot "skills\$Skill\$($Relative -replace '/', '\')"
                     Bytes = $Bytes
                 }
+            }
+        }
+    }
+
+    foreach ($Provider in $Providers) {
+        $ProviderFilesDir = Join-Path $SkillSourceDir "files-$($Provider.Name)"
+        if (-not (Test-Path $ProviderFilesDir)) {
+            continue
+        }
+        foreach ($SupportFile in @(Get-ChildItem -LiteralPath $ProviderFilesDir -Recurse -File)) {
+            $Relative = Get-PortableRelativePath -BasePath $ProviderFilesDir -TargetPath $SupportFile.FullName
+            $PlannedFiles += [pscustomobject]@{
+                TargetPath = Join-Path $Provider.PackageRoot "skills\$Skill\$($Relative -replace '/', '\')"
+                Bytes = [System.IO.File]::ReadAllBytes($SupportFile.FullName)
             }
         }
     }

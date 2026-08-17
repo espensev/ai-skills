@@ -176,14 +176,21 @@ scripts/            Export automation
 docs/               Release notes and readiness tracking
 ```
 
-Shared skills are single-sourced in two layers. Skills listed under
-`generated_skills` in `skills-src/manifest.json` are authored once in
-`skills-src/<skill>/SKILL.src.md` and regenerated into both provider packages
-by `scripts/Build-ProviderSkillPackages.ps1`; the generated `SKILL.md` files
-remain committed build outputs. Eight of the nine `provider_owned_shared_skills`
-pairs are authored per provider but kept to one workflow contract each, with
-only provider-mechanical differences; that parity is reported by
-`scripts/Compare-ProviderSkillParity.ps1`.
+Shared skills are single-sourced. Every skill listed under `generated_skills` in
+`skills-src/manifest.json` is authored once in `skills-src/<skill>/SKILL.src.md`
+and regenerated into both provider packages by
+`scripts/Build-ProviderSkillPackages.ps1`; the generated `SKILL.md` files remain
+committed build outputs. Provider differences live in explicit `{{#claude}}` /
+`{{#codex}}` conditional blocks and `{{token}}` substitutions inside the canon,
+so parity for those pairs is enforced by the generator rather than by authoring
+discipline — `Build-ProviderSkillPackages.ps1 -Check` byte-verifies both copies
+in the release gate. Support files ship verbatim from
+`skills-src/<skill>/files/` (both providers) or
+`skills-src/<skill>/files-claude/` and `skills-src/<skill>/files-codex/` (one
+provider). `telemetry-live-ops` is the only remaining
+`provider_owned_shared_skills` entry: it is a declared whole-document fork,
+recorded with its reason in `declared_provider_forks`, and its cross-provider
+state is reported by `scripts/Compare-ProviderSkillParity.ps1`.
 
 ## License
 

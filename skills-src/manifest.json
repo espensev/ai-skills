@@ -14,7 +14,6 @@
     "ship",
     "skill-authoring",
     "smart-test",
-    "telemetry-live-ops",
     "truthpack-drift",
     "worktree-preflight"
   ],
@@ -26,7 +25,8 @@
     "planner",
     "qa",
     "session-stats",
+    "telemetry-live-ops",
     "token-audit"
   ],
-  "notes": "provider_owned_shared_skills exist in both provider packages but have substantively drifted; they stay provider-owned until a later reconciliation pass migrates them into skills-src."
+  "notes": "provider_owned_shared_skills exist in both provider packages and are kept to one workflow contract per pair (only provider-mechanical differences); parity is reported by scripts/Compare-ProviderSkillParity.ps1. telemetry-live-ops is machine-local and intentionally keeps per-provider presentations. A later pass may migrate reconciled pairs into skills-src."
 }

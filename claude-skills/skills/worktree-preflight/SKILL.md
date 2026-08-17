@@ -1,6 +1,6 @@
 ---
 name: worktree-preflight
-description: "Validate planned agent file ownership against dirty worktrees, missing worktrees, stale branches, uncommitted changes, and parallel-agent overlaps. Use before launching a multi-agent campaign or assigning parallel work."
+description: "Use immediately before launching parallel work to validate planned file ownership, worktree existence, stale branches, dirty changes, and agent overlaps. Do not use for broader campaign health or recovery after launch (use campaign-health)."
 disable-model-invocation: true
 argument-hint: "<check|plan|dirty> — pre-launch conflict detection"
 allowed-tools: Read, Glob, Grep, Bash

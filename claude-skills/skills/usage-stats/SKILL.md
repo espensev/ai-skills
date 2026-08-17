@@ -1,6 +1,6 @@
 ---
 name: usage-stats
-description: "Track token consumption, cost, budgets, and rate-limit forecasts; analyze session tool/agent/timeline activity; and report agent and campaign performance — telemetry-first (measured) with heuristic fallback (estimated). Use when reviewing session cost or usage, setting budgets, forecasting rate-limit pressure, summarizing or comparing sessions, or evaluating agent efficiency and model selection."
+description: "Use when reviewing token/cost usage, budgets, rate-limit forecasts, session tool or timeline activity, or agent/campaign efficiency. Prefers measured telemetry with an explicitly estimated fallback. Do not use to evaluate delegation-routing rules (use delegation-eval) or operate a live telemetry deployment."
 argument-hint: "<summary|cost|breakdown|budget|forecast|history|tools|agents|timeline|compare|efficiency|trends|export> — usage, cost & agent analytics"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true

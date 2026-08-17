@@ -29,10 +29,16 @@ Set-Location $RepoRoot
 
 Invoke-Step "Ready package validation" {
     & (Join-Path $ScriptRoot "Test-ReadyPackages.ps1") -StrictSkillManifest
+    if ($LASTEXITCODE -ne 0) {
+        throw "Ready package validation failed"
+    }
 }
 
 Invoke-Step "README manifest counts" {
     & (Join-Path $ScriptRoot "Update-ReadmePackageCounts.ps1") -Check
+    if ($LASTEXITCODE -ne 0) {
+        throw "README manifest count check failed"
+    }
 }
 
 Invoke-Step "Provider skill package generation" {

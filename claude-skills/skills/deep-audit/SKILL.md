@@ -1,6 +1,6 @@
 ---
 name: deep-audit
-description: Perform evidence-backed, multi-pass runtime-efficiency audits across real execution paths, covering CPU, allocation and retention, I/O, concurrency, queues, retries, scheduling, and lifecycle. Use for deep performance or scalability audits, hot-path reconstruction, or resumable trace, verify, and profile work. Do not use for diff review, a known regression with a requested fix, tests, security, bounded feasibility research, or parallel remediation and orchestration.
+description: Use when the user asks for an evidence-backed, multi-pass runtime-efficiency or scalability audit across real execution paths. Covers hot-path reconstruction, CPU, allocation/retention, I/O, concurrency, queues, retries, scheduling, and lifecycle. Do not use for diff review, one known regression with a requested fix, tests, security assessment, bounded feasibility research, or parallel remediation.
 argument-hint: "[discover|trace|audit|deepen|verify|profile|resume|report] [target]"
 user-invocable: true
 ---

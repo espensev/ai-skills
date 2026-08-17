@@ -32,9 +32,10 @@ function Get-DescriptionLines {
     $Found = @()
     $Block = "shared"
     $InFrontmatter = $false
-    $LineNumber = 0
-    foreach ($Line in ($Text -split "\r?\n")) {
-        $LineNumber++
+    $Lines = @($Text -split "\r?\n")
+    for ($Index = 0; $Index -lt $Lines.Count; $Index++) {
+        $Line = $Lines[$Index]
+        $LineNumber = $Index + 1
         if ($Line -eq "---") {
             if (-not $InFrontmatter) {
                 $InFrontmatter = $true
@@ -53,9 +54,31 @@ function Get-DescriptionLines {
             $Block = "shared"
             continue
         }
-        if ($Line -match "^\s*description:\s*(.+?)\s*$") {
+        if ($Line -match "^\s*description:\s*(.*?)\s*$") {
+            $Value = $Matches[1].Trim()
+            if ($Value -match '^[>|][+-]?$') {
+                $Style = $Value.Substring(0, 1)
+                $Body = @()
+                $Probe = $Index + 1
+                while ($Probe -lt $Lines.Count) {
+                    $Next = $Lines[$Probe]
+                    if ($Next -match '^\s+(.*)$') {
+                        $Body += $Matches[1].Trim()
+                        $Probe++
+                        continue
+                    }
+                    if ([string]::IsNullOrWhiteSpace($Next)) {
+                        $Body += ""
+                        $Probe++
+                        continue
+                    }
+                    break
+                }
+                $Index = $Probe - 1
+                $Value = if ($Style -eq ">") { ($Body -join " ").Trim() } else { ($Body -join "`n").Trim() }
+            }
             $Found += [pscustomobject]@{
-                Text = $Matches[1].Trim().Trim('"').Trim("'")
+                Text = $Value.Trim('"').Trim("'")
                 Scope = $Block
                 Line = $LineNumber
             }
@@ -109,6 +132,7 @@ function Get-PortableRelativePath {
 
 $SourceManifest = Get-Content -Raw $SourceManifestPath | ConvertFrom-Json
 $GeneratedSkills = @($SourceManifest.generated_skills)
+$ProviderOwnedSharedSkills = @($SourceManifest.provider_owned_shared_skills)
 $DeclaredForks = @{}
 if ($null -ne $SourceManifest.declared_provider_forks) {
     foreach ($Property in $SourceManifest.declared_provider_forks.PSObject.Properties) {
@@ -159,6 +183,17 @@ foreach ($Package in $ReleaseManifest.packages) {
 $Findings = @()
 $Rows = @()
 $GeneratorEnforced = 0
+
+# Every governed shared skill must exist in both provider trees. Grouping only
+# pairs would otherwise make a one-sided deletion disappear from this report.
+foreach ($ExpectedPair in @($GeneratedSkills + $ProviderOwnedSharedSkills | Sort-Object -Unique)) {
+    $PairRecords = @($Records | Where-Object { $_.Skill -eq $ExpectedPair })
+    foreach ($ProviderName in @("claude", "codex")) {
+        if ($ProviderName -notin @($PairRecords | Select-Object -ExpandProperty Provider -Unique)) {
+            $Findings += "$ExpectedPair`: governed shared skill is missing from the $ProviderName package tree"
+        }
+    }
+}
 
 foreach ($Group in ($Records | Group-Object Skill | Where-Object { $_.Count -gt 1 })) {
     $Skill = $Group.Name

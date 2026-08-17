@@ -1,6 +1,6 @@
 ---
 name: planner
-description: "Design structured multi-agent campaign plans. Use when you want to plan work decomposition, define agent tasks, map dependencies, or draft a campaign before execution. Supports --mode refactor for phased refactors, migrations, and modularization."
+description: "Use when the user wants a structured multi-agent campaign designed before execution: work decomposition, agent tasks, dependencies, gates, or a phased refactor/migration. Do not use to execute an approved campaign (use manager) or for one bounded local change."
 argument-hint: "<description> [--mode refactor] — describe what you want to build or change"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true

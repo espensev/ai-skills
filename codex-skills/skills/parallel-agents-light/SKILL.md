@@ -1,6 +1,6 @@
 ---
 name: parallel-agents-light
-description: "Lightweight Codex orchestration for Claude-style parallel subagents, Ultracode-light workflows, bounded sidecar agents, and fast split-review or split-implementation passes. Use when the user asks Codex to use parallel agents, subagents, swarm-style work, lightweight multi-agent coding, independent reviewers, or faster split execution without committing to a full manager campaign."
+description: "Use when the user explicitly asks Codex for lightweight parallel agents, subagents, independent reviewers, or faster split execution without a full manager campaign. Routes among local work, bounded sidecars, split review, and split implementation; do not use for a single tight file set or a durable managed campaign."
 ---
 
 # Parallel Agents Light

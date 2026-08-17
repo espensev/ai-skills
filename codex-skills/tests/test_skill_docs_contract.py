@@ -70,6 +70,7 @@ class TestSkillDocsContract(unittest.TestCase):
             SKILLS / "mcp-server-patterns" / "SKILL.md",
             SKILLS / "memory-management" / "SKILL.md",
             SKILLS / "observer" / "SKILL.md",
+            SKILLS / "observer" / "references" / "output-contracts.md",
             SKILLS / "planner" / "SKILL.md",
             SKILLS / "qa" / "SKILL.md",
             SKILLS / "repo-conventions" / "SKILL.md",
@@ -121,6 +122,12 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertNotIn('cp -r ""', text)
         self.assertNotIn("from __future__ import annotations", text)
         self.assertNotIn("unittest.main()", text)
+
+    def test_readme_install_examples_cover_manifest_skills(self):
+        text = README.read_text(encoding="utf-8")
+        manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
+        for skill in manifest["default_skills"] + manifest["optional_skills"]:
+            self.assertIn(f"skills/{skill}", text, skill)
 
     def test_portability_notes_distinguish_package_and_installed_layouts(self):
         text = PORTABILITY_NOTES.read_text(encoding="utf-8")
@@ -233,6 +240,35 @@ class TestSkillDocsContract(unittest.TestCase):
         for skill in demoted:
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
             self.assertNotIn("disable-model-invocation:", text, skill)
+
+    def test_observer_and_manager_use_progressive_disclosure(self):
+        observer = OBSERVER_SKILL.read_text(encoding="utf-8")
+        contracts = (SKILLS / "observer" / "references" / "output-contracts.md").read_text(encoding="utf-8")
+        manager = MANAGER_SKILL.read_text(encoding="utf-8")
+        self.assertIn("references/output-contracts.md", observer)
+        self.assertNotIn("### Note Output", observer)
+        self.assertIn("### Note Output", contracts)
+        self.assertNotIn("### Phase 1: Load context", manager)
+        self.assertIn("planning policy is loaded on demand", manager)
+
+    def test_collision_prone_skills_use_trigger_first_descriptions(self):
+        for skill in (
+            "deep-audit",
+            "diagnosing-bugs",
+            "qa",
+            "planner",
+            "manager",
+            "review",
+            "discover",
+            "campaign-health",
+            "worktree-preflight",
+            "usage-stats",
+        ):
+            text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+            description = next(line for line in text.splitlines() if line.startswith("description:"))
+            description = description.removeprefix("description:").strip().strip('"')
+            self.assertTrue(description.startswith("Use "), skill)
+            self.assertIn("Do not use", description, skill)
 
     def test_current_docs_match_runtime_verify_surface(self):
         self.assertIn("validates build, tests, and readiness", README.read_text(encoding="utf-8"))

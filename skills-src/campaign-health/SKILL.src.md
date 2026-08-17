@@ -1,7 +1,7 @@
 ---
 name: campaign-health
 {{#claude}}
-description: "Analyze campaign/workflow state for health signals: stuck plans, orphaned agents, stale worktrees, state integrity, and complexity trends. Use when reviewing campaign readiness or recovering blocked multi-agent work."
+description: "Use when reviewing or recovering an ongoing multi-agent campaign: stuck plans, orphaned agents, stale worktrees, state integrity, or complexity trends. Do not use for the immediate pre-launch file-ownership check (use worktree-preflight) or to execute campaign tasks (use manager)."
 disable-model-invocation: true
 argument-hint: "<status|stuck|complexity|full> — workflow health check"
 allowed-tools: Read, Glob, Grep, Bash
@@ -10,7 +10,7 @@ extracted-from: WinOverSight
 portable-since: 2026-03-26
 {{/claude}}
 {{#codex}}
-description: "Analyze campaign/workflow state for health signals: stuck plans, orphaned agents, stale worktrees, state integrity, and complexity trends. Use when reviewing campaign readiness or recovering from blocked work."
+description: "Use when reviewing or recovering an ongoing multi-agent campaign: stuck plans, orphaned agents, stale worktrees, state integrity, or complexity trends. Do not use for the immediate pre-launch file-ownership check (use worktree-preflight) or to execute campaign tasks (use manager)."
 {{/codex}}
 ---
 

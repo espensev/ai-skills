@@ -1,6 +1,6 @@
 ---
 name: diagnosing-bugs
-description: "Build and use a tight feedback loop for hard bugs, failing tests, runtime errors, flaky behavior, and performance regressions. Use when the user asks to diagnose, debug, or fix something broken, throwing, failing, slow, flaky, or regressed."
+description: "Use when the user wants the cause or fix for a reproducible bug, runtime error, flaky behavior, or performance regression. Builds a red-capable feedback loop before changing code. Do not use merely to run or classify a known test suite (use qa), review a diff (use review), or audit runtime efficiency broadly (use deep-audit)."
 {{#claude}}
 disable-model-invocation: true
 argument-hint: "[<symptom|command>] - loop | perf | fix | postmortem"

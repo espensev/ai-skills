@@ -11,3 +11,9 @@
 *.txt text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf
+
+# Generated-skill support files may be extensionless; keep canon and both
+# provider checkouts byte-stable across Windows and Unix.
+skills-src/**/files/** text eol=lf
+skills-src/**/files-claude/** text eol=lf
+skills-src/**/files-codex/** text eol=lf

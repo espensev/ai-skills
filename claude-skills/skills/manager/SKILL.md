@@ -1,6 +1,6 @@
 ---
 name: manager
-description: "Orchestrate multiple parallel Claude Code agents for any project. Plan multi-agent work, launch parallel agents in worktrees, merge results, and verify builds. Use when the user wants a multi-agent campaign, parallel worktree execution, managed merges, or campaign status."
+description: "Use when the user explicitly wants a multi-agent campaign executed or managed: parallel worktrees, agent launches, dependency-aware progress, merges, verification, or campaign status. Do not use for plan-only design (use /planner), bounded codebase research, or one tight local change."
 argument-hint: "<command> [args] — go | plan | run | merge | verify | status | analyze | review"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Edit, Write
 user-invocable: true
@@ -161,151 +161,29 @@ project graph metadata, conflict zones, and the planner-facing
 
 ## Command: `plan` — Autonomous Planning Phase
 
-Runs all planning phases to completion without user input.
+Manager owns campaign orchestration; `/planner` and
+`.claude/skills/planning-contract.md` own plan design. Do not copy
+their decomposition rules into this skill.
 
-### Phase 1: Load context
+1. Read the planner skill and planning contract.
+2. Run `python scripts/task_manager.py plan preflight --json`; stop on errors.
+3. Run `python scripts/task_manager.py plan create "<description>" --json`.
+4. Design and register agents using the planner contract and the returned
+   `analysis_v2.planning_context`; preserve single-file ownership and explicit
+   dependencies.
+5. Finalize concrete goal, exit criteria, verification, and documentation
+   fields through `task_manager.py plan finalize`.
+6. Approve and execute through the backend, then replace every generated spec
+   TODO with self-contained instructions before any agent launch.
+7. Keep `data/plans/{plan-id}.json` authoritative and write the durable
+   `docs/campaign-{plan-id}-{slug}.md` view.
+8. Report `status` and `graph`. Under `go`, continue to `run ready`; under
+   plan-only invocation, return the ready plan without launching agents.
 
-1. Read `.claude/skills/project.toml` — project config (paths, commands, modules)
-2. Read `.claude/skills/planning-contract.md` — the shared planning contract
-3. Read the conventions file specified in `[project].conventions` — project architecture
-4. Scan for discovery documents: check `docs/discovery-*.md` for relevant findings
-
-### Phase 2: Preflight
-
-Before autonomous planning, confirm the repo is configured strongly enough for
-autonomous verify:
-
-```bash
-python scripts/task_manager.py plan preflight --json
-```
-
-If preflight reports errors, stop and report the exact blocker.
-
-### Phase 3: Analyze
-
-```bash
-python scripts/task_manager.py plan create "<description>" --json
-```
-
-This does three things:
-1. Runs codebase analysis (file sizes, imports, conflict zones, planning context)
-2. Creates a draft plan summary in runtime state and writes the full plan JSON
-   to `[paths].plans`
-3. Outputs JSON with the plan context + full analysis for you to consume
-
-### Phase 4: Design
-
-Read `.claude/skills/planning-contract.md` — the shared planning contract that
-defines the 13 required plan elements, agent spec format, and decomposition
-heuristics. The plan you produce must satisfy all 13 elements.
-
-Using the analysis JSON, design the agent breakdown. For each agent, determine:
-- **letter** — next available (provided in the plan output)
-- **name** — kebab-case descriptive name
-- **scope** — one-line description of what this agent does
-- **deps** — which other agents must complete first
-- **files** — which files this agent will modify (IMPORTANT: minimize overlap)
-- **group** — auto-calculated from deps
-- **complexity** — low/medium/high
-
-Rules for good decomposition (from the planning contract):
-- **File ownership**: Each file should be owned by at most ONE agent. Check
-  `analysis_v2.planning_context` first — use `ui_surfaces`, `ownership_summary`,
-  `priority_projects`, and `coordination_hotspots` before falling back to raw
-  `conflict_zones`. If two agents must touch the same file, make one the owner
-  and the other depend on it.
-- **Bounded scope**: An agent should need < 300 lines of changes. If more, split.
-- **Self-contained specs**: Each agent spec must contain enough detail for an
-  agent to execute without asking questions.
-- **Test coverage**: If agents add features, include a test agent that depends
-  on the feature agents.
-- **Agent count**: Prefer 2-6 agents. More than 6 increases coordination cost.
-
-If `planning_context.analysis_health.partial_analysis` or
-`planning_context.analysis_health.fallback_only` is true, be more conservative
-with decomposition around startup projects, packaging projects, and shared UI
-surfaces.
-
-### Phase 5: Register
-
-Add each agent to the draft plan:
-
-```bash
-python scripts/task_manager.py plan-add-agent <plan-id> <letter> <name> \
-    --scope "..." --deps "..." --files "..." --complexity medium
-```
-
-Repeat for each agent.
-
-### Phase 6: Finalize required plan elements
-
-Before approval, fill the required plan elements through the backend instead of
-editing the plan artifact by hand:
-
-```bash
-python scripts/task_manager.py plan finalize <plan-id> \
-    --goal "..." \
-    --exit-criterion "..." \
-    --verification-step "..." \
-    --documentation-update "..."
-```
-
-At minimum, ensure the goal statement and exit criteria are concrete. The
-backend can synthesize minimum values, but explicit values are preferred.
-
-### Phase 7: Auto-approve + Execute
-
-**Do NOT ask the user for approval.** Approve and execute immediately:
-
-```bash
-python scripts/task_manager.py plan approve <plan-id>
-python scripts/task_manager.py plan execute <plan-id>
-```
-
-This auto-registers all agents in the state file and generates spec template
-files in the specs directory.
-
-### Phase 8: Write Plan Artifacts
-
-Keep the machine-readable plan in:
-
-```
-data/plans/{plan-id}.json
-```
-
-Write the human-readable campaign document to:
-
-```
-docs/campaign-{plan-id}-{slug}.md
-```
-
-Derive the slug from the campaign title (2-4 words, kebab-case). The JSON
-plan file is the authoritative machine-readable source of truth; the markdown
-document is the durable human-readable campaign record. `verify` consumes plan
-JSON first and uses markdown only for drift checks.
-
-### Phase 9: Fill spec files
-
-**Fill in each spec file** with complete task instructions — never leave TODOs:
-
-For each agent:
-1. Read the relevant source files the agent will modify
-2. Edit the spec template to replace all TODOs with detailed, actionable instructions
-3. Include specific code locations, function names, expected behavior
-4. The spec should be self-contained — an agent running it should not need to ask
-   any clarifying questions
-
-### Phase 10: Report + proceed
-
-```bash
-python scripts/task_manager.py status
-python scripts/task_manager.py graph
-```
-
-Present the plan document path and a summary of the 13 elements,
-then report the ready agents. If invoked via `go`, immediately proceed to
-`run ready`. If invoked via `plan` alone, report that agents are ready and
-the user can launch with `/manager run ready`.
+If analysis is partial or fallback-only, follow the planner skill's degraded
+analysis and discovery-replan rules. This section intentionally contains only
+the manager/backend handoff; detailed planning policy is loaded on demand from
+the owning skill and contract.
 
 ---
 

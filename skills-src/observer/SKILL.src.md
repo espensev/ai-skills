@@ -1004,6 +1004,12 @@ For periodic collection, run `$observer cycle --auto` manually or via `$loop`
 when a recurring pass is wanted.
 {{/codex}}
 
+> This section, and Non-Interference Contract rules 7-8, differ between the
+> Claude and Codex packages because the mechanism exists on one side only:
+> Claude ships portable observer hook scripts, Codex ships none. The asymmetry
+> is defensible only while that stays true. Expiry condition and what to
+> revisit: `docs/observer-hook-asymmetry.md` in the Ai-Skills repo.
+
 ---
 
 ## Non-Interference Contract
@@ -1050,6 +1056,9 @@ when a recurring pass is wanted.
   the eval-case candidate in the observation entry or report instead.
 - Re-rank which skills need attention with:
   `python scripts/skill_feedback_loop.py --out docs/skill-improvement-report.md`
+  If `scripts/skill_feedback_loop.py` is not present in the repo (for example a
+  skills-only install without the runtime files), skip this command and record
+  the skills needing attention in the observation entry or report instead.
 {{/codex}}
 - Only turn user preference into a reusable pattern after repetition or an
   explicit request to codify it.

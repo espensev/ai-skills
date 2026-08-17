@@ -817,6 +817,12 @@ provides the full configuration:
 **Timeout guidance:** All hook scripts complete in < 1s. Set 5s for
 PostToolUse, 10s for SessionStart/SubagentStop.
 
+> This section, and Non-Interference Contract rules 7-8, differ between the
+> Claude and Codex packages because the mechanism exists on one side only:
+> Claude ships portable observer hook scripts, Codex ships none. The asymmetry
+> is defensible only while that stays true. Expiry condition and what to
+> revisit: `docs/observer-hook-asymmetry.md` in the Ai-Skills repo.
+
 ---
 
 ## Non-Interference Contract

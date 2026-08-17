@@ -83,9 +83,10 @@ The generated `SKILL.md` files stay committed package outputs, so installers
 and exporters are unchanged. Edit the canonical source, regenerate, and commit
 both together; never hand-edit a generated `SKILL.md`. Skills not listed in
 `generated_skills` (including `provider_owned_shared_skills`) are
-provider-owned and untouched by the generator; the check mode also fails on
-unplanned `.md` files inside a generated skill's package directory and on
-CRLF-corrupted `SKILL.src.md` sources.
+provider-owned and untouched by the generator; the check mode also fails on any
+unplanned file inside a generated skill's package directory — not just `.md`, so
+a stray `.py` or `.json` is caught too — and on CRLF-corrupted `SKILL.src.md`
+sources.
 
 Verbatim support files live under `skills-src/<skill>/files/` (copied to both
 providers) or `skills-src/<skill>/files-claude/` and

@@ -189,15 +189,19 @@ foreach ($Skill in $GeneratedSkills) {
         }
     }
 
-    # Orphan detection: any .md file in a generated skill's package dir that the
-    # build does not plan is drift (e.g. a hand-added doc the generator would
-    # never produce or clean up).
+    # Orphan detection: ANY file in a generated skill's package dir that the
+    # build does not plan is drift - a hand-added doc, a stray script, a
+    # leftover data file. The exception is a file the skill legitimately
+    # declares as a support file (skills-src/<skill>/files/, files-claude/, or
+    # files-codex/), which the loops above already added to $PlannedFiles and
+    # which therefore is not an orphan. Restricting this to *.md let an
+    # unplanned .py or .json sit inside a generated package and still pass.
     $PlannedPaths = @($PlannedFiles | ForEach-Object { [System.IO.Path]::GetFullPath($_.TargetPath) })
     foreach ($Provider in $Providers) {
         $TargetDir = Join-Path $Provider.PackageRoot "skills\$Skill"
-        foreach ($ExistingMd in @(Get-ChildItem -LiteralPath $TargetDir -Recurse -File -Filter *.md)) {
-            if ($PlannedPaths -notcontains [System.IO.Path]::GetFullPath($ExistingMd.FullName)) {
-                $OrphanFiles += Get-PortableRelativePath -BasePath $RepoRoot -TargetPath $ExistingMd.FullName
+        foreach ($ExistingFile in @(Get-ChildItem -LiteralPath $TargetDir -Recurse -File)) {
+            if ($PlannedPaths -notcontains [System.IO.Path]::GetFullPath($ExistingFile.FullName)) {
+                $OrphanFiles += Get-PortableRelativePath -BasePath $RepoRoot -TargetPath $ExistingFile.FullName
             }
         }
     }
@@ -226,7 +230,7 @@ if ($Check) {
         $Problems += "Provider skill packages are stale relative to skills-src. Run scripts/Build-ProviderSkillPackages.ps1. Differing files:`n" + ($StaleFiles -join "`n")
     }
     if ($OrphanFiles.Count -gt 0) {
-        $Problems += "Unplanned .md files found inside generated skill package directories (remove them or move their content into skills-src):`n" + ($OrphanFiles -join "`n")
+        $Problems += "Unplanned files found inside generated skill package directories (remove them, or declare them as support files under skills-src/<skill>/files, files-claude, or files-codex):`n" + ($OrphanFiles -join "`n")
     }
     if ($Problems.Count -gt 0) {
         # Plain output + exit 1 (no Write-Error): under ErrorActionPreference
@@ -242,7 +246,7 @@ if ($Check) {
 }
 
 if ($OrphanFiles.Count -gt 0) {
-    Write-Output "WARNING - unplanned .md files inside generated skill package directories (not touched by the build):"
+    Write-Output "WARNING - unplanned files inside generated skill package directories (not touched by the build):"
     $OrphanFiles | ForEach-Object { Write-Output "  $_" }
 }
 

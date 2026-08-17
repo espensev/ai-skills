@@ -161,7 +161,7 @@ Each ready package follows a **contract-first, read-all write-scoped** design:
 - Skills reference shared contracts (`planning-contract.md`) that define required plan elements and agent specs
 - Agents read the full repo for context but only write to explicitly scoped files
 - All material claims require source evidence (file path, line number, or command output)
-- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ. The one exception is `telemetry-live-ops`, a machine-local ops skill that intentionally keeps per-provider presentations.
+- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ. The one exception is `telemetry-live-ops`, a machine-local ops skill that intentionally keeps per-provider presentations. A one-sided obligation is allowed only when the mechanism exists on one side only; the standing example and its expiry condition are recorded in [docs/observer-hook-asymmetry.md](docs/observer-hook-asymmetry.md).
 
 The export script reads `release-manifest.json` to determine which packages are
 ready and applies the `portable-runtime` strategy to Claude and Codex.

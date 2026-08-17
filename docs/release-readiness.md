@@ -19,7 +19,9 @@ the same way, so release readiness is tracked explicitly.
 
 ## Release Checklist
 
-Run the full local release gate before shipping:
+Run the full local release gate before shipping. The repo scripts require
+**PowerShell 7+ (`pwsh`)** — they rely on .NET APIs such as
+`[System.IO.Path]::GetRelativePath` that Windows PowerShell 5.1 does not have:
 
 ```powershell
 .\scripts\Test-ReleaseReadiness.ps1
@@ -54,8 +56,10 @@ provider packages with:
 The generated `SKILL.md` files stay committed package outputs, so installers
 and exporters are unchanged. Edit the canonical source, regenerate, and commit
 both together; never hand-edit a generated `SKILL.md`. Skills not listed in
-`generated_skills` (including the drifted `provider_owned_shared_skills`) are
-provider-owned and untouched by the generator.
+`generated_skills` (including the parity-kept `provider_owned_shared_skills`)
+are provider-owned and untouched by the generator; the check mode also fails
+on unplanned `.md` files inside a generated skill's package directory and on
+CRLF-corrupted `SKILL.src.md` sources.
 
 ## Export Flow
 

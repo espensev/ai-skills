@@ -123,6 +123,7 @@ $Providers = @(
 )
 $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $StaleFiles = @()
+$OrphanFiles = @()
 $FileCount = 0
 
 foreach ($Skill in $GeneratedSkills) {
@@ -132,6 +133,9 @@ foreach ($Skill in $GeneratedSkills) {
         throw "Missing canonical source for generated skill: $SourcePath"
     }
     $SourceText = [System.IO.File]::ReadAllText($SourcePath, $Utf8NoBom)
+    if ($SourceText.Contains("`r")) {
+        throw "CRLF line endings detected in canonical source: $SourcePath. Src files must be LF-only; CR would corrupt conditional-block markers."
+    }
 
     # Planned outputs: expanded SKILL.md per provider plus verbatim support files.
     $PlannedFiles = @()
@@ -162,6 +166,19 @@ foreach ($Skill in $GeneratedSkills) {
         }
     }
 
+    # Orphan detection: any .md file in a generated skill's package dir that the
+    # build does not plan is drift (e.g. a hand-added doc the generator would
+    # never produce or clean up).
+    $PlannedPaths = @($PlannedFiles | ForEach-Object { [System.IO.Path]::GetFullPath($_.TargetPath) })
+    foreach ($Provider in $Providers) {
+        $TargetDir = Join-Path $Provider.PackageRoot "skills\$Skill"
+        foreach ($ExistingMd in @(Get-ChildItem -LiteralPath $TargetDir -Recurse -File -Filter *.md)) {
+            if ($PlannedPaths -notcontains [System.IO.Path]::GetFullPath($ExistingMd.FullName)) {
+                $OrphanFiles += Get-PortableRelativePath -BasePath $RepoRoot -TargetPath $ExistingMd.FullName
+            }
+        }
+    }
+
     foreach ($Planned in $PlannedFiles) {
         $FileCount++
         if (Test-BytesEqual -Expected $Planned.Bytes -TargetPath $Planned.TargetPath) {
@@ -181,13 +198,29 @@ foreach ($Skill in $GeneratedSkills) {
 }
 
 if ($Check) {
+    $Problems = @()
     if ($StaleFiles.Count -gt 0) {
-        Write-Error ("Provider skill packages are stale relative to skills-src. Run scripts/Build-ProviderSkillPackages.ps1. Differing files:`n" + ($StaleFiles -join "`n"))
+        $Problems += "Provider skill packages are stale relative to skills-src. Run scripts/Build-ProviderSkillPackages.ps1. Differing files:`n" + ($StaleFiles -join "`n")
+    }
+    if ($OrphanFiles.Count -gt 0) {
+        $Problems += "Unplanned .md files found inside generated skill package directories (remove them or move their content into skills-src):`n" + ($OrphanFiles -join "`n")
+    }
+    if ($Problems.Count -gt 0) {
+        # Plain output + exit 1 (no Write-Error): under ErrorActionPreference
+        # Stop a thrown error record would bypass the caller's LASTEXITCODE
+        # handling and double-report. This yields one clear failure in both
+        # standalone -File runs and gate-step invocations.
+        Write-Output ("FAIL - " + ($Problems -join "`n"))
         exit 1
     }
 
     Write-Output "PASS - provider skill packages match skills-src ($FileCount files across $($GeneratedSkills.Count) skills)"
     exit 0
+}
+
+if ($OrphanFiles.Count -gt 0) {
+    Write-Output "WARNING - unplanned .md files inside generated skill package directories (not touched by the build):"
+    $OrphanFiles | ForEach-Object { Write-Output "  $_" }
 }
 
 if ($StaleFiles.Count -gt 0) {

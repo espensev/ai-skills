@@ -229,7 +229,9 @@ Writes report to `docs/artifacts/campaign-health-report.md`.
 | `{{cmd}}manager` | Campaign-health goes deeper {{dash}} stuck detection, orphan finding |
 | `{{cmd}}manager verify` | Include health check in campaign exit criteria |
 | `{{cmd}}observer` | Record health findings as `drift` or `debt` observations |
+{{#codex}}
 | `{{cmd}}loop` | Good candidate for periodic sweep passes |
+{{/codex}}
 | `{{cmd}}planner` | Check health before planning to avoid stacking on stuck plans |
 
 ---

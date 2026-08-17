@@ -68,7 +68,9 @@ Compare the installed Codex and Claude roots against the manifests:
 | **review** | Review branch, staged, or working-tree diffs against standards, specs, and regression risk, writing durable findings under `docs/reviews/` |
 | **ship** | Stage, commit, push validated work with campaign-aware commit grouping |
 | **observer** | Passive project intelligence — observe patterns over time without interfering |
-| **loop** | Run focused work loops with repeated inspect-edit-verify cycles |
+
+`loop` (codex-skills only) runs focused work loops with repeated
+inspect-edit-verify cycles; it has no claude-skills counterpart.
 
 ### Ops & analytics suite (shared across packages)
 
@@ -159,7 +161,7 @@ Each ready package follows a **contract-first, read-all write-scoped** design:
 - Skills reference shared contracts (`planning-contract.md`) that define required plan elements and agent specs
 - Agents read the full repo for context but only write to explicitly scoped files
 - All material claims require source evidence (file path, line number, or command output)
-- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ.
+- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ. The one exception is `telemetry-live-ops`, a machine-local ops skill that intentionally keeps per-provider presentations.
 
 The export script reads `release-manifest.json` to determine which packages are
 ready and applies the `portable-runtime` strategy to Claude and Codex.
@@ -174,10 +176,14 @@ scripts/            Export automation
 docs/               Release notes and readiness tracking
 ```
 
-Shared skills listed in `skills-src/manifest.json` are authored once and
-regenerated into both provider packages by
-`scripts/Build-ProviderSkillPackages.ps1`; the generated `SKILL.md` files
-remain committed build outputs.
+Shared skills are single-sourced in two layers. Skills listed under
+`generated_skills` in `skills-src/manifest.json` are authored once in
+`skills-src/<skill>/SKILL.src.md` and regenerated into both provider packages
+by `scripts/Build-ProviderSkillPackages.ps1`; the generated `SKILL.md` files
+remain committed build outputs. The eight `provider_owned_shared_skills`
+pairs are authored per provider but kept to one workflow contract each, with
+only provider-mechanical differences; that parity is reported by
+`scripts/Compare-ProviderSkillParity.ps1`.
 
 ## License
 

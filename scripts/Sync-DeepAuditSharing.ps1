@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory=$false)]
-    [string]$SharedRoot = (Join-Path $env:OneDrive "common\common_dev"),
+    [string]$SharedRoot = (Join-Path $env:OneDrive "Common\common_development\common_dev"),
 
     [Parameter(Mandatory=$false)]
     [string]$MachineAgentsSkillsRoot = (Join-Path ([Environment]::GetFolderPath("UserProfile")) ".agents\skills"),

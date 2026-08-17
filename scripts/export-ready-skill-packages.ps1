@@ -44,7 +44,7 @@ if (-Not (Test-Path $ManifestPath)) {
 $Manifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json
 
 if (-Not $TargetDir) {
-    $TargetDir = Join-Path $HOME ("OneDrive\Common\" + $Manifest.export_name)
+    $TargetDir = Join-Path $HOME ("OneDrive\Common\common_development\" + $Manifest.export_name)
 }
 
 if (Test-Path $TargetDir) {

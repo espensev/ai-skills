@@ -56,6 +56,9 @@ Node-only workflow.
 - When the same failure pattern should become a standing regression check, turn
   it into an eval case with:
   `python scripts/observe_to_eval.py --merge eval/cases/light-skill-cases.json`
+  If `scripts/observe_to_eval.py` is not present in the repo (for example a
+  skills-only install without the runtime files), skip this command and record
+  the eval-case candidate in the observation entry or report instead.
 - Do not generalize a broad new rule from a single flaky test or ambiguous log.
 
 ## Output

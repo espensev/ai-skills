@@ -26,8 +26,11 @@ Run the full local release gate before shipping:
 ```
 
 The wrapper runs ready-package validation, README manifest count checks, Codex
-and Claude contract tests, the machine-local lifecycle source/cache tests,
-provider parity reporting, and git whitespace checks.
+and Claude contract tests, isolated machine-local lifecycle catalog/cache/runtime
+contracts, provider parity reporting, and git whitespace checks. The lifecycle
+Pester tests use disposable fixtures; this source-only gate does not invoke the
+installed Claude Remember plugin or prove that the user has trusted the Codex
+SessionStart hook.
 Use `-IncludeLiveRootCompare` after syncing local Codex and Claude skill roots.
 
 Individual checks are also available when narrowing a failure:
@@ -67,3 +70,34 @@ skill roots against manifest-listed source files:
 
 Pass `-IncludeExtra` when you intentionally want to list unrelated local skills
 that are present in an agent root but not managed by these packages.
+
+## Machine-Local Lifecycle Acceptance
+
+After the source-only gate passes, explicitly check the local plugin cache and
+DevHome runtime projection:
+
+```powershell
+.\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1 -Check
+.\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeCodexHooks.ps1 -Check
+```
+
+The full Remember adapter suite is host-dependent because one test invokes the
+installed Claude Remember plugin. Run it separately and treat any failure as a
+live lifecycle blocker even when `Test-ReleaseReadiness.ps1` is green:
+
+```powershell
+python -B -m unittest .\codex-skills\local-hooks\devhome-lifecycle\tests\test_remember_adapter.py
+```
+
+Current host acceptance findings are tracked in
+[`docs/reviews/review-2026-08-16-devhome-lifecycle-feature.md`](reviews/review-2026-08-16-devhome-lifecycle-feature.md).
+
+Finally restart Codex, confirm `devhome-lifecycle@ai-skills` is enabled, review
+and trust the current SessionStart command in `/hooks`, and perform one attended
+new-session smoke. Source acquisition is outside all of these checks; none of
+them pulls or cleans the Ai-Skills checkout.
+
+No-AppData acceptance also requires a regression probe proving that an ambient
+AppData-like `CODEX_HOME` cannot relocate adapter mirrors, locks, checkpoints,
+logs, Remember discovery, or transcript validation. That probe is currently red
+and is tracked in the feature review above.

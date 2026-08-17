@@ -25,3 +25,9 @@
   discovery.
 - Preserve unrelated dirty-worktree changes and keep package docs, manifests,
   eval cases, tests, and installed-root guidance aligned when changing a skill.
+- Treat `codex-skills/local-hooks/devhome-lifecycle/` as a machine-local source
+  authority, not a portable package entry. Keep it out of `release-manifest.json`
+  and both provider install manifests; reconcile its plugin cache and runtime
+  projection through the root installer, never by editing installed copies or
+  Codex hook-trust state. Keep production adapter-generated state on the same
+  physical DevHome root; ambient `CODEX_HOME` is not authority to relocate it.

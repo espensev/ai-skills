@@ -4,7 +4,13 @@
 `D:\Development\AI-related\Ai-Skills` and address the repository coherently.
 **Date:** 2026-08-15
 **Status:** complete
-**Recommended next:** none - the migration is small enough to implement directly
+**Document role:** pre-implementation discovery snapshot; branch counts and
+"current" statements below describe the discovery date, not live status.
+**Outcome:** implemented by `70a6c92`; current operation is documented in
+[`codex-skills/local-hooks/devhome-lifecycle/README.md`](../codex-skills/local-hooks/devhome-lifecycle/README.md).
+**Follow-up status:** implementation acceptance has open adapter, guard, and
+activation findings in the
+[full feature review](reviews/review-2026-08-16-devhome-lifecycle-feature.md).
 
 ---
 
@@ -146,7 +152,7 @@ All questions answered.
 
 ---
 
-## Recommendation
+## Historical Recommendation
 
 Proceed directly with a source-only `codex-skills/local-hooks/devhome-lifecycle`
 package, a verified-machine installer with `-Check`, targeted hook tests, a

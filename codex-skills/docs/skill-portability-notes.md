@@ -47,6 +47,15 @@ This package repo stores the export surface in package-root paths such as:
 
 These are the files that should be reviewed, tested, and versioned here.
 
+### Machine-local exclusion
+
+`local-hooks/devhome-lifecycle/` is versioned beside the Codex package but is not
+part of the export surface above. It remains absent from
+`package/install-manifest.json` and `release-manifest.json`; the repository-root
+`Install-AgentSkills.ps1 -CodexLocalPlugin DevHomeLifecycle` path manages its
+local marketplace, materialized cache, and DevHome runtime projection
+separately.
+
 ## Installed Target Layout
 
 After vendoring into a consumer repo, the runtime layout moves to target paths:
@@ -112,8 +121,10 @@ the installed runtime layout.
 
 ## Remaining Gaps
 
-- There is still no installer or distribution wrapper beyond the documented
-  copy steps.
+- The exported package still has no self-contained installer or distribution
+  wrapper beyond the documented copy steps. The repository-root
+  `Install-AgentSkills.ps1` convenience wrapper is not exported into consumer
+  packages.
 - `init` is usable but still non-interactive.
 
 ## Verification Expectations

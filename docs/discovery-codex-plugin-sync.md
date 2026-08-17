@@ -4,7 +4,13 @@
 plugin choice without turning machine-local hooks into a portable default.
 **Date:** 2026-08-16
 **Status:** complete
-**Recommended next:** none - the integration is small enough to implement directly
+**Document role:** pre-implementation discovery snapshot; absence and gate
+statements below describe the state inspected before implementation.
+**Outcome:** implemented by `ed97d29`; current operation is documented in
+[`codex-skills/local-hooks/devhome-lifecycle/README.md`](../codex-skills/local-hooks/devhome-lifecycle/README.md).
+**Follow-up status:** catalog/cache convergence works, but overall acceptance
+has open adapter, guard, and activation findings in the
+[full feature review](reviews/review-2026-08-16-devhome-lifecycle-feature.md).
 
 ---
 
@@ -22,9 +28,10 @@ plugin choice without turning machine-local hooks into a portable default.
 
 ### Q1: Where does this repository expose plugin and AI-skill choices?
 
-**Answer:** Portable skills are selected by provider install manifests. The
-repository has no tracked Codex marketplace today, so `devhome-lifecycle`
-cannot appear in the plugin picker or contribute a plugin-provided skill.
+**Answer (at discovery time):** Portable skills were selected by provider
+install manifests. The repository had no tracked Codex marketplace, so
+`devhome-lifecycle` could not appear in the plugin picker or contribute a
+plugin-provided skill.
 
 **Evidence:**
 
@@ -173,7 +180,7 @@ All questions answered.
 
 ---
 
-## Recommendation
+## Historical Recommendation
 
 Add an `ai-skills` repository marketplace, package `devhome-lifecycle` as a
 local plugin with one reconciliation hook and one operator skill, preserve the

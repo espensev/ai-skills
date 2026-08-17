@@ -127,18 +127,30 @@ The source authority for the DevHome safety and Remember-compatibility hooks is
 It remains outside the portable ready-package manifests and is available as the
 `devhome-lifecycle` choice in the repository's local **AI Skills** Codex
 marketplace. Its sync-only plugin hook keeps the verified
-`D:\DevHome\state\codex` projection current without registering the safety or
-Remember behavior twice.
+`D:\DevHome\state\codex` projection current once it is enabled and trusted,
+without registering the safety or Remember behavior twice.
 
 ```powershell
 .\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
 ```
 
-Re-run that command after source updates. It hash-checks the materialized plugin
-cache and refreshes it only when needed; `-Force` requests an explicit reinstall.
+Use `-Provider Both` with the same `-CodexLocalPlugin` choice when the Claude
+package roots should be refreshed in the same run. Re-run the command after
+updating this checkout; it hash-checks the materialized plugin cache and
+refreshes it only when needed, while `-Force` requests an explicit reinstall.
+Source acquisition is deliberately separate, so the synchronizer never pulls,
+cleans, or otherwise changes Git state.
 This machine-specific choice pins its Codex state to
 `D:\DevHome\state\codex`; an alternate `CODEX_HOME` does not relocate the
-lifecycle plugin or its runtime hook projection.
+lifecycle plugin or its runtime hook projection. Plugin enablement and hook
+trust remain user-controlled Codex state. After first installation or a hook
+command change, restart Codex, confirm the plugin is enabled, and review the
+reconciliation hook in `/hooks`.
+
+Current review blocker: the Remember adapter's generated mirrors, locks,
+checkpoints, and logs still derive from ambient `CODEX_HOME`. Until that path is
+pinned too, the broader no-AppData lifecycle requirement is not complete. See
+the [full lifecycle feature review](docs/reviews/review-2026-08-16-devhome-lifecycle-feature.md).
 
 ## Architecture
 

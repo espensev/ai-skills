@@ -7,6 +7,12 @@ This source package contains the installable skill docs, the
 `task_manager.py` backend, and the portability tests that consumer repos can
 vendor into their own `.codex/skills` runtime tree.
 
+The same source tree also contains one deliberately non-portable companion at
+`local-hooks/devhome-lifecycle/`. It is the controller-specific source for the
+local `devhome-lifecycle@ai-skills` plugin and DevHome hook projection; it is
+not included in this package's install manifest, exported skill count, or
+consumer-repo copy instructions.
+
 ## Package Layout
 
 | Path | Purpose |
@@ -32,7 +38,23 @@ vendor into their own `.codex/skills` runtime tree.
 | `docs/reports/` | Validation checklists and revalidation reports |
 | `examples/` | Example plan artifacts and bridge scripts |
 | `tests/` | Portability and runtime verification tests |
+| `local-hooks/devhome-lifecycle/` | Source-only local plugin and DevHome lifecycle hook authority; excluded from portable installs and exports |
 | `.github/workflows/validate.yml` | Package validation pipeline |
+
+Select or refresh that machine-local companion only from the Ai-Skills
+repository root:
+
+```powershell
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+```
+
+That root command keeps source acquisition separate from cache/runtime
+convergence and pins the plugin cache and five-file runtime projection to
+`D:\DevHome\state\codex`. Adapter-generated state still follows ambient
+`CODEX_HOME` and is a known placement blocker. Plugin enablement and hook trust
+remain Codex-managed, user-reviewed state. See
+[`local-hooks/devhome-lifecycle/README.md`](local-hooks/devhome-lifecycle/README.md)
+for its operator contract.
 
 ## Skills
 

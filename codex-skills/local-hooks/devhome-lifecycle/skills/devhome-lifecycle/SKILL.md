@@ -17,6 +17,12 @@ editing the installed projection or Codex trust state by hand.
 - Plugin cache:
   `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle`; never
   develop there or relocate it through `CODEX_HOME`
+- Known blocker: adapter-generated mirrors, locks, checkpoints, and logs still
+  derive from ambient `CODEX_HOME`; do not claim full no-AppData placement until
+  the production adapter pins those paths to physical DevHome.
+- Known blocker: the installed Remember PostToolUse integration currently
+  exceeds the adapter's three-second bound and fails open; a green cache/runtime
+  check does not prove Remember capture.
 
 The package remains outside the portable provider manifests. The
 `devhome-lifecycle@ai-skills` plugin contributes this skill and one startup
@@ -33,9 +39,16 @@ registers the marketplace and proves source-to-cache hash convergence:
 ```
 
 Do not assume a restart refreshes a local plugin cache. Use
-`Sync-DevHomeLifecyclePlugin.ps1 -Check` for a read-only cache check. The startup
-bootstrap receives the canonical source path, so runtime reconciliation still
-uses current repository files if the materialized plugin cache is old.
+the canonical source synchronizer for a read-only cache check:
+
+```powershell
+& 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1' -Check
+```
+
+The startup bootstrap receives the canonical source path, so runtime
+reconciliation still uses current repository files if the materialized plugin
+cache is old. Plugin enablement and hook trust remain Codex-managed user state;
+an installed/current cache does not prove that SessionStart is active.
 
 ## Check
 
@@ -57,3 +70,6 @@ mutation to the identity-gated installer and verifies convergence afterward:
 Do not copy files manually, edit generated native memory, or manufacture hook
 trust. After refreshing a changed hook definition, restart Codex and review the
 new definition in `/hooks`.
+
+Source acquisition is separate: never pull, reset, or clean the Ai-Skills
+checkout as part of lifecycle reconciliation.

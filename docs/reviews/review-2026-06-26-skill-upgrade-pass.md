@@ -5,12 +5,11 @@
 **Spec source:** user request to seek upgrades across skills if needed
 **Verdict:** PASS WITH NOTES
 
-## Current Update
+## Historical Status
 
-The Gemini wrapper drift noted below is now legacy-package hygiene, not a
-default ready-export warning. The active Google-facing package is
-`antigravity-skills`, which exports manifest-listed workflows instead of
-Gemini command wrappers.
+The Gemini wrapper drift below became legacy-package hygiene after the
+Antigravity split. Both provider packages were removed on 2026-08-09; the body
+below remains a record of the June upgrade pass.
 
 ## Findings
 

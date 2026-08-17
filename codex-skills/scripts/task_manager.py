@@ -79,6 +79,7 @@ from analysis.basic_provider import _normalize_string_list
 from analysis.engine import run_analysis
 from analysis.models import AnalysisRequest
 from task_runtime import (
+    RuntimePaths,
     TaskRuntimeError,
     atomic_write as _runtime_atomic_write,
     coerce_int as _coerce_int,
@@ -124,6 +125,16 @@ def _template_path_for(root: Path | None = None) -> Path:
 
 
 _CONFIG_PATH = _config_path_for()
+
+_CFG: dict
+_RUNTIME_PATHS: RuntimePaths
+AGENTS_DIR: Path
+STATE_FILE: Path
+ANALYSIS_CACHE_FILE: Path
+PLANS_DIR: Path
+_tracker_str: str
+TRACKER_FILE: Path | None
+CONVENTIONS_FILE: str
 
 
 def _parse_toml_simple(path: Path) -> dict:

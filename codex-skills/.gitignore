@@ -8,7 +8,7 @@ __pycache__/
 
 # Local package runtime state; source changes belong in scripts/, skills/, docs/, and tests/
 .claude/
-agents/
+/agents/
 data/
 docs/campaign-*.md
 live-tracker.md

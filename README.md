@@ -1,28 +1,25 @@
 # AI Skills
 
-**Manifest-driven skill packages for AI coding agents — ready-to-export bundles for Claude Code, Codex, and Google Antigravity — plus the shared contracts, docs, and `wt-cli` worktree tooling that support them.**
+**Manifest-driven skill packages for AI coding agents — ready-to-export bundles for Claude Code and Codex, plus the shared contracts and validation tooling that support them.**
 
 This repo curates reusable workflows for planning, testing, review, shipping,
-multi-agent worktree orchestration, docs/schema drift checks, telemetry-aware
-token and cost analysis, and local Ollama delegation. The shipping surface is
+multi-agent worktree orchestration, lightweight Codex sidecar routing,
+docs/schema drift checks, telemetry-aware token and cost analysis, and local
+Ollama delegation. The shipping surface is
 deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-84 install-ready skills ship across three provider-specific packages:
+50 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 21 | Core campaign orchestration plus review/debug workflows, shared ops/analytics (build gates, health, docs sync, schema/truth validation, memory hygiene, session & token analytics), and worktree guardrails for Claude Code |
-| **codex-skills** | 33 | Extended toolkit for Codex: API/engineering patterns, deep research, Playwright e2e, review/debug workflows, plus the full ops/analytics and verification suite |
-| **antigravity-skills** | 30 | Antigravity adapter: Agent Skills, workflows, guardrails, the ops/analytics suite, and editor/refactor helpers |
-| **wt-cli** | — | TypeScript CLI for cross-platform worktree orchestration in parallel agent flows |
+| **claude-skills** | 21 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
+| **codex-skills** | 29 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
 
-> Counts reflect each package's `package/install-manifest.json`. The legacy
-> `gemini-skills` adapter remains in source for Gemini CLI enterprise/API-key
-> compatibility, but the ready Google-facing export is now `antigravity-skills`.
-> Imported or source-only skills that are not manifest-listed stay as reference
-> material and do not ship in ready-package exports.
+> Counts reflect each ready package's `package/install-manifest.json`.
+> Explicit `source_only_skills` entries and unmanifested imported material stay as
+> reference surfaces and do not ship in ready-package exports.
 
 ## Quick Start
 
@@ -32,8 +29,7 @@ contracts, workflows, and wrappers that are exported.
 .\scripts\Test-ReleaseReadiness.ps1
 ```
 
-**Validate ready packages** with export, installer, and Antigravity bootstrap
-smoke checks:
+**Validate ready packages** with manifest, export, and installer smoke checks:
 
 ```powershell
 .\scripts\Test-ReadyPackages.ps1
@@ -58,15 +54,10 @@ Compare the installed Codex and Claude roots against the manifests:
 .\scripts\Compare-AgentSkillRoots.ps1 -Provider Both -FailOnMissingOrStale
 ```
 
-**Bootstrap Antigravity skills** into another repo:
-
-```powershell
-.\antigravity-skills\scripts\bootstrap.ps1 -TargetDir "C:\path\to\target-repo"
-```
-
-The bootstrap script creates `.agents/skills/` and `.agent/workflows/`, copies
-manifest-listed skills and workflows, and injects multi-agent guardrails into
-`AGENTS.md`.
+Package installs also prune retired standalone skill directories. The one
+authoritative retirement registry, including each replacement route, is
+[`scripts/retired-skills.json`](scripts/retired-skills.json); both the installer
+and root comparator consume it directly.
 
 ## What's Inside
 
@@ -82,7 +73,10 @@ manifest-listed skills and workflows, and injects multi-agent guardrails into
 | **review** | Review branch, staged, or working-tree diffs against standards, specs, and regression risk, writing durable findings under `docs/reviews/` |
 | **ship** | Stage, commit, push validated work with campaign-aware commit grouping |
 | **observer** | Passive project intelligence — observe patterns over time without interfering |
-| **loop** | Run focused work loops with repeated inspect-edit-verify cycles |
+
+`repo-conventions` (codex-skills only) starts from the target repository's own
+rules, then supplies fallback playbooks for APIs, backend/frontend structure,
+Playwright E2E, current research, and bounded inspect-edit-verify cycles.
 
 ### Ops & analytics suite (shared across packages)
 
@@ -94,10 +88,16 @@ manifest-listed skills and workflows, and injects multi-agent guardrails into
 | **schema-validator** | Validate a schema is consumed correctly across data → API → test layers; report drift |
 | **truthpack-drift** | Detect drift between declared reusable "truth" facts and the current source |
 | **docs-sync** | Detect and fix drift between docs and code (versions, paths, conflict markers) |
-| **session-stats** | Session tool/agent/timeline analytics, with a telemetry-first measured tier |
-| **token-audit** | Token/cost/budget/forecast intelligence — uses real telemetry data when available, heuristic otherwise |
-| **agent-report** | Structured agent handoff and performance/cost reports |
+| **usage-stats** | Token/cost/budget/forecast intelligence, session tool/agent/timeline analytics, and agent performance/cost reports — telemetry-first with heuristic fallback |
+| **deep-audit** | Run evidence-backed, resumable runtime-efficiency audits with explicit safety and evidence boundaries |
+| **skill-authoring** | Create or revise Agent Skills with focused discovery metadata, progressive disclosure, support files, and package wiring |
 | **worktree-preflight** | Pre-launch conflict gate over branch/worktree/file-ownership (unified OK / WARNING / CONFLICT contract) |
+
+### Lightweight Codex parallelism
+
+| Skill | Purpose |
+|---|---|
+| **parallel-agents-light** | Route Codex work between the local controller loop, bounded sidecar subagents, split implementation, and full `$manager` campaigns. Use it for Claude-style parallel subagent requests when the full campaign runtime would be too heavy. |
 
 ### Local-model delegation (new)
 
@@ -106,13 +106,15 @@ manifest-listed skills and workflows, and injects multi-agent guardrails into
 | **delegate** | Decide whether a narrow, well-scoped sub-task should go to a **local Ollama model** vs stay with the controller, and route it if so. Grounded in the local `ollama-telemetry` MCP delegation tools (`ollama_readiness` / `ollama_delegate` / `ollama_batch_delegate`), with a static-guidance fallback when the MCP server is unavailable. The controller always verifies the result. |
 | **delegation-eval** | Evaluate whether local model routing is worth keeping. Uses `ollama-telemetry` eval runs, judge packets, usage metrics, and `dispatch_recommendations` to compare helper models and propose reviewed `dispatch-rules.json` changes. |
 
-`token-audit` and `session-stats` also gained a **telemetry-first data tier**: when a local `ollama-telemetry` API is reachable (`http://127.0.0.1:8099`), they read real measured token/cost data instead of character-heuristic estimates, falling back silently when it is not.
+`usage-stats` also has a **telemetry-first data tier**: when a local `ollama-telemetry` API is reachable (`http://127.0.0.1:8099`), it reads real measured token/cost data instead of character-heuristic estimates, falling back silently when it is not.
 
 Telemetry integration is deliberately split by portability:
 
-- `delegate`, `delegation-eval`, `token-audit`, and `session-stats` are portable and depend on API/MCP contracts.
+- `delegate`, `delegation-eval`, and `usage-stats` are portable and depend on API/MCP contracts.
 - `telemetry-live-ops` is machine-local, points at a personal live deployment, and is not exported.
-- Deprecated/duplicative Claude-only skills (`refactor-planner`, `observer-test`, `worktree-manager`) remain in source for compatibility but are no longer in the curated install manifest.
+- Deprecated Claude-only aliases `refactor-planner`, `observer-test`, and
+  `worktree-manager` were removed; their behavior is covered by
+  `planner --mode refactor`, `observer`, and `manager` with its task runtime.
 
 See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md) for the integration boundary.
 
@@ -124,36 +126,78 @@ See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md)
 
 `telemetry-live-ops` is kept in this source repo for this workstation only. It is intentionally excluded from the install manifests and ready-package export.
 
-### Antigravity adapter extras
+### Machine-local Codex lifecycle hooks
 
-`brief`, `edit`, `epic-refactor`, `forensic-debugger`, `guardrails`, `ui-test-engineer`, `doc-weaver` — plus the core campaign workflow and the shared ops/analytics suite above. Imported domain-specific skills are kept out of the installable adapter set so the adapter stays maintainable.
+The source authority for the DevHome safety and Remember-compatibility hooks is
+[`codex-skills/local-hooks/devhome-lifecycle`](codex-skills/local-hooks/devhome-lifecycle/README.md).
+It remains outside the portable ready-package manifests and is available as the
+`devhome-lifecycle` choice in the repository's local **AI Skills** Codex
+marketplace. Its sync-only plugin hook keeps the verified
+`D:\DevHome\state\codex` projection current once it is enabled and trusted,
+without registering the safety or Remember behavior twice.
+
+```powershell
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+```
+
+Use `-Provider Both` with the same `-CodexLocalPlugin` choice when the Claude
+package roots should be refreshed in the same run. Re-run the command after
+updating this checkout; it hash-checks the materialized plugin cache and
+refreshes it only when needed, while `-Force` requests an explicit reinstall.
+Source acquisition is deliberately separate, so the synchronizer never pulls,
+cleans, or otherwise changes Git state.
+This machine-specific choice pins its Codex state to
+`D:\DevHome\state\codex`; an alternate `CODEX_HOME` does not relocate the
+lifecycle plugin or its runtime hook projection. Plugin enablement and hook
+trust remain user-controlled Codex state. After first installation or a hook
+command change, restart Codex, confirm the plugin is enabled, and review the
+reconciliation hook in `/hooks`.
+
+Current review blocker: the Remember adapter's generated mirrors, locks,
+checkpoints, and logs still derive from ambient `CODEX_HOME`. Until that path is
+pinned too, the broader no-AppData lifecycle requirement is not complete. See
+the [full lifecycle feature review](docs/reviews/review-2026-08-16-devhome-lifecycle-feature.md).
 
 ## Architecture
 
-Each package follows a **contract-first, read-all write-scoped** design:
+Each ready package follows a **contract-first, read-all write-scoped** design:
 
 - Skills reference shared contracts (`planning-contract.md`) that define required plan elements and agent specs
 - Agents read the full repo for context but only write to explicitly scoped files
 - All material claims require source evidence (file path, line number, or command output)
-- Each skill keeps an **equivalent workflow contract across Claude, Codex, and Antigravity** — Claude and Codex ship the full portable runtime while Antigravity ships adapter skills plus workflows, so provider metadata, runtime wiring, invocation surface, and wording differ per package
+- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ. The one exception is `telemetry-live-ops`, a machine-local ops skill that intentionally keeps per-provider presentations. A one-sided obligation is allowed only when the mechanism exists on one side only; the standing example and its expiry condition are recorded in [docs/observer-hook-asymmetry.md](docs/observer-hook-asymmetry.md).
 
 The export script reads `release-manifest.json` to determine which packages are
-ready and applies the correct export strategy: `portable-runtime` for
-Claude/Codex and `antigravity-adapter` for the active Google package. The
-`gemini-adapter` strategy remains available for the legacy Gemini source
-package but is not part of the default ready export.
+ready and applies the `portable-runtime` strategy to Claude and Codex.
 
 ## Repository Layout
 
 ```
 codex-skills/       Codex package — skills, contracts, Python runtime
 claude-skills/      Claude package — skills, contracts, Python runtime
-antigravity-skills/ Antigravity package — skills, workflows, bootstrap, guardrails
-gemini-skills/      Legacy Gemini package — skills, commands, bootstrap, guardrails
-wt-cli/             Worktree orchestration CLI (TypeScript)
+skills-src/         Single-source canon for shared skills (generated into both packages)
 scripts/            Export automation
 docs/               Release notes and readiness tracking
 ```
+
+Shared skills are single-sourced. Every skill listed under `generated_skills` in
+`skills-src/manifest.json` is authored once in `skills-src/<skill>/SKILL.src.md`
+and regenerated into both provider packages by
+`scripts/Build-ProviderSkillPackages.ps1`; the generated `SKILL.md` files remain
+committed build outputs. Provider differences live in explicit `{{#claude}}` /
+`{{#codex}}` conditional blocks and `{{token}}` substitutions inside the canon,
+so parity for those pairs is enforced by the generator rather than by authoring
+discipline — `Build-ProviderSkillPackages.ps1 -Check` byte-verifies both copies
+in the release gate. Support files ship verbatim from
+`skills-src/<skill>/files/` (both providers) or
+`skills-src/<skill>/files-claude/` and `skills-src/<skill>/files-codex/` (one
+provider). `telemetry-live-ops` is the only remaining
+`provider_owned_shared_skills` entry: it is a declared whole-document fork,
+recorded with its reason in `declared_provider_forks`. Every shared pair that is
+neither generated nor declared fails the release gate:
+`scripts/Compare-ProviderSkillParity.ps1 -FailOnUndeclaredFork` exits non-zero
+on an undeclared fork, and on a generated pair whose `description:` diverges
+without a `{{#claude}}` / `{{#codex}}` block in the canon declaring it.
 
 ## License
 

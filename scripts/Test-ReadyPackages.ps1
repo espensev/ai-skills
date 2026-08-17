@@ -6,25 +6,13 @@ param (
     [switch]$SkipExportSmoke,
 
     [Parameter(Mandatory=$false)]
-    [switch]$StrictWrapperManifest,
-
-    [Parameter(Mandatory=$false)]
-    [switch]$StrictWorkflowManifest,
-
-    [Parameter(Mandatory=$false)]
     [switch]$StrictSkillManifest,
 
     [Parameter(Mandatory=$false)]
     [string]$InstallerSmokeDir,
 
     [Parameter(Mandatory=$false)]
-    [switch]$SkipInstallerSmoke,
-
-    [Parameter(Mandatory=$false)]
-    [string]$AntigravityBootstrapSmokeDir,
-
-    [Parameter(Mandatory=$false)]
-    [switch]$SkipAntigravityBootstrapSmoke
+    [switch]$SkipInstallerSmoke
 )
 
 $ErrorActionPreference = "Stop"
@@ -39,10 +27,6 @@ if (-not $ExportSmokeDir) {
 if (-not $InstallerSmokeDir) {
     $InstallerSmokeDir = Join-Path ([System.IO.Path]::GetTempPath()) "ai-skills-installer-smoke"
 }
-if (-not $AntigravityBootstrapSmokeDir) {
-    $AntigravityBootstrapSmokeDir = Join-Path ([System.IO.Path]::GetTempPath()) "ai-skills-antigravity-bootstrap-smoke"
-}
-
 $Failures = New-Object System.Collections.Generic.List[string]
 $Warnings = New-Object System.Collections.Generic.List[string]
 $Rows = New-Object System.Collections.Generic.List[object]
@@ -73,17 +57,6 @@ function Test-RequiredPath {
     return $true
 }
 
-function Resolve-RelativeInclude {
-    param (
-        [string]$FromFile,
-        [string]$IncludePath
-    )
-
-    $FromDir = Split-Path -Parent $FromFile
-    $NativeInclude = $IncludePath -replace "/", [System.IO.Path]::DirectorySeparatorChar
-    return [System.IO.Path]::GetFullPath((Join-Path $FromDir $NativeInclude))
-}
-
 function Get-SkillDescription {
     param ([string]$SkillPath)
 
@@ -102,12 +75,38 @@ function Get-SkillDescription {
     return $null
 }
 
+function Get-SkillName {
+    param ([string]$SkillPath)
+
+    $SkillText = Get-Content -Raw $SkillPath
+    $FrontmatterMatch = [regex]::Match($SkillText, "(?s)^---\s*(.*?)\s*---")
+    if (-not $FrontmatterMatch.Success) {
+        return $null
+    }
+
+    foreach ($Line in ($FrontmatterMatch.Groups[1].Value -split "\r?\n")) {
+        if ($Line -match "^\s*name:\s*(.+?)\s*$") {
+            return $Matches[1].Trim().Trim('"').Trim("'")
+        }
+    }
+
+    return $null
+}
+
 function Test-SkillDescription {
     param (
         [string]$PackageName,
         [string]$SkillName,
         [string]$SkillPath
     )
+
+    $DeclaredName = Get-SkillName $SkillPath
+    if ($DeclaredName -ne $SkillName) {
+        Add-Failure "$PackageName skill frontmatter name does not match folder: $SkillName (declares '$DeclaredName')"
+    }
+    if ($SkillName -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+        Add-Failure "$PackageName skill folder is not kebab-case: $SkillName"
+    }
 
     $Description = Get-SkillDescription $SkillPath
     if ([string]::IsNullOrWhiteSpace($Description)) {
@@ -117,6 +116,34 @@ function Test-SkillDescription {
 
     if ($Description -notmatch "(?i)\bUse\s+(when|for|after|before)\b") {
         Add-Failure "$PackageName skill description lacks discovery trigger: $SkillName"
+    }
+}
+
+function Test-SkillSupportReferences {
+    param (
+        [string]$PackageName,
+        [string]$SkillName,
+        [string]$SkillPath
+    )
+
+    $SkillRoot = Split-Path -Parent $SkillPath
+    $SkillText = (Get-Content -Raw $SkillPath) -replace "\\", "/"
+    foreach ($SupportDirName in @("references", "examples", "assets", "scripts")) {
+        $SupportDir = Join-Path $SkillRoot $SupportDirName
+        if (-not (Test-Path $SupportDir)) {
+            continue
+        }
+
+        $Prefix = [System.IO.Path]::GetFullPath($SkillRoot).TrimEnd(
+            [System.IO.Path]::DirectorySeparatorChar,
+            [System.IO.Path]::AltDirectorySeparatorChar
+        ) + [System.IO.Path]::DirectorySeparatorChar
+        foreach ($SupportFile in @(Get-ChildItem -LiteralPath $SupportDir -Recurse -File -Force)) {
+            $RelativePath = $SupportFile.FullName.Substring($Prefix.Length) -replace "\\", "/"
+            if ($SkillText -notmatch [regex]::Escape($RelativePath)) {
+                Add-Failure "$PackageName skill support file is not referenced by SKILL.md: $SkillName/$RelativePath"
+            }
+        }
     }
 }
 
@@ -187,25 +214,9 @@ function Test-SkillCommandReferences {
 }
 
 function Get-ManifestSkillNames {
-    param (
-        [object]$Package,
-        [object]$InstallManifest
-    )
+    param ([object]$InstallManifest)
 
-    switch ($Package.strategy) {
-        "portable-runtime" {
-            return @($InstallManifest.default_skills) + @($InstallManifest.optional_skills)
-        }
-        "gemini-adapter" {
-            return @($InstallManifest.skills)
-        }
-        "antigravity-adapter" {
-            return @($InstallManifest.skills)
-        }
-        default {
-            return @()
-        }
-    }
+    return @($InstallManifest.default_skills) + @($InstallManifest.optional_skills)
 }
 
 function Test-ReadmePackageCounts {
@@ -232,7 +243,7 @@ function Test-ReadmePackageCounts {
         }
 
         $InstallManifest = Get-Content -Raw $InstallManifestPath | ConvertFrom-Json
-        $SkillCount = @(Get-ManifestSkillNames -Package $Package -InstallManifest $InstallManifest).Count
+        $SkillCount = @(Get-ManifestSkillNames -InstallManifest $InstallManifest).Count
         $ExpectedTotal += $SkillCount
 
         $PackageRowPattern = "\|\s*\*\*$([regex]::Escape($Package.name))\*\*\s*\|\s*(\d+)\s*\|"
@@ -282,7 +293,7 @@ function Test-InstalledPortablePackage {
         }
     }
 
-    foreach ($Skill in @(Get-ManifestSkillNames -Package $Package -InstallManifest $InstallManifest)) {
+    foreach ($Skill in @(Get-ManifestSkillNames -InstallManifest $InstallManifest)) {
         $TargetPath = Join-Path $TargetRoot "$Skill\SKILL.md"
         if (-not (Test-Path $TargetPath)) {
             Add-Failure "$($Package.name) installer smoke missing skill: $Skill"
@@ -328,57 +339,6 @@ function Test-InstallerSmoke {
     }
 }
 
-function Test-AntigravityBootstrapSmoke {
-    param ([object]$ReleaseManifest)
-
-    $AntigravityPackage = @($ReleaseManifest.packages | Where-Object { $_.status -eq "ready" -and $_.strategy -eq "antigravity-adapter" } | Select-Object -First 1)
-    if (-not $AntigravityPackage) {
-        return
-    }
-
-    $PackageRoot = Join-Path $RepoRoot $AntigravityPackage.path
-    $BootstrapScript = Join-Path $PackageRoot "scripts\bootstrap.ps1"
-    $InstallManifestPath = Join-Path $PackageRoot "package\install-manifest.json"
-
-    if (-not (Test-Path $BootstrapScript)) {
-        Add-Failure "$($AntigravityPackage.name) bootstrap script missing: scripts/bootstrap.ps1"
-        return
-    }
-    if (-not (Test-Path $InstallManifestPath)) {
-        Add-Failure "$($AntigravityPackage.name) install manifest missing for bootstrap smoke"
-        return
-    }
-
-    $RunDir = New-SmokeRunDirectory $AntigravityBootstrapSmokeDir
-    try {
-        & $BootstrapScript -TargetDir $RunDir 6>$null | Out-Null
-        $InstallManifest = Get-Content -Raw $InstallManifestPath | ConvertFrom-Json
-
-        foreach ($Skill in @($InstallManifest.skills)) {
-            $TargetPath = Join-Path $RunDir ".agents\skills\$Skill\SKILL.md"
-            if (-not (Test-Path $TargetPath)) {
-                Add-Failure "$($AntigravityPackage.name) bootstrap smoke missing skill: $Skill"
-            }
-        }
-
-        foreach ($Workflow in @($InstallManifest.workflows)) {
-            $TargetPath = Join-Path $RunDir ".agent\workflows\$Workflow"
-            if (-not (Test-Path $TargetPath)) {
-                Add-Failure "$($AntigravityPackage.name) bootstrap smoke missing workflow: $Workflow"
-            }
-        }
-
-        $AgentsPath = Join-Path $RunDir "AGENTS.md"
-        if (-not (Test-Path $AgentsPath)) {
-            Add-Failure "$($AntigravityPackage.name) bootstrap smoke missing AGENTS.md"
-        } elseif ((Get-Content -Raw $AgentsPath) -notmatch "Global Multi-Agent Guardrails") {
-            Add-Failure "$($AntigravityPackage.name) bootstrap smoke did not install guardrails"
-        }
-    } catch {
-        Add-Failure "$($AntigravityPackage.name) bootstrap smoke failed: $($_.Exception.Message)"
-    }
-}
-
 if (-not (Test-Path $ReleaseManifestPath)) {
     Add-Failure "Missing release manifest: release-manifest.json"
 } else {
@@ -392,11 +352,7 @@ if (-not (Test-Path $ReleaseManifestPath)) {
         $PackageRoot = Join-Path $RepoRoot $Package.path
         $InstallManifestPath = Join-Path $PackageRoot "package\install-manifest.json"
         $SkillCount = 0
-        $WrapperCount = $null
-        $ExtraWrapperCount = $null
-        $WorkflowCount = $null
-        $ExtraWorkflowCount = $null
-        $ExtraSkillCount = $null
+        $SourceOnlySkillCount = $null
 
         if (-not (Test-Path $PackageRoot)) {
             Add-Failure "$($Package.name) source root missing: $($Package.path)"
@@ -434,6 +390,7 @@ if (-not (Test-Path $ReleaseManifestPath)) {
                 $Skills = @($InstallManifest.default_skills) + @($InstallManifest.optional_skills)
                 $SourceOnlySkills = @($InstallManifest.source_only_skills)
                 $SkillCount = $Skills.Count
+                $SourceOnlySkillCount = $SourceOnlySkills.Count
                 $ExportedSourceOnlySkills = @($Skills | Where-Object { $_ -in $SourceOnlySkills })
                 if ($ExportedSourceOnlySkills.Count -gt 0) {
                     Add-Failure "$($Package.name) exports source-only skills: $($ExportedSourceOnlySkills -join ', ')"
@@ -443,6 +400,7 @@ if (-not (Test-Path $ReleaseManifestPath)) {
                     $SkillPath = Join-Path $PackageRoot ("skills\" + $Skill + "\SKILL.md")
                     if (Test-RequiredPath $PackageRoot "skills/$Skill/SKILL.md" "$($Package.name) skill") {
                         Test-SkillDescription $Package.name $Skill $SkillPath
+                        Test-SkillSupportReferences $Package.name $Skill $SkillPath
                         Test-SkillScriptReferences `
                             -PackageName $Package.name `
                             -PackageRoot $PackageRoot `
@@ -466,7 +424,6 @@ if (-not (Test-Path $ReleaseManifestPath)) {
                 $ExtraSkills = @($DiskSkills | Where-Object { $_ -notin $Skills })
                 $UnexpectedExtraSkills = @($ExtraSkills | Where-Object { $_ -notin $SourceOnlySkills })
                 $MissingSourceOnlySkills = @($SourceOnlySkills | Where-Object { $_ -notin $DiskSkills })
-                $ExtraSkillCount = $ExtraSkills.Count
                 if ($UnexpectedExtraSkills.Count -gt 0) {
                     $Message = "$($Package.name) has unexpected skill directories not listed in package/install-manifest.json: $($UnexpectedExtraSkills -join ', ')"
                     if ($StrictSkillManifest) {
@@ -480,144 +437,6 @@ if (-not (Test-Path $ReleaseManifestPath)) {
                 }
             }
 
-            "gemini-adapter" {
-                foreach ($RootFile in @($InstallManifest.root_files)) {
-                    Test-RequiredPath $PackageRoot $RootFile "$($Package.name) root file" | Out-Null
-                }
-
-                foreach ($DocsFile in @($InstallManifest.docs_files)) {
-                    Test-RequiredPath $PackageRoot $DocsFile "$($Package.name) docs file" | Out-Null
-                }
-
-                foreach ($ScriptFile in @($InstallManifest.script_files)) {
-                    Test-RequiredPath $PackageRoot $ScriptFile "$($Package.name) script file" | Out-Null
-                }
-
-                $Skills = @($InstallManifest.skills)
-                $Wrappers = @($InstallManifest.command_wrappers)
-                $SkillCount = $Skills.Count
-                $WrapperCount = $Wrappers.Count
-
-                foreach ($Skill in $Skills) {
-                    $SkillPath = Join-Path $PackageRoot ("skills\" + $Skill + "\SKILL.md")
-                    if (Test-RequiredPath $PackageRoot "skills/$Skill/SKILL.md" "$($Package.name) skill") {
-                        Test-SkillDescription $Package.name $Skill $SkillPath
-                    }
-                }
-
-                foreach ($Wrapper in $Wrappers) {
-                    $WrapperPath = Join-Path $PackageRoot ".gemini\commands\$Wrapper"
-                    if (-not (Test-Path $WrapperPath)) {
-                        Add-Failure "$($Package.name) command wrapper missing: $Wrapper"
-                        continue
-                    }
-
-                    $WrapperText = Get-Content -Raw $WrapperPath
-                    $IncludeMatches = [regex]::Matches($WrapperText, "@\{([^}]+)\}")
-                    if ($IncludeMatches.Count -eq 0) {
-                        Add-WarningMessage "$($Package.name) command wrapper has no include: $Wrapper"
-                        continue
-                    }
-
-                    foreach ($Match in $IncludeMatches) {
-                        $ResolvedInclude = Resolve-RelativeInclude $WrapperPath $Match.Groups[1].Value
-                        if (-not (Test-Path $ResolvedInclude)) {
-                            Add-Failure "$($Package.name) command wrapper include missing: $Wrapper -> $($Match.Groups[1].Value)"
-                        }
-                    }
-                }
-
-                $WrapperDir = Join-Path $PackageRoot ".gemini\commands"
-                $DiskWrappers = @()
-                if (Test-Path $WrapperDir) {
-                    $DiskWrappers = @(Get-ChildItem $WrapperDir -Filter "*.toml" | ForEach-Object { $_.Name })
-                }
-                $ExtraWrappers = @($DiskWrappers | Where-Object { $_ -notin $Wrappers })
-                $ExtraWrapperCount = $ExtraWrappers.Count
-                if ($ExtraWrappers.Count -gt 0) {
-                    $Message = "$($Package.name) has command wrappers not listed in package/install-manifest.json: $($ExtraWrappers -join ', ')"
-                    if ($StrictWrapperManifest) {
-                        Add-Failure $Message
-                    } else {
-                        Add-WarningMessage $Message
-                    }
-                }
-
-                if ($Skills -contains "telemetry-live-ops") {
-                    Add-Failure "$($Package.name) exports source-only telemetry-live-ops"
-                }
-                if ($Wrappers -contains "telemetry-live-ops.toml") {
-                    Add-Failure "$($Package.name) exports source-only telemetry-live-ops wrapper"
-                }
-            }
-
-            "antigravity-adapter" {
-                foreach ($RootFile in @($InstallManifest.root_files)) {
-                    Test-RequiredPath $PackageRoot $RootFile "$($Package.name) root file" | Out-Null
-                }
-
-                foreach ($DocsFile in @($InstallManifest.docs_files)) {
-                    Test-RequiredPath $PackageRoot $DocsFile "$($Package.name) docs file" | Out-Null
-                }
-
-                foreach ($ScriptFile in @($InstallManifest.script_files)) {
-                    Test-RequiredPath $PackageRoot $ScriptFile "$($Package.name) script file" | Out-Null
-                }
-
-                $Skills = @($InstallManifest.skills)
-                $Workflows = @($InstallManifest.workflows)
-                $SkillCount = $Skills.Count
-                $WorkflowCount = $Workflows.Count
-
-                foreach ($Skill in $Skills) {
-                    $SkillPath = Join-Path $PackageRoot ("skills\" + $Skill + "\SKILL.md")
-                    if (Test-RequiredPath $PackageRoot "skills/$Skill/SKILL.md" "$($Package.name) skill") {
-                        Test-SkillDescription $Package.name $Skill $SkillPath
-                    }
-                }
-
-                foreach ($Workflow in $Workflows) {
-                    $WorkflowPath = Join-Path $PackageRoot ".agent\workflows\$Workflow"
-                    if (-not (Test-Path $WorkflowPath)) {
-                        Add-Failure "$($Package.name) workflow missing: $Workflow"
-                        continue
-                    }
-
-                    $SkillName = [System.IO.Path]::GetFileNameWithoutExtension($Workflow)
-                    if ($SkillName -notin $Skills) {
-                        Add-Failure "$($Package.name) workflow has no matching skill: $Workflow"
-                    }
-
-                    $WorkflowText = Get-Content -Raw $WorkflowPath
-                    if ($WorkflowText -notmatch [regex]::Escape(".agents/skills/$SkillName/SKILL.md")) {
-                        Add-WarningMessage "$($Package.name) workflow does not reference its installed skill path: $Workflow"
-                    }
-                }
-
-                $WorkflowDir = Join-Path $PackageRoot ".agent\workflows"
-                $DiskWorkflows = @()
-                if (Test-Path $WorkflowDir) {
-                    $DiskWorkflows = @(Get-ChildItem $WorkflowDir -Filter "*.md" | ForEach-Object { $_.Name })
-                }
-                $ExtraWorkflows = @($DiskWorkflows | Where-Object { $_ -notin $Workflows })
-                $ExtraWorkflowCount = $ExtraWorkflows.Count
-                if ($ExtraWorkflows.Count -gt 0) {
-                    $Message = "$($Package.name) has workflows not listed in package/install-manifest.json: $($ExtraWorkflows -join ', ')"
-                    if ($StrictWorkflowManifest) {
-                        Add-Failure $Message
-                    } else {
-                        Add-WarningMessage $Message
-                    }
-                }
-
-                if ($Skills -contains "telemetry-live-ops") {
-                    Add-Failure "$($Package.name) exports source-only telemetry-live-ops"
-                }
-                if ($Workflows -contains "telemetry-live-ops.md") {
-                    Add-Failure "$($Package.name) exports source-only telemetry-live-ops workflow"
-                }
-            }
-
             default {
                 Add-Failure "$($Package.name) uses unsupported strategy: $($Package.strategy)"
             }
@@ -627,11 +446,7 @@ if (-not (Test-Path $ReleaseManifestPath)) {
             Package = $Package.name
             Strategy = $Package.strategy
             Skills = $SkillCount
-            Wrappers = $WrapperCount
-            ExtraWrappers = $ExtraWrapperCount
-            Workflows = $WorkflowCount
-            ExtraWorkflows = $ExtraWorkflowCount
-            ExtraSkills = $ExtraSkillCount
+            SourceOnlySkills = $SourceOnlySkillCount
         }) | Out-Null
     }
 
@@ -659,10 +474,6 @@ if (-not $SkipExportSmoke -and $Failures.Count -eq 0) {
 
 if (-not $SkipInstallerSmoke -and $Failures.Count -eq 0) {
     Test-InstallerSmoke -ReleaseManifest $ReleaseManifest
-}
-
-if (-not $SkipAntigravityBootstrapSmoke -and $Failures.Count -eq 0) {
-    Test-AntigravityBootstrapSmoke -ReleaseManifest $ReleaseManifest
 }
 
 Write-Output "Ready Package Validation"
@@ -693,7 +504,4 @@ if (-not $SkipExportSmoke) {
 }
 if (-not $SkipInstallerSmoke) {
     Write-Output "Installer smoke target root: $InstallerSmokeDir"
-}
-if (-not $SkipAntigravityBootstrapSmoke) {
-    Write-Output "Antigravity bootstrap smoke target root: $AntigravityBootstrapSmokeDir"
 }

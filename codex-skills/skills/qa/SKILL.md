@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Run tests, check coverage, triage failures, optionally smoke-test a configured app (HTTP endpoints or a desktop/GUI build), and generate regression tests. Use when the user wants to test code, check quality, diagnose failures, or generate tests for a change.
+description: Use when the user wants tests run, coverage checked, failures classified, a configured app smoke-tested, or regression tests added. Do not use for findings-first diff review (use review), a hard bug needing a new reproduction-and-fix loop (use diagnosing-bugs), or a broad runtime-efficiency audit (use deep-audit).
 ---
 
 # QA — Testing & Quality Assurance
@@ -8,11 +8,36 @@ description: Run tests, check coverage, triage failures, optionally smoke-test a
 You are a QA engineer. You run tests, diagnose failures, assess coverage, and
 generate regression tests.
 
-**All commands run to completion autonomously.**
+**Most commands run to completion autonomously.** The exception is anything destructive,
+irreversible, or that drives a live signed-in session — those pause for explicit owner go-ahead
+(principle 5).
 
-**Config:** `.codex/skills/project.toml` — paths, commands, modules, smoke, and QA policy
-**Test command:** `[commands].test`. **Framework:** `[qa].framework` (else auto-detect; default `pytest`)
-**Source modules:** `[modules]` in project.toml (or auto-discovered)
+## Core principles (every command, every project)
+
+1. **No false pass.** Report each result as `pass` / `fail` / `blocked` / `not run` — never blank,
+   never an implied success you did not observe. Mark `pass` ONLY for something you directly ran
+   and saw (a suite you did not execute is `not run`, not `pass`); a `fail` carries repro steps and
+   a severity; a `blocked` names the exact missing dependency. A `pass` on a visual/appearance row
+   means "renders as coded" — provisional, never an owner sign-off on the design.
+2. **Test what is really there.** Never present stale or wrong-target output as a pass. If the
+   project declares a deployed/verified artifact (`[qa].manual-target` + `[qa].provenance-verify`),
+   confirm its identity FIRST and refuse the build output the project forbids
+   (`[qa].never-test-build-output`). See `smoke`.
+3. **Verify, do not release.** This skill tests and verifies; it never publishes, deploys, retags,
+   or bumps version/build numbers. If a step would require a release action (anything listed in
+   `[qa].forbidden-actions`), STOP and report it — those are owner-gated.
+4. **Evidence is durable — and clean.** When `[qa].evidence-dir` is set, append results there (don't
+   only print them) and keep the referenced screenshots/logs beside them. When capturing from a
+   live/signed-in session, never record account identifiers, cookies, auth or credential URLs, or
+   tokens — redact or avoid any frame/log line that would expose them.
+5. **Sandbox the destructive; get consent.** Destructive or induced-fault checks (clearing data,
+   corrupting a settings file, dropping the network) run against a throwaway COPY of the app's data
+   dir, never live state. These — and anything that drives a live signed-in session (it steals the
+   user's focus) — need explicit owner go-ahead first; they are the exception to autonomous runs.
+
+**Config:** `.codex/skills/project.toml` — paths, commands, modules, lanes, smoke, and QA policy.
+**Test command:** `[commands].test`. **Framework:** `[qa].framework` (else auto-detect; default `pytest`).
+**Source modules:** `[modules]` (or auto-discovered). **Lanes:** `[qa.lanes]`.
 
 ## Commands
 
@@ -36,8 +61,8 @@ Before any command, load project configuration:
 2. Extract `[commands].test` for the test command
 3. Extract `[modules]` for the source module list (if configured)
 4. Extract `[smoke-test]` for smoke-test config (HTTP by default; `mode = "gui"` for a desktop app)
-5. Extract `[qa]` for QA policy (if present): `framework`, `evidence-dir`, `manual-target`,
-   `provenance-verify`, `never-test-build-output`, `forbidden-actions`, `checklist`
+5. Extract `[qa]` for QA policy (if present): `framework`, `evidence-dir`, lanes (`[qa.lanes]`),
+   `manual-target`, `provenance-verify`, `never-test-build-output`, `forbidden-actions`, `checklist`
 6. Read the conventions file specified in `[project].conventions`
 
 If no project.toml exists, fall back to scanning the project structure:
@@ -58,7 +83,8 @@ the default**, so a project with no `[qa].framework` behaves exactly as before:
 | `go` | `<test-cmd> ./... -run <Re>` | `<test-cmd> ./... -list '.*'` | `<test-cmd> -v ./...` | package |
 
 `<test-cmd>` is always `[commands].test`. For `dotnet`/xUnit, **scope by `--filter`, not by appending
-file paths** — a bare scope token is a `Category=`/`FullyQualifiedName~` expression, never a path.
+file paths** — a bare scope token is a `[qa.lanes]` name or a `Category=`/`FullyQualifiedName~`
+expression, never a path.
 
 ## Feedback Hierarchy
 
@@ -84,16 +110,19 @@ Run the test suite with clear reporting.
 - `$qa run api` — just `tests/test_api.py` (or matching test file)
 - `$qa run sessions events` — multiple files
 - `$qa run collector` — all tests that import the named module
+- `$qa run <lane>` — if the token matches a `[qa.lanes]` key, run that lane's filter (e.g. for
+  dotnet/xUnit, `$qa run logic` → `<test-cmd> --filter "Category=Logic"`). A lane whose expression
+  is empty means the full suite — omit `--filter` entirely (never emit `--filter ""`).
 
 ### Steps:
 
-1. **Resolve scope** to tests. If a bare module name is given (e.g. `api`), map it to the matching
-   test via the framework's *test→source link* (imports for pytest/jest; type name for dotnet/xUnit
-   — see *Framework idioms*).
+1. **Resolve scope.** In priority order: (a) a token matching a `[qa.lanes]` key → that lane's
+   filter expression; (b) a bare module/test name → the matching test via the framework's
+   test→source link (see *Framework idioms*); (c) multiple tokens → union. Empty → full suite.
 
 2. **Run the test command** (`[commands].test`) using the framework's *scope / select* idiom — for
    `pytest` that is appended file paths; for `dotnet` it is `--filter "<expr>"` (never appended
-   paths). See *Framework idioms*.
+   paths):
    ```bash
    <test-command> [scoped files | --filter "<expr>"]
    ```
@@ -113,7 +142,7 @@ Run the test suite with clear reporting.
 ## Command: `smoke` — Live Smoke Test
 
 Read `[smoke-test]` from project.toml. If no `[smoke-test]` config exists, skip and report that
-smoke config is needed. Dispatch on `[smoke-test].mode` (default `http`).
+smoke config is needed. Dispatch on `[smoke-test].mode` (default `http`):
 
 ### Mode: `http` (default) — Live Endpoint Smoke Test
 
@@ -137,7 +166,7 @@ the finally block.
 ### Mode: `gui` — Desktop UI Smoke Test (provenance-gated)
 
 For a windowed app (no HTTP endpoints). This verifies an **already-deployed** artifact via UI
-Automation; it never builds, deploys, or releases (this skill verifies, it does not release).
+Automation; it never builds, deploys, or releases (Core principle 3).
 
 1. **Provenance gate first.** If `[smoke-test].verify` (or `[qa].provenance-verify`) is set, run it
    and read its verdict:
@@ -154,11 +183,10 @@ Automation; it never builds, deploys, or releases (this skill verifies, it does 
    `pass-pattern` (e.g. `SMOKE PASS`) as the success signal; a blank/black frame is a launch
    failure, not a pass.
 4. **Record evidence.** Save/keep screenshots and the run log under `[smoke-test].evidence` (or
-   `[qa].evidence-dir`), scrubbed of any signed-in-session secrets (account ids, cookies, tokens,
-   auth/credential URLs). For a windowed app capture at a fractional DPI (e.g. 150%) when the driver
-   supports it — integer scales hide the rounding/clipping class of bug. A single-DPI capture
-   certifies only that DPI; other scales (e.g. 100/125%) stay `not run` until DPI/hardware switching
-   is available.
+   `[qa].evidence-dir`), scrubbed of any signed-in-session secrets (principle 4). For a windowed app
+   capture at a fractional DPI (e.g. 150%) when the driver supports it — integer scales hide the
+   rounding/clipping class of bug. A single-DPI capture certifies only that DPI; other scales (e.g.
+   100/125%) stay `not run` until DPI/hardware switching is available.
 5. **Report.** Identity block (version/build/commit from the verifier), the smoke pass/fail, the
    evidence paths, and whether this counts as release evidence or diagnostic-only. Point the
    operator at `[qa].checklist` (if set) for the manual rows this automated smoke does not cover.
@@ -167,7 +195,7 @@ Automation; it never builds, deploys, or releases (this skill verifies, it does 
 deployed copy is missing, stale, or unverified, STOP and report — do not "fix" it by deploying.
 Destructive or induced-fault rows (e.g. corrupt-settings recovery, clear-data) run on a throwaway
 copy of the app data — point the driver at a scratch dir via `[smoke-test].data-root-env` (if set)
-— and need explicit owner consent first.
+— and need explicit owner consent first (principle 5).
 
 ---
 
@@ -177,18 +205,16 @@ Analyze which source modules have test coverage and where gaps exist.
 
 ### Steps:
 
-1. **Build the source-to-test map.** Use the `[modules]` config from project.toml
-   to get the list of source files. For each source module, find its test files via the framework's
-   *test→source link* (see *Framework idioms*): for `pytest`/`jest`, Grep for imports
-   (`import <module>|from <module>`, output mode `files_with_matches`); for `dotnet`/xUnit, Grep for
-   the type name (source `Foo` ↔ test class/file `FooTests`).
-   If no `[modules]` config, scan the project root for source files using Glob.
+1. **Build the source-to-test map.** Use the `[modules]` config from project.toml to get the list
+   of source files. For each source module, find its test files via the framework's *test→source
+   link* (see *Framework idioms*): for `pytest`/`jest`, Grep for imports
+   (`import <module>|from <module>`, output mode `files_with_matches`); for `dotnet`/xUnit, Grep
+   for the type name (e.g. source `Foo` ↔ test class/file `FooTests`). If no `[modules]` config,
+   scan the project root with Glob.
 
-2. **Count tests per file** using the framework's *collect-and-count* idiom (see *Framework
-   idioms*) — e.g. for pytest:
-   ```bash
-   <test-command> <file> --co 2>&1 | tail -1
-   ```
+2. **Count tests per file/module** using the framework's *collect-and-count* idiom (see table) —
+   e.g. `<test-command> <file> --co 2>&1 | tail -1` (pytest — read the trailing "N collected"
+   summary line) or `<test-command> --list-tests` filtered to the type (dotnet).
 
 3. **Build the coverage matrix:**
 
@@ -222,11 +248,8 @@ Diagnose current test failures with structured root cause analysis.
 ### Steps:
 
 1. **Run the full suite** with verbose output, using the framework's *verbose run* idiom (see
-   *Framework idioms*) — e.g. `<test-command> -v` (pytest) or
-   `<test-command> --logger "console;verbosity=detailed"` (dotnet):
-   ```bash
-   <test-command-verbose>
-   ```
+   table) — e.g. `<test-command> -v` (pytest) or
+   `<test-command> --logger "console;verbosity=detailed"` (dotnet).
 
 2. **If all pass**, report the pass count and exit.
 
@@ -287,16 +310,22 @@ Generate targeted regression tests for specific changed files.
 
 4. **Write tests** to the appropriate test file using the Edit tool.
    - If a test file exists for the module, add to it
-   - If no test file exists, create `tests/test_<module>.py` (or the
-     project's test naming convention)
+   - If no test file exists, create one following the project's naming convention
+     (`tests/test_<module>.py` for pytest; `<Module>Tests.cs` for dotnet/xUnit;
+     `<module>.test.ts` for jest — see *Framework idioms*)
    - Never overwrite existing tests — only add new ones
 
-5. **Run the new tests** to verify they pass:
-   ```bash
-   <test-command> <new-test-file>::<NewTestClass> -v
-   ```
+5. **Run the new tests** to verify, scoped via the framework's *scope / select* idiom — e.g.
+   `<test-command> <file>::<NewTestClass> -v` (pytest) or
+   `<test-command> --filter "FullyQualifiedName~<NewTestClass>"` (dotnet).
 
 6. **Report.** List of generated tests with what they cover.
+
+> **Scope discipline.** `regtest` adds *tests*, never product-code fixes. If a generated test
+> exposes a real bug, leave it failing and report it — and if `[project].conventions` defines a
+> "failing test → record → await approval before fixing" protocol, follow that instead of editing
+> app code. A generated test that asserts current (possibly wrong) behavior just to go green is a
+> false pass (Core principle 1).
 
 ---
 
@@ -305,7 +334,8 @@ Generate targeted regression tests for specific changed files.
 When no explicit source-to-test map is available, build one dynamically:
 
 1. List all source files from `[modules]` in project.toml (or scan project root)
-2. For each source module, grep test files for import references
+2. For each source module, find its test files via the framework's *test→source link* (imports for
+   pytest/jest; type name for dotnet/xUnit — see *Framework idioms*)
 3. Build the mapping at runtime — no hardcoded tables needed
 
 This replaces any project-specific hardcoded mapping with a general approach

@@ -1,6 +1,6 @@
 ---
 name: manager
-description: "Orchestrate multiple parallel Codex agents for any project. Plan multi-agent work, launch parallel agents in worktrees, merge results, and verify builds. Use when the user wants a multi-agent campaign, parallel worktree execution, managed merges, or campaign status."
+description: "Use when the user explicitly wants a multi-agent campaign executed or managed: parallel worktrees, agent launches, dependency-aware progress, merges, verification, or campaign status. Do not use for plan-only design (use $planner), bounded codebase research, or one tight local change."
 ---
 
 # Manager — Multi-Agent Orchestrator
@@ -41,10 +41,20 @@ backend primitives now include `go`, `attach`, `result`, `recover`, `merge`,
 | `merge` | `$manager merge` | Skill-level workflow: merge completed agent worktrees into main working tree |
 | `verify` | `$manager verify` | Skill-level workflow: post-merge validation + readiness assessment |
 | `new` | `$manager new <name> [scope]` | Quick-add a single agent |
-| `review` | `$manager review <agents>` | Skill-level workflow: review completed work and update tracker |
+| `review` | `$manager review <agent>` | Review a completed agent's work: read spec, check diff, mark complete |
 | `next` | `$manager next` | Auto-advance: launch whatever is ready |
 
 Default to `status` if no command given.
+
+### When to use `go` vs `plan` + `run`
+
+| Scenario | Use | Why |
+|----------|-----|-----|
+| Feature work with clear scope | `$manager go` | End-to-end autonomous; fastest path |
+| First campaign in unfamiliar codebase | `$manager plan` then review, then `$manager run ready` | Lets you inspect the plan and specs before committing |
+| Refactor with high coordination cost | `$manager plan` then review | Refactors benefit from human sign-off on decomposition |
+| Quick fix (1-2 agents) | `$manager go` | Overhead of review outweighs risk |
+| Follow-up campaign after a failure | `$manager plan` then review | Understand what went wrong before re-executing |
 
 ---
 
@@ -99,13 +109,13 @@ UI surfaces, and high-overlap hotspots.
 
 Use feedback in this order:
 
-1. explicit user correction or changed requirement
-2. build, typecheck, lint, smoke, or test failure with concrete output
-3. blocker, regression, or workaround evidence from prior runs
+1. explicit user correction or requirement change
+2. failing build, test, lint, or verify output
+3. `$observer` blocker or regression signals
 4. plan drift between JSON, docs, tracker, and code
 
-A single weak signal should shape the current run only. Reusable or repeated
-signals should be turned into durable feedback artifacts or eval cases.
+Treat single weak signals as local context. Promote repeated or reusable ones
+into observer records or eval cases so future runs start from better evidence.
 
 ### Autonomous Addition Policy
 
@@ -148,151 +158,29 @@ project graph metadata, conflict zones, and the planner-facing
 
 ## Command: `plan` — Autonomous Planning Phase
 
-Runs all planning phases to completion without user input.
+Manager owns campaign orchestration; `$planner` and
+`.codex/skills/planning-contract.md` own plan design. Do not copy
+their decomposition rules into this skill.
 
-### Phase 1: Load context
+1. Read the planner skill and planning contract.
+2. Run `python scripts/task_manager.py plan preflight --json`; stop on errors.
+3. Run `python scripts/task_manager.py plan create "<description>" --json`.
+4. Design and register agents using the planner contract and the returned
+   `analysis_v2.planning_context`; preserve single-file ownership and explicit
+   dependencies.
+5. Finalize concrete goal, exit criteria, verification, and documentation
+   fields through `task_manager.py plan finalize`.
+6. Approve and execute through the backend, then replace every generated spec
+   TODO with self-contained instructions before any agent launch.
+7. Keep `data/plans/{plan-id}.json` authoritative and write the durable
+   `docs/campaign-{plan-id}-{slug}.md` view.
+8. Report `status` and `graph`. Under `go`, continue to `run ready`; under
+   plan-only invocation, return the ready plan without launching agents.
 
-1. Read `.codex/skills/project.toml` — project config (paths, commands, modules)
-2. Read `.codex/skills/planning-contract.md` — the shared planning contract
-3. Read the conventions file specified in `[project].conventions` — project architecture
-4. Scan for discovery documents: check `docs/discovery-*.md` for relevant findings
-
-### Phase 2: Preflight
-
-Before autonomous planning, confirm the repo is configured strongly enough for
-autonomous verify:
-
-```bash
-python scripts/task_manager.py plan preflight --json
-```
-
-If preflight reports errors, stop and report the exact blocker.
-
-### Phase 3: Analyze
-
-```bash
-python scripts/task_manager.py plan create "<description>" --json
-```
-
-This does three things:
-1. Runs codebase analysis (file sizes, imports, conflict zones, planning context)
-2. Creates a draft plan summary in runtime state and writes the full plan JSON
-   to `[paths].plans`
-3. Outputs JSON with the plan context + full analysis for you to consume
-
-### Phase 4: Design
-
-Read `.codex/skills/planning-contract.md` — the shared planning contract that
-defines the 13 required plan elements, agent spec format, and decomposition
-heuristics. The plan you produce must satisfy all 13 elements.
-
-Using the analysis JSON, design the agent breakdown. For each agent, determine:
-- **letter** — next available (provided in the plan output)
-- **name** — kebab-case descriptive name
-- **scope** — one-line description of what this agent does
-- **deps** — which other agents must complete first
-- **files** — which files this agent will modify (IMPORTANT: minimize overlap)
-- **group** — auto-calculated from deps
-- **complexity** — low/medium/high
-
-Rules for good decomposition (from the planning contract):
-- **File ownership**: Each file should be owned by at most ONE agent. Check
-  `analysis_v2.planning_context` first — use `ui_surfaces`, `ownership_summary`,
-  `priority_projects`, and `coordination_hotspots` before falling back to raw
-  `conflict_zones`. If two agents must touch the same file, make one the owner
-  and the other depend on it.
-- **Bounded scope**: An agent should need < 300 lines of changes. If more, split.
-- **Self-contained specs**: Each agent spec must contain enough detail for an
-  agent to execute without asking questions.
-- **Test coverage**: If agents add features, include a test agent that depends
-  on the feature agents.
-- **Agent count**: Prefer 2-6 agents. More than 6 increases coordination cost.
-
-If `planning_context.analysis_health.partial_analysis` or
-`planning_context.analysis_health.fallback_only` is true, be more conservative
-with decomposition around startup projects, packaging projects, and shared UI
-surfaces.
-
-### Phase 5: Register
-
-Add each agent to the draft plan:
-
-```bash
-python scripts/task_manager.py plan-add-agent <plan-id> <letter> <name> \
-    --scope "..." --deps "..." --files "..." --complexity medium
-```
-
-Repeat for each agent.
-
-### Phase 6: Finalize required plan elements
-
-Before approval, fill the required plan elements through the backend instead of
-editing the plan artifact by hand:
-
-```bash
-python scripts/task_manager.py plan finalize <plan-id> \
-    --goal "..." \
-    --exit-criterion "..." \
-    --verification-step "..." \
-    --documentation-update "..."
-```
-
-At minimum, ensure the goal statement and exit criteria are concrete. The
-backend can synthesize minimum values, but explicit values are preferred.
-
-### Phase 7: Auto-approve + Execute
-
-**Do NOT ask the user for approval.** Approve and execute immediately:
-
-```bash
-python scripts/task_manager.py plan approve <plan-id>
-python scripts/task_manager.py plan execute <plan-id>
-```
-
-This auto-registers all agents in the state file and generates spec template
-files in the specs directory.
-
-### Phase 8: Write Plan Artifacts
-
-Keep the machine-readable plan in:
-
-```
-data/plans/{plan-id}.json
-```
-
-Write the human-readable campaign document to:
-
-```
-docs/campaign-{plan-id}-{slug}.md
-```
-
-Derive the slug from the campaign title (2-4 words, kebab-case). The JSON
-plan file is the authoritative machine-readable source of truth; the markdown
-document is the durable human-readable campaign record. `verify` consumes plan
-JSON first and uses markdown only for drift checks.
-
-### Phase 9: Fill spec files
-
-**Fill in each spec file** with complete task instructions — never leave TODOs:
-
-For each agent:
-1. Read the relevant source files the agent will modify
-2. Edit the spec template to replace all TODOs with detailed, actionable instructions
-3. Include specific code locations, function names, expected behavior
-4. The spec should be self-contained — an agent running it should not need to ask
-   any clarifying questions
-
-### Phase 10: Report + proceed
-
-```bash
-python scripts/task_manager.py status
-python scripts/task_manager.py graph
-```
-
-Present the plan document path and a summary of the 13 elements,
-then report the ready agents. If invoked via `go`, immediately proceed to
-`run ready`. If invoked via `plan` alone, report that agents are ready and
-the user can launch with `$manager run ready`.
+If analysis is partial or fallback-only, follow the planner skill's degraded
+analysis and discovery-replan rules. This section intentionally contains only
+the manager/backend handoff; detailed planning policy is loaded on demand from
+the owning skill and contract.
 
 ---
 
@@ -300,6 +188,19 @@ the user can launch with `$manager run ready`.
 
 Launch agents in parallel isolated worktrees. **Always auto-advances through
 all dependency groups until every agent is done or failed.**
+
+### Pre-launch spec validation
+
+Before launching any agent, validate all spec files for the agents about to run:
+
+1. Read each spec file (`agents/agent-{letter}-{name}.md`)
+2. Reject any spec that contains `TODO` placeholders — report the offending
+   file and stop. The planner (or user) must fill the spec before launch.
+3. Confirm the spec has a non-empty `## Task` section and a `## Verification`
+   section with at least one command.
+
+If any spec fails validation, report the issue and do not launch. This prevents
+agents from starting work with broken or incomplete instructions.
 
 ### Steps:
 
@@ -310,25 +211,20 @@ all dependency groups until every agent is done or failed.**
    If the backend is waiting for execution, it outputs JSON with agent prompts.
 
 2. **Parse the JSON.** For each agent in the `agents` array, launch:
-   - `subagent_type`: `"general-purpose"`
-   - `model`: honor the JSON `model` field as the requested launch tier
-   - `isolation`: `"worktree"`
-   - `run_in_background`: `true`
-   - `prompt`: from the JSON `prompt` field
+   a background worker in an isolated worktree with the JSON `prompt` field
+   as its task, honoring the JSON `model` field as the requested launch tier.
 
-   For Codex launches, treat the backend `model` field as an abstract tier:
-   - `mini` -> prefer `GPT-5.3-Codex-Spark` when available
-   - `standard` -> use the normal general-purpose coding model
-   - `max` -> use the strongest available coding model
-
-   Prefer `GPT-5.3-Codex-Spark` for bounded background subagents, sidecar
-   research, docs, and test-focused work when the task fits the low tier. This
-   preserves higher-capability model budget for integration-heavy or ambiguous
-   tasks, and it may use separate limits when Codex exposes them separately.
-   If the preferred model is unavailable, fall back to the closest stronger
+   Map the backend `model` tier to the Codex model lineup: `mini` → the
+   current low-cost Codex tier, `standard` → the normal general-purpose
+   coding model, `max` → the strongest available coding model. Prefer the
+   low tier for bounded background subagents, sidecar research, docs, and
+   test-focused work when the task fits it — this preserves
+   stronger-model budget for integration-heavy or ambiguous tasks, and it
+   may use separate limits when Codex exposes them separately. If the
+   preferred model is unavailable, fall back to the closest stronger
    available model rather than blocking launch.
 
-   **CRITICAL:** Launch ALL agents in a SINGLE message with multiple Agent tool calls.
+   **CRITICAL:** Launch all agents of a group together so they run in parallel.
 
 3. **Report launch status.**
 
@@ -418,6 +314,18 @@ state directly.
 - **Same-group agents** — manual merge, keep both contributions.
 - **Never silently drop changes** — report every conflict and resolution.
 
+### Observation promotion
+
+After merging worktrees, check each merged worktree path for `observations.jsonl`.
+If present, promote observations to the project-level log:
+
+1. Read and parse the JSONL file from the worktree root
+2. Append each observation to `data/observations.jsonl`
+3. Report promoted observation count per worktree
+
+This feeds `$observer synthesize` with execution-time signals (test results,
+build errors, churn, blockers) that improve future planning.
+
 ---
 
 ## Command: `verify` — Post-Merge Validation
@@ -495,14 +403,41 @@ Produce a summary with:
 - **Drift findings**: optional follow-up audit findings, if any
 - **Stale state**: items cleaned up (or "none")
 - **Blockers**: anything that would prevent the next `go` from succeeding
+- **Observer flags**: if `data/observations.jsonl` contains recent `blocker` (warning), `regression` (failure), or `workaround` (warning/debt) observations
 - **Feedback handoff**: which findings should stay local, enter observer
-  artifacts, or become eval cases
+  records, or become eval cases — recorded for future planning, not just
+  mentioned in the current report
+
+### Refactor-aware verification
+
+When the active plan includes refactor elements (R1, R2, R3 from the planning
+contract's refactor mode), verify adds these checks:
+
+- **R2 — Behavioral invariants:** For each invariant listed in the plan, confirm
+  the behavior is preserved (run the test or command that exercises it). Report
+  any broken invariant as a verify failure.
+- **R3 — Rollback strategy:** Confirm the rollback mechanism described in the
+  plan is still viable (e.g., the backup branch exists, the migration has a
+  down path). Report as a warning if rollback readiness cannot be confirmed.
 
 ### Integration with `go`:
 
 The `go` command's full lifecycle is: `plan` → backend `go` → `merge` → `verify`.
 If `verify` finds test failures or build errors after merge, it reports them
 but does not attempt auto-fixes (that would exceed merge scope).
+
+### Discovery-replan during execution
+
+If during `run` or `merge` an agent reports a blocker that requires more
+research (e.g., an undocumented API, an unexpected dependency):
+
+1. Mark the agent as `failed` with a clear reason.
+2. Continue with remaining agents (standard error recovery).
+3. In the final summary, recommend: `$discover {targeted question}` followed by
+   re-planning to address the gap.
+
+Do not pause the entire pipeline for discovery — complete what can be completed,
+then report what needs further research.
 
 ### Optional durable feedback
 
@@ -512,8 +447,13 @@ feedback trail:
 - record evidence-backed blockers, regressions, and drift in
   `data/observations.jsonl`
 - refresh `docs/observer/project-intelligence.md` when the summary is stale
-- convert recurring blocker/regression patterns into eval cases with
+- convert recurring blocker/regression patterns into durable observations via
+  `$observer note` so the next campaign starts from better evidence
+- additionally convert those patterns into eval cases with
   `python scripts/observe_to_eval.py --merge eval/cases/light-skill-cases.json`
+  If `scripts/observe_to_eval.py` is not present in the repo (for example a
+  skills-only install without the runtime files), skip this command and record
+  the eval-case candidate in the observation entry or report instead.
 
 ---
 
@@ -556,14 +496,23 @@ Then fill in the spec file with Edit tool.
 
 ## Command: `review`
 
-1. Read agent spec + diff/changes
-2. Run verification from spec
-3. Generate compliance report
-4. Update backend:
+Skill-level workflow (no dedicated backend primitive — orchestrates existing
+primitives and tools):
+
+1. **Read** the agent spec (`agents/agent-<letter>-<name>.md`) and the agent's
+   reported diff/changes (from `result` payload or worktree inspection)
+2. **Run verification** steps listed in the spec's `## Verification` section
+3. **Assess compliance**: do the changes satisfy the spec's scope and exit
+   criteria?
+4. **Mark complete** via backend:
    ```bash
-   python scripts/task_manager.py complete <letter> -s "<summary>"
+   python scripts/task_manager.py complete <letter> -s "<one-line summary>"
    ```
-5. Edit the tracker file with a tracker entry
+   If the work does not meet criteria, mark failed instead:
+   ```bash
+   python scripts/task_manager.py fail <letter> -r "<reason>"
+   ```
+5. **Update tracker** file with a tracker entry (if tracker is configured)
 
 ---
 
@@ -601,6 +550,35 @@ Report failures in the final summary. Do not halt the pipeline for a single fail
 
 ---
 
+## Tracker File
+
+The tracker file (configured in `[paths].tracker` in project.toml) is a
+markdown file that records completed work across campaigns. It provides
+continuity between campaigns so planners and managers can see what was done
+recently.
+
+**Format:** Markdown table with these columns:
+
+```markdown
+| ID | Status | Owner | Scope | Issue | Update |
+|---|---|---|---|---|---|
+| PROJ-001 | Done | agent-a | `src/app.py` | Add endpoint | Added /api/foo route |
+```
+
+**When to update:**
+- After `$manager review` marks an agent complete (step 5 of review)
+- After `$manager verify` passes (append a campaign summary row)
+- After `$manager go` completes the full lifecycle
+
+**Who updates:** The manager (or the agent, if the spec includes a
+post-completion tracker section). Never update the tracker before the work
+is verified — tracker entries represent completed, validated work.
+
+**Ship behavior:** `$ship` classifies the tracker file as a "warn" file —
+it will be staged for commit but flagged for review.
+
+---
+
 ## Conventions
 
 - Read `.codex/skills/project.toml` for all project-specific paths and commands
@@ -609,5 +587,5 @@ Report failures in the final summary. Do not halt the pipeline for a single fail
 - Specs: `agents/agent-{letter}-{name}.md` (or path from `[paths].specs`)
 - Letters sequential (a-z, then aa, ab, etc.)
 - Always honor the backend `model` tier when launching subagents
-- Always `isolation: "worktree"` for launches
+- Always launch agents in isolated worktrees
 - Always verify before declaring done

@@ -1,6 +1,6 @@
 ---
 name: planner
-description: "Design structured multi-agent campaign plans. Use when you want to plan work decomposition, define agent tasks, map dependencies, or draft a campaign before execution. Supports --mode refactor for phased refactors, migrations, and modularization."
+description: "Use when the user wants a structured multi-agent campaign designed before execution: work decomposition, agent tasks, dependencies, gates, or a phased refactor/migration. Do not use to execute an approved campaign (use manager) or for one bounded local change."
 ---
 
 # Planner — Campaign Designer
@@ -107,12 +107,17 @@ python scripts/task_manager.py plan finalize <plan-id> \
     --documentation-update "..."
 ```
 
-Then approve and execute:
+Then approve and execute the plan record:
 
 ```bash
 python scripts/task_manager.py plan approve <plan-id>
 python scripts/task_manager.py plan execute <plan-id>
 ```
+
+These are plan-state transitions, not work execution: `plan execute` registers
+the agents in runtime state and generates spec template files for Phase 5. It
+launches nothing — actually launching agents stays with `$manager run`,
+consistent with this skill's design-only role.
 
 `plan create` writes the full plan JSON into `[paths].plans` and keeps only a
 summary in runtime state.
@@ -223,6 +228,43 @@ as the primary planning surface. In particular:
 - use `planning_context.conflict_zones` as one coordination signal, not the only one
 
 Always check the planning contract's conflict zone analysis element against this data.
+
+Follow the canonical conflict zone identification procedure in the planning
+contract (element 8) — do not invent a separate method here.
+
+### Degraded analysis handling
+
+If `planning_context.analysis_health` reports a non-healthy status (e.g.,
+`mode: "basic"`, `fallback: true`, or missing sections), adjust the plan
+conservatively:
+
+| Signal | Adjustment |
+|--------|-----------|
+| `mode: "basic"` or `fallback: true` | Reduce max agents to 3; prefer sequential groups over parallel |
+| Missing `conflict_zones` | Treat every shared file as a potential conflict zone |
+| Missing `ownership_summary` | Require explicit file lists in every agent spec (no glob patterns) |
+| Partial file inventory | Add a verification agent in the final group that confirms file existence |
+
+When analysis is degraded, state the limitation in the plan's Risk Assessment
+(element 11) so the executor knows the plan was built on incomplete data.
+
+### Discovery-replan loop
+
+If during planning you discover that critical information is missing (e.g., a
+module's API is undocumented, a dependency tree is unclear, or a conflict zone
+cannot be resolved without more research):
+
+1. **Stop planning** — do not produce a speculative plan.
+2. **Report the gap** to the user with a specific recommendation:
+   ```
+   Planning blocked: {description of missing information}.
+   Recommended: $discover {targeted research question}
+   ```
+3. After discovery completes, the user re-invokes `$planner` with the same
+   description. The planner reads the new discovery document and resumes.
+
+This loop prevents campaigns from executing with stale or speculative
+assumptions.
 
 ---
 

@@ -2,8 +2,8 @@
 
 > **Historical record (2026-06-25).** Counts and verification notes below
 > reflect the repo at review time: the shipped total was 78 before the
-> Antigravity package landed (now tracked in `README.md`), and
-> `quick_validate.py` was a local helper that never landed in this repo. The
+> Antigravity package landed; both Antigravity and Gemini packages were later
+> retired. `quick_validate.py` was a local helper that never landed, and the
 > current validation entry point is `scripts/Test-ReleaseReadiness.ps1`.
 
 ## Scope

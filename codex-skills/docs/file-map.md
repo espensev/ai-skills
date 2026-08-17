@@ -1,6 +1,7 @@
 # File Map
 
-Source-of-truth reference for every file in the campaign-skills runtime.
+Source-of-truth reference for the portable campaign-skills runtime and the
+separately governed machine-local companion kept in this source tree.
 
 ## Scripts
 
@@ -81,6 +82,23 @@ Codebase analysis providers and synthesis pipeline.
 | `data/plans/plan-*.json` | Individual plan files with agents, plan_elements, analysis_summary |
 | `data/analysis-cache.json` | Cached analysis snapshot with content-addressed hash key |
 | `live-tracker.md` | Human-readable progress tracker (parsed by `parse_tracker`) |
+
+## Source-Only Local Companion
+
+`local-hooks/devhome-lifecycle/` is not part of the portable campaign runtime.
+It contains the repository authority for `devhome-lifecycle@ai-skills`, its
+single startup reconciler, the five-file DevHome behavior-hook projection, and
+their isolated contract tests.
+
+| Surface | Location | Rule |
+|---|---|---|
+| Source authority | `local-hooks/devhome-lifecycle/` | Edit and review here. |
+| Plugin cache | `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle\` | Materialized projection; refresh through the root installer. |
+| Runtime projection | `D:\DevHome\state\codex\hooks.json` plus four files under `hooks\` | Reconcile from source; never develop in place. |
+| Adapter-generated state | `<CODEX_HOME>\remember-adapter\` (current implementation) | Known placement blocker: production must be pinned to physical DevHome before no-AppData acceptance. |
+
+The component stays out of `package/install-manifest.json`. Plugin enablement
+and hook trust remain user-controlled Codex state.
 
 ## Agent Specs
 

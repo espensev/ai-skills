@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 
 def find_observations_file(cwd: str) -> str | None:
     """Find the observations file, preferring worktree-local."""
-    # Worktree-local (observer-test initialized)
+    # Worktree-local observation log
     local = os.path.join(cwd, "observations.jsonl")
     if os.path.isfile(local):
         return local

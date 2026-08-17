@@ -1,0 +1,54 @@
+{
+  "schema": "ai-skills/retired-skills/v1",
+  "description": "Authoritative list of standalone skill directories that package installation must remove from managed target roots.",
+  "retired_skills": [
+    {
+      "name": "agent-report",
+      "replacement": "usage-stats"
+    },
+    {
+      "name": "api-design",
+      "replacement": "repo-conventions"
+    },
+    {
+      "name": "backend-patterns",
+      "replacement": "repo-conventions"
+    },
+    {
+      "name": "deep-research",
+      "replacement": "repo-conventions"
+    },
+    {
+      "name": "e2e-testing",
+      "replacement": "repo-conventions"
+    },
+    {
+      "name": "frontend-patterns",
+      "replacement": "repo-conventions"
+    },
+    {
+      "name": "loop",
+      "replacement": "repo-conventions"
+    },
+    {
+      "name": "observer-test",
+      "replacement": "observer"
+    },
+    {
+      "name": "refactor-planner",
+      "replacement": "planner --mode refactor"
+    },
+    {
+      "name": "session-stats",
+      "replacement": "usage-stats"
+    },
+    {
+      "name": "token-audit",
+      "replacement": "usage-stats"
+    },
+    {
+      "name": "worktree-manager",
+      "replacement": "manager"
+    }
+  ]
+}

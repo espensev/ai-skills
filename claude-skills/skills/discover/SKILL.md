@@ -1,6 +1,6 @@
 ---
 name: discover
-description: Research a codebase to answer specific questions before planning. Produces structured findings documents that feed into /planner. Use when you need to understand something before committing to a plan — mapping dependencies, assessing feasibility, identifying constraints, inventorying patterns, or evaluating optimization opportunities.
+description: Use when a bounded codebase question must be answered before planning or editing: dependencies, feasibility, constraints, patterns, or optimization opportunities. Produces findings for /planner. Do not use for implementation, current web research, findings-first diff review, or a multi-pass runtime-efficiency audit.
 argument-hint: "<goal or question> — what you need to know before planning"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Write, Edit
 user-invocable: true

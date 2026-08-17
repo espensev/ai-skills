@@ -1,7 +1,7 @@
 [
   {
-    "id": "api-design-basic-001",
-    "selected_skill": "api-design",
+    "id": "audit-gated-subagents-basic-001",
+    "selected_skill": "audit-gated-subagents",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -9,8 +9,8 @@
     "notes": ""
   },
   {
-    "id": "backend-patterns-basic-001",
-    "selected_skill": "backend-patterns",
+    "id": "deep-audit-basic-001",
+    "selected_skill": "deep-audit",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -18,8 +18,35 @@
     "notes": ""
   },
   {
-    "id": "deep-research-basic-001",
-    "selected_skill": "deep-research",
+    "id": "deep-audit-profile-safety-003",
+    "selected_skill": "deep-audit",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "deep-audit-resume-002",
+    "selected_skill": "deep-audit",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "delegate-basic-001",
+    "selected_skill": "delegate",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "diagnosing-bugs-deep-audit-boundary-001",
+    "selected_skill": "diagnosing-bugs",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -45,7 +72,7 @@
     "notes": ""
   },
   {
-    "id": "discover-edge-003",
+    "id": "discover-deep-audit-boundary-001",
     "selected_skill": "discover",
     "output": "",
     "created_files": [],
@@ -54,8 +81,8 @@
     "notes": ""
   },
   {
-    "id": "dmux-workflows-basic-001",
-    "selected_skill": "dmux-workflows",
+    "id": "discover-edge-003",
+    "selected_skill": "discover",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -72,44 +99,8 @@
     "notes": ""
   },
   {
-    "id": "e2e-testing-basic-001",
-    "selected_skill": "e2e-testing",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
     "id": "exa-search-basic-001",
     "selected_skill": "exa-search",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "frontend-patterns-basic-001",
-    "selected_skill": "frontend-patterns",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "loop-basic-001",
-    "selected_skill": "loop",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "loop-edge-002",
-    "selected_skill": "loop",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -127,6 +118,15 @@
   },
   {
     "id": "manager-basic-001",
+    "selected_skill": "manager",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "manager-deep-audit-boundary-001",
     "selected_skill": "manager",
     "output": "",
     "created_files": [],
@@ -243,6 +243,78 @@
     "notes": ""
   },
   {
+    "id": "repo-conventions-api-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-backend-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-cycle-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-cycle-edge-002",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-e2e-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-frontend-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-research-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "review-deep-audit-boundary-001",
+    "selected_skill": "review",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "ship-basic-001",
     "selected_skill": "ship",
     "output": "",
@@ -261,8 +333,8 @@
     "notes": ""
   },
   {
-    "id": "verification-loop-basic-001",
-    "selected_skill": "verification-loop",
+    "id": "skill-authoring-basic-001",
+    "selected_skill": "skill-authoring",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -270,8 +342,8 @@
     "notes": ""
   },
   {
-    "id": "delegate-basic-001",
-    "selected_skill": "delegate",
+    "id": "verification-loop-basic-001",
+    "selected_skill": "verification-loop",
     "output": "",
     "created_files": [],
     "verification_commands": [],

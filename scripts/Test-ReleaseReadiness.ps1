@@ -28,18 +28,60 @@ function Invoke-Step {
 Set-Location $RepoRoot
 
 Invoke-Step "Ready package validation" {
-    & (Join-Path $ScriptRoot "Test-ReadyPackages.ps1")
+    & (Join-Path $ScriptRoot "Test-ReadyPackages.ps1") -StrictSkillManifest
+    if ($LASTEXITCODE -ne 0) {
+        throw "Ready package validation failed"
+    }
 }
 
 Invoke-Step "README manifest counts" {
     & (Join-Path $ScriptRoot "Update-ReadmePackageCounts.ps1") -Check
+    if ($LASTEXITCODE -ne 0) {
+        throw "README manifest count check failed"
+    }
+}
+
+Invoke-Step "Provider skill package generation" {
+    & (Join-Path $ScriptRoot "Build-ProviderSkillPackages.ps1") -Check
+    if ($LASTEXITCODE -ne 0) {
+        throw "Provider skill package check failed"
+    }
+}
+
+# Deliberately NOT behind -SkipParityReport: the human-readable report below is
+# optional, this enforcement is not. Invoke-Step does not propagate child exit
+# codes, hence the explicit $LASTEXITCODE guard.
+Invoke-Step "Provider parity enforcement" {
+    & (Join-Path $ScriptRoot "Compare-ProviderSkillParity.ps1") -FailOnUndeclaredFork
+    if ($LASTEXITCODE -ne 0) {
+        throw "Provider parity enforcement failed"
+    }
 }
 
 if (-not $SkipUnitTests) {
-    Invoke-Step "Codex and Claude package contract tests" {
-        python -m unittest codex-skills.tests.test_skill_docs_contract claude-skills.tests.test_skill_docs_contract
+    Invoke-Step "Codex, Claude, and local plugin contract tests" {
+        python -m unittest codex-skills.tests.test_skill_docs_contract codex-skills.tests.test_local_plugin_contract claude-skills.tests.test_skill_docs_contract
         if ($LASTEXITCODE -ne 0) {
             throw "Package contract tests failed"
+        }
+    }
+
+    Invoke-Step "DevHome lifecycle source and plugin-cache contracts" {
+        $LifecycleTestPaths = @(
+            (Join-Path $RepoRoot "codex-skills\local-hooks\devhome-lifecycle\tests\DevHome-Hooks.Tests.ps1"),
+            (Join-Path $RepoRoot "codex-skills\local-hooks\devhome-lifecycle\tests\DevHome-PluginSync.Tests.ps1")
+        )
+        $LifecycleResult = Invoke-Pester -Path $LifecycleTestPaths -Output Normal -PassThru
+        if ($LifecycleResult.FailedCount -ne 0) {
+            throw "DevHome lifecycle contracts failed: $($LifecycleResult.FailedCount)"
+        }
+    }
+
+    Invoke-Step "Installer retirement contracts" {
+        $InstallerTestPath = Join-Path $RepoRoot "scripts\tests\Install-AgentSkills.Tests.ps1"
+        $InstallerResult = Invoke-Pester -Path $InstallerTestPath -Output Normal -PassThru
+        if ($InstallerResult.FailedCount -ne 0) {
+            throw "Installer retirement contracts failed: $($InstallerResult.FailedCount)"
         }
     }
 }

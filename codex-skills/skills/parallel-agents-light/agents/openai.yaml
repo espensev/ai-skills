@@ -1,0 +1,4 @@
+interface:
+  display_name: "Parallel Agents Light"
+  short_description: "Route safe Codex sidecars and escalation"
+  default_prompt: "Use $parallel-agents-light to split this task into safe local, sidecar, or manager work."

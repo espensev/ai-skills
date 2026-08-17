@@ -106,8 +106,8 @@
     }
   },
   {
-    "id": "loop-basic-001",
-    "skill": "loop",
+    "id": "repo-conventions-cycle-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Iterate locally on a bounded cleanup of skill frontmatter until done.",
     "checks": {
       "must_mention": [
@@ -152,12 +152,15 @@
   {
     "id": "observer-basic-001",
     "skill": "observer",
-    "prompt": "Summarize project drift and record a few durable observations without changing product code.",
+    "prompt": "Summarize project drift for a verified remote target and record optional repo-owned observations without changing product code or Codex native memory.",
     "checks": {
       "must_mention": [
         "observation",
         "evidence",
-        "project-intelligence"
+        "project-intelligence",
+        "repo-owned",
+        "controller_machine_id",
+        "target_machine_ids"
       ],
       "must_not_mention": [
         ".claude/skills",
@@ -373,8 +376,8 @@
     }
   },
   {
-    "id": "loop-edge-002",
-    "skill": "loop",
+    "id": "repo-conventions-cycle-edge-002",
+    "skill": "repo-conventions",
     "prompt": "Keep running the test suite every 5 minutes until all tests pass.",
     "checks": {
       "must_mention": [
@@ -394,8 +397,8 @@
     }
   },
   {
-    "id": "api-design-basic-001",
-    "skill": "api-design",
+    "id": "repo-conventions-api-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Design a REST API for the new billing service with proper status codes and pagination.",
     "checks": {
       "must_mention": [
@@ -414,8 +417,8 @@
     }
   },
   {
-    "id": "backend-patterns-basic-001",
-    "skill": "backend-patterns",
+    "id": "repo-conventions-backend-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Structure the new payment handler with proper validation, caching, and error handling.",
     "checks": {
       "must_mention": [
@@ -434,8 +437,8 @@
     }
   },
   {
-    "id": "deep-research-basic-001",
-    "skill": "deep-research",
+    "id": "repo-conventions-research-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Research current best practices for database connection pooling in serverless environments.",
     "checks": {
       "must_mention": [
@@ -447,26 +450,6 @@
         "CLAUDE.md"
       ],
       "verification_any_of": [],
-      "must_create": []
-    }
-  },
-  {
-    "id": "dmux-workflows-basic-001",
-    "skill": "dmux-workflows",
-    "prompt": "Coordinate three parallel agents working on different modules with clear ownership.",
-    "checks": {
-      "must_mention": [
-        "ownership",
-        "parallel"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [
-        "merge",
-        "verify"
-      ],
       "must_create": []
     }
   },
@@ -488,8 +471,8 @@
     }
   },
   {
-    "id": "e2e-testing-basic-001",
-    "skill": "e2e-testing",
+    "id": "repo-conventions-e2e-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Write a Playwright E2E test for the login flow using stable selectors.",
     "checks": {
       "must_mention": [
@@ -525,8 +508,8 @@
     }
   },
   {
-    "id": "frontend-patterns-basic-001",
-    "skill": "frontend-patterns",
+    "id": "repo-conventions-frontend-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Build an accessible React form component that follows our design system.",
     "checks": {
       "must_mention": [
@@ -610,18 +593,239 @@
   {
     "id": "memory-management-basic-001",
     "skill": "memory-management",
-    "prompt": "Record the lesson from this debugging session into durable memory and check the always-loaded surface stays within budget.",
+    "prompt": "Record the lesson from this local debugging session into durable Codex memory and check the always-loaded surface stays within budget.",
     "checks": {
       "must_mention": [
         "type",
-        "description",
+        "MEMORY.md",
+        "extensions/ad_hoc/notes",
+        "controller_machine_id",
+        "target_machine_ids",
         "AGENTS.md"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md",
+        "docs/memory",
+        "scripts/memory_audit.py"
+      ],
+      "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "deep-audit-basic-001",
+    "skill": "deep-audit",
+    "prompt": "Deep-audit this service for hot paths, allocations, repeated I/O, timer overlap, queues, retries, cancellation, and shutdown. Preserve facts versus hypotheses and do not implement fixes.",
+    "checks": {
+      "must_mention": [
+        "frequency",
+        "cardinality",
+        "evidence",
+        "uncertainty",
+        "next mode"
+      ],
+      "must_not_mention": [
+        "implemented the fix",
+        "security audit complete",
+        "Final Deep Audit Report",
+        "Finding ID: F-",
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "trace",
+        "measure",
+        "profile"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "deep-audit-resume-002",
+    "skill": "deep-audit",
+    "prompt": "Resume the existing deep audit from .audit, detect dirty-tree or revision drift, and adversarially verify the highest-priority stale finding.",
+    "checks": {
+      "must_mention": [
+        "revision",
+        "state",
+        "revalidate"
+      ],
+      "must_not_mention": [
+        "implemented the fix",
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "git status",
+        "git diff",
+        "revision"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "deep-audit-profile-safety-003",
+    "skill": "deep-audit",
+    "prompt": "For F-004 design a queue-depth and queue-age measurement with a workload, baseline, thresholds, and confounders. Do not restart services or run production load.",
+    "checks": {
+      "must_mention": [
+        "baseline",
+        "threshold",
+        "safety",
+        "confound"
+      ],
+      "must_not_mention": [
+        "restarted production",
+        "deployed instrumentation",
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "measurement",
+        "profile",
+        "benchmark"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "review-deep-audit-boundary-001",
+    "skill": "review",
+    "prompt": "Audit this pull request diff against main for merge blockers and performance-regression risk.",
+    "checks": {
+      "must_mention": [
+        "diff",
+        "finding"
+      ],
+      "must_not_mention": [
+        "runtime architecture map",
+        "discovery queue",
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "git diff",
+        "test"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "diagnosing-bugs-deep-audit-boundary-001",
+    "skill": "diagnosing-bugs",
+    "prompt": "The service became 35 percent slower after commit abc. Reproduce the regression, find the root cause, fix it, and verify the result.",
+    "checks": {
+      "must_mention": [
+        "reproduce",
+        "root cause",
+        "fix"
+      ],
+      "must_not_mention": [
+        "repository-wide audit",
+        "discovery queue",
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "test",
+        "benchmark",
+        "reproduce"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "discover-deep-audit-boundary-001",
+    "skill": "discover",
+    "prompt": "Map the dependencies, constraints, and feasibility of this proposed refactor before we plan it.",
+    "checks": {
+      "must_mention": [
+        "dependencies",
+        "constraints",
+        "feasibility"
+      ],
+      "must_not_mention": [
+        "runtime cost model",
+        "measurement required",
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "rg",
+        "inspect",
+        "findings"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "manager-deep-audit-boundary-001",
+    "skill": "manager",
+    "prompt": "Coordinate parallel audit and remediation lanes with independent reviewers and approval gates, then implement approved fixes.",
+    "checks": {
+      "must_mention": [
+        "parallel",
+        "approval",
+        "implement"
+      ],
+      "must_not_mention": [
+        "Deep Audit owns approval gates",
+        "Deep Audit owns remediation",
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "task_manager",
+        "test",
+        "git diff"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "audit-gated-subagents-basic-001",
+    "skill": "audit-gated-subagents",
+    "prompt": "Act as chief operator for a review-first subsystem audit. Build PASS 0 maps, assign disjoint reviewer lanes, require independent plan and spec review, and stop at explicit gates before any fixes.",
+    "checks": {
+      "must_mention": [
+        "PASS 0",
+        "gate",
+        "review",
+        "ownership"
       ],
       "must_not_mention": [
         ".claude/skills",
         "CLAUDE.md"
       ],
-      "verification_any_of": [],
+      "verification_any_of": [
+        "git diff",
+        "test",
+        "review"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "skill-authoring-basic-001",
+    "skill": "skill-authoring",
+    "prompt": "Create a portable Agent Skill for reviewing database migrations. Define focused discovery metadata, a concise SKILL.md, support-file boundaries, package manifest wiring, and validation.",
+    "checks": {
+      "must_mention": [
+        "SKILL.md",
+        "frontmatter",
+        "manifest",
+        "validate"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "Test-ReadyPackages",
+        "pytest",
+        "validate"
+      ],
       "must_create": []
     }
   }

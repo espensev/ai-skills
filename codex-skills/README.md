@@ -7,6 +7,12 @@ This source package contains the installable skill docs, the
 `task_manager.py` backend, and the portability tests that consumer repos can
 vendor into their own `.codex/skills` runtime tree.
 
+The same source tree also contains one deliberately non-portable companion at
+`local-hooks/devhome-lifecycle/`. It is the controller-specific source for the
+local `devhome-lifecycle@ai-skills` plugin and DevHome hook projection; it is
+not included in this package's install manifest, exported skill count, or
+consumer-repo copy instructions.
+
 ## Package Layout
 
 | Path | Purpose |
@@ -32,7 +38,23 @@ vendor into their own `.codex/skills` runtime tree.
 | `docs/reports/` | Validation checklists and revalidation reports |
 | `examples/` | Example plan artifacts and bridge scripts |
 | `tests/` | Portability and runtime verification tests |
+| `local-hooks/devhome-lifecycle/` | Source-only local plugin and DevHome lifecycle hook authority; excluded from portable installs and exports |
 | `.github/workflows/validate.yml` | Package validation pipeline |
+
+Select or refresh that machine-local companion only from the Ai-Skills
+repository root:
+
+```powershell
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+```
+
+That root command keeps source acquisition separate from cache/runtime
+convergence and pins the plugin cache and five-file runtime projection to
+`D:\DevHome\state\codex`. Adapter-generated state still follows ambient
+`CODEX_HOME` and is a known placement blocker. Plugin enablement and hook trust
+remain Codex-managed, user-reviewed state. See
+[`local-hooks/devhome-lifecycle/README.md`](local-hooks/devhome-lifecycle/README.md)
+for its operator contract.
 
 ## Skills
 
@@ -43,8 +65,7 @@ vendor into their own `.codex/skills` runtime tree.
 | Discover | `$discover` | Research codebase before planning (supports optimization discovery) |
 | QA | `$qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
 | Ship | `$ship` | Stage, commit, and push with smart file classification |
-| Loop | `$loop` | Drive a bounded inspect-edit-verify loop for one objective |
-| Loop Master | `$loop-master` | Supervise multi-round or multi-agent execution across the stack |
+| Loop Master | `$loop-master` | Backward-compatible alias that routes immediate work to `repo-conventions` and durable campaigns to `planner`/`manager` |
 
 ### Optional Engineering Skills
 
@@ -53,24 +74,27 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 
 | Skill | Trigger | Purpose |
 |---|---|---|
-| API Design | auto | Design consistent HTTP APIs: resources, status codes, pagination, idempotency, and error contracts |
-| Backend Patterns | auto | Structure backend handlers, services, validation, data access, caching, and background work without overengineering |
-| Deep Research | auto | Run current, cited research workflows using built-in web search first and optional MCP accelerators when available |
+| Audit-Gated Subagents | auto | Run review-first multi-agent audits with PASS 0 maps, chief/operator gates, lane ownership, independent reviewers, and safety stops |
+| Deep Audit | auto | Run evidence-first, resumable runtime-efficiency audits across hot paths, allocation/retention, I/O, concurrency, queues, retries, scaling, and lifecycle behavior |
 | Delegate | auto | Route one bounded, already-fetched transform to local Ollama via the `ollama-telemetry` MCP tools when readiness and task class allow it |
 | Delegation Eval | auto | Run and judge local-model helper evals from `ollama-telemetry`, then compare measured results against dispatch rules |
 | Diagnosing Bugs | auto | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
-| dmux Workflows | auto | Coordinate safe parallel or delegated work with clear ownership, integration order, and optional dmux or worktree orchestration |
 | Documentation Lookup | auto | Fetch current framework and library docs before answering library-specific questions |
-| E2E Testing | auto | Build and debug Playwright E2E suites using stable selectors, app-aware setup, and artifact review |
 | Exa Search | auto | Use Exa as an optional accelerator for semantic web, code, company, or people search when Exa MCP is available |
-| Frontend Patterns | auto | Build React and Next.js UI work that respects existing design systems, accessibility, and compiler guidance |
 | MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
-| Memory Management | auto | Govern durable memory with a typed write schema, locality routing, and index budget discipline across AGENTS.md and repo-owned notes |
-| Observer | auto | Keep passive project intelligence in repo-owned artifacts such as observation logs, metrics, and synthesized health notes |
+| Memory Management | auto | Govern explicit updates to native Codex memory, keep generated registries read-only, enforce index budgets, and label controller/target machine provenance |
+| Observer | auto | Keep optional project intelligence in repo-owned observation logs, metrics, and health notes without creating a parallel native-memory store |
+| Parallel Agents Light | auto | Route Codex work between local execution, bounded sidecar subagents, split implementation, and full manager campaigns |
+| Repository Conventions | auto | Follow the target repo first, with fallback playbooks for API/backend/frontend structure, Playwright E2E, current research, and bounded local cycles |
 | Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
-| Session Stats | auto | Summarize session/tool activity, preferring measured `ollama-telemetry` usage data when available |
-| Token Audit | auto | Analyze tokens, costs, budgets, and forecasts, preferring measured telemetry API data when available |
+| Skill Authoring | auto | Create and revise Agent Skills with focused discovery metadata, progressive disclosure, and package wiring |
+| Usage Stats | auto | Analyze tokens, costs, budgets, forecasts, session/tool activity, and agent performance, preferring measured telemetry API data when available |
 | Verification Loop | auto | Run repo-appropriate build, lint, typecheck, test, and diff review before handoff |
+
+`codebase-review-prompts` and `telemetry-live-ops` remain explicit source-only
+skills. The former is owned by the shared agent catalog on this workstation;
+the latter depends on machine-local telemetry deployment details. Neither is
+copied by the provider package installer.
 
 ## Workflow
 
@@ -113,33 +137,30 @@ for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
   cp -r "$d" <project>/.codex/skills/
 done
 
-# Optional loops and engineering skills
+# Optional engineering skills
 for d in \
-  skills/loop \
   skills/loop-master \
-  skills/agent-report \
-  skills/api-design \
-  skills/backend-patterns \
+  skills/audit-gated-subagents \
   skills/build-gate \
   skills/campaign-health \
-  skills/deep-research \
+  skills/deep-audit \
   skills/delegate \
   skills/delegation-eval \
+  skills/diagnosing-bugs \
   skills/docs-sync \
-  skills/dmux-workflows \
   skills/documentation-lookup \
-  skills/e2e-testing \
   skills/exa-search \
-  skills/frontend-patterns \
   skills/mcp-server-patterns \
   skills/memory-management \
   skills/observer \
+  skills/parallel-agents-light \
+  skills/repo-conventions \
   skills/review \
   skills/schema-validator \
-  skills/session-stats \
+  skills/skill-authoring \
   skills/smart-test \
-  skills/token-audit \
   skills/truthpack-drift \
+  skills/usage-stats \
   skills/worktree-preflight \
   skills/verification-loop; do
   cp -r "$d" <project>/.codex/skills/
@@ -170,33 +191,30 @@ for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
   cp -r "$d" ~/.codex/skills/
 done
 
-# Optional loops and engineering skills
+# Optional engineering skills
 for d in \
-  skills/loop \
   skills/loop-master \
-  skills/agent-report \
-  skills/api-design \
-  skills/backend-patterns \
+  skills/audit-gated-subagents \
   skills/build-gate \
   skills/campaign-health \
-  skills/deep-research \
+  skills/deep-audit \
   skills/delegate \
   skills/delegation-eval \
+  skills/diagnosing-bugs \
   skills/docs-sync \
-  skills/dmux-workflows \
   skills/documentation-lookup \
-  skills/e2e-testing \
   skills/exa-search \
-  skills/frontend-patterns \
   skills/mcp-server-patterns \
   skills/memory-management \
   skills/observer \
+  skills/parallel-agents-light \
+  skills/repo-conventions \
   skills/review \
   skills/schema-validator \
-  skills/session-stats \
+  skills/skill-authoring \
   skills/smart-test \
-  skills/token-audit \
   skills/truthpack-drift \
+  skills/usage-stats \
   skills/worktree-preflight \
   skills/verification-loop; do
   cp -r "$d" ~/.codex/skills/

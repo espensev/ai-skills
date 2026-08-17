@@ -10,6 +10,33 @@ $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptRoot
 $ManifestPath = Join-Path $RepoRoot "release-manifest.json"
 
+function Test-GeneratedPackageArtifact {
+    param ([string]$Path)
+
+    return ($Path -match '(^|[\\/])__pycache__([\\/]|$)' -or $Path -match '\.py[co]$')
+}
+
+function Copy-CleanDirectory {
+    param (
+        [string]$SourcePath,
+        [string]$TargetPath
+    )
+
+    New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
+    $SourcePrefix = [System.IO.Path]::GetFullPath($SourcePath).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    ) + [System.IO.Path]::DirectorySeparatorChar
+    Get-ChildItem -LiteralPath $SourcePath -Recurse -File -Force |
+        Where-Object { -not (Test-GeneratedPackageArtifact $_.FullName) } |
+        ForEach-Object {
+            $RelativeFile = $_.FullName.Substring($SourcePrefix.Length)
+            $TargetFile = Join-Path $TargetPath $RelativeFile
+            New-Item -ItemType Directory -Path (Split-Path -Parent $TargetFile) -Force | Out-Null
+            Copy-Item -LiteralPath $_.FullName -Destination $TargetFile -Force
+        }
+}
+
 if (-Not (Test-Path $ManifestPath)) {
     throw "Missing release manifest: $ManifestPath"
 }
@@ -17,7 +44,7 @@ if (-Not (Test-Path $ManifestPath)) {
 $Manifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json
 
 if (-Not $TargetDir) {
-    $TargetDir = Join-Path $HOME ("OneDrive\Common\" + $Manifest.export_name)
+    $TargetDir = Join-Path $HOME ("OneDrive\Common\common_development\" + $Manifest.export_name)
 }
 
 if (Test-Path $TargetDir) {
@@ -74,86 +101,16 @@ foreach ($Package in $Manifest.packages) {
             }
 
             foreach ($RuntimeDir in $InstallManifest.runtime_directories) {
-                Copy-Item -Path (Join-Path $SourceRoot $RuntimeDir) -Destination (Join-Path $PackageDest "scripts") -Recurse -Force
+                Copy-CleanDirectory `
+                    -SourcePath (Join-Path $SourceRoot $RuntimeDir) `
+                    -TargetPath (Join-Path $PackageDest $RuntimeDir)
             }
 
             foreach ($Skill in @($InstallManifest.default_skills) + @($InstallManifest.optional_skills)) {
-                Copy-Item -Path (Join-Path $SourceRoot ("skills\" + $Skill)) -Destination (Join-Path $PackageDest "skills") -Recurse -Force
+                Copy-CleanDirectory `
+                    -SourcePath (Join-Path $SourceRoot ("skills\" + $Skill)) `
+                    -TargetPath (Join-Path $PackageDest ("skills\" + $Skill))
             }
-        }
-
-        "gemini-adapter" {
-            $GeminiManifestFile = Join-Path $SourceRoot "package\install-manifest.json"
-
-            New-Item -ItemType Directory -Path $PackageDest -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest "skills") -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest ".gemini") -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest "scripts") -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest "docs") -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest "package") -Force | Out-Null
-
-            foreach ($File in @("README.md", "GEMINI.md")) {
-                Copy-Item -Path (Join-Path $SourceRoot $File) -Destination (Join-Path $PackageDest $File) -Force
-            }
-
-            Copy-Item -Path (Join-Path $SourceRoot "scripts\bootstrap.ps1") -Destination (Join-Path $PackageDest "scripts\bootstrap.ps1") -Force
-            Copy-Item -Path (Join-Path $SourceRoot "docs\skill-portability-notes.md") -Destination (Join-Path $PackageDest "docs\skill-portability-notes.md") -Force
-            if (Test-Path $GeminiManifestFile) {
-                $GeminiInstallManifest = Get-Content -Raw $GeminiManifestFile | ConvertFrom-Json
-
-                foreach ($Skill in $GeminiInstallManifest.skills) {
-                    Copy-Item -Path (Join-Path $SourceRoot ("skills\" + $Skill)) -Destination (Join-Path $PackageDest "skills") -Recurse -Force
-                }
-
-                New-Item -ItemType Directory -Path (Join-Path $PackageDest ".gemini\commands") -Force | Out-Null
-                foreach ($CommandWrapper in $GeminiInstallManifest.command_wrappers) {
-                    Copy-Item -Path (Join-Path $SourceRoot (".gemini\commands\" + $CommandWrapper)) -Destination (Join-Path $PackageDest ".gemini\commands\$CommandWrapper") -Force
-                }
-
-                Copy-Item -Path $GeminiManifestFile -Destination (Join-Path $PackageDest "package\install-manifest.json") -Force
-            } else {
-                throw "Missing install manifest: $GeminiManifestFile"
-            }
-        }
-
-        "antigravity-adapter" {
-            $AntigravityManifestFile = Join-Path $SourceRoot "package\install-manifest.json"
-
-            New-Item -ItemType Directory -Path $PackageDest -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest "skills") -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest ".agents") -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest ".agent\workflows") -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest "scripts") -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest "docs") -Force | Out-Null
-            New-Item -ItemType Directory -Path (Join-Path $PackageDest "package") -Force | Out-Null
-
-            if (-Not (Test-Path $AntigravityManifestFile)) {
-                throw "Missing install manifest: $AntigravityManifestFile"
-            }
-
-            $AntigravityInstallManifest = Get-Content -Raw $AntigravityManifestFile | ConvertFrom-Json
-
-            foreach ($File in @($AntigravityInstallManifest.root_files) + @($AntigravityInstallManifest.docs_files) + @($AntigravityInstallManifest.script_files)) {
-                $SourceFile = Join-Path $SourceRoot ($File -replace "/", [System.IO.Path]::DirectorySeparatorChar)
-                $DestFile = Join-Path $PackageDest ($File -replace "/", [System.IO.Path]::DirectorySeparatorChar)
-
-                if (-Not (Test-Path $SourceFile)) {
-                    throw "Missing Antigravity package file: $SourceFile"
-                }
-
-                New-Item -ItemType Directory -Path (Split-Path -Parent $DestFile) -Force | Out-Null
-                Copy-Item -Path $SourceFile -Destination $DestFile -Force
-            }
-
-            foreach ($Skill in $AntigravityInstallManifest.skills) {
-                Copy-Item -Path (Join-Path $SourceRoot ("skills\" + $Skill)) -Destination (Join-Path $PackageDest "skills") -Recurse -Force
-            }
-
-            foreach ($Workflow in $AntigravityInstallManifest.workflows) {
-                Copy-Item -Path (Join-Path $SourceRoot (".agent\workflows\" + $Workflow)) -Destination (Join-Path $PackageDest ".agent\workflows\$Workflow") -Force
-            }
-
-            Copy-Item -Path $AntigravityManifestFile -Destination (Join-Path $PackageDest "package\install-manifest.json") -Force
         }
 
         default {

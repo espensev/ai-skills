@@ -5,6 +5,7 @@ import os
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, cast
 
 
 class TaskRuntimeError(RuntimeError):
@@ -69,7 +70,7 @@ def safe_resolve(untrusted: str | Path, root: Path) -> Path:
 def coerce_int(value: object, default: int = 0) -> int:
     """Safely coerce a value to int, returning default on failure."""
     try:
-        return int(value)
+        return int(cast(Any, value))
     except (TypeError, ValueError):
         return default
 

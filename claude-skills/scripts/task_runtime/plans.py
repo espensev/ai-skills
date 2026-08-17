@@ -4,14 +4,14 @@ import argparse
 import io
 import json
 from contextlib import redirect_stdout
-from typing import Callable
+from typing import Any, Callable, cast
 
 from .state import coerce_int
 
 
 def _safe_int(value: object, field_name: str, error_type: type[Exception]) -> int:
     try:
-        return int(value)  # type: ignore[arg-type]
+        return int(cast(Any, value))
     except (TypeError, ValueError):
         raise error_type(f"'{field_name}' must be an integer, got: {value!r}")
 

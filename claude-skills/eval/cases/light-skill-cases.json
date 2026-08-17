@@ -250,109 +250,6 @@
     }
   },
   {
-    "id": "observer-test-basic-001",
-    "skill": "observer-test",
-    "prompt": "Start observing this worktree run and record any test failures you see.",
-    "checks": {
-      "must_mention": [
-        "observation",
-        "worktree"
-      ],
-      "must_not_mention": [
-        ".codex",
-        ".gemini"
-      ],
-      "verification_any_of": [
-        "observations.jsonl",
-        "report"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "refactor-planner-basic-001",
-    "skill": "refactor-planner",
-    "prompt": "Design a phased plan for migrating the data layer behind a new interface.",
-    "checks": {
-      "must_mention": [
-        "phase",
-        "contract",
-        "seam"
-      ],
-      "must_not_mention": [
-        ".codex",
-        ".gemini"
-      ],
-      "verification_any_of": [
-        "test",
-        "verify",
-        "pytest"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "refactor-planner-edge-002",
-    "skill": "refactor-planner",
-    "prompt": "Plan a modularization — extract the validation logic into its own module.",
-    "checks": {
-      "must_mention": [
-        "phase",
-        "extraction"
-      ],
-      "must_not_mention": [
-        ".codex",
-        ".gemini"
-      ],
-      "verification_any_of": [
-        "test",
-        "verify"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "worktree-manager-basic-001",
-    "skill": "worktree-manager",
-    "prompt": "Create worktrees for three agents working on different parts of the codebase.",
-    "checks": {
-      "must_mention": [
-        "worktree",
-        "branch"
-      ],
-      "must_not_mention": [
-        ".codex",
-        ".gemini"
-      ],
-      "verification_any_of": [
-        "git worktree",
-        "git branch"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "worktree-manager-merge-002",
-    "skill": "worktree-manager",
-    "prompt": "All agents are done. Merge their worktrees back in smallest-diff-first order.",
-    "checks": {
-      "must_mention": [
-        "merge",
-        "worktree"
-      ],
-      "must_not_mention": [
-        ".codex",
-        ".gemini"
-      ],
-      "verification_any_of": [
-        "git",
-        "diff",
-        "merge"
-      ],
-      "must_create": []
-    }
-  },
-  {
     "id": "delegate-basic-001",
     "skill": "delegate",
     "prompt": "I already fetched the failing build log. Summarize these 180 lines into the failing tests and why — offload it to a local model if that's safe.",
@@ -389,6 +286,184 @@
         ".gemini"
       ],
       "verification_any_of": [],
+      "must_create": []
+    }
+  },
+  {
+    "id": "deep-audit-basic-001",
+    "skill": "deep-audit",
+    "prompt": "Deep-audit this service for hot paths, allocations, repeated I/O, timer overlap, queues, retries, cancellation, and shutdown. Preserve facts versus hypotheses and do not implement fixes.",
+    "checks": {
+      "must_mention": [
+        "frequency",
+        "cardinality",
+        "evidence",
+        "uncertainty",
+        "next mode"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini"
+      ],
+      "verification_any_of": [
+        "trace",
+        "measure",
+        "profile"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "deep-audit-resume-002",
+    "skill": "deep-audit",
+    "prompt": "Resume the existing deep audit from .audit, detect dirty-tree or revision drift, and adversarially verify the highest-priority stale finding.",
+    "checks": {
+      "must_mention": [
+        "revision",
+        "state",
+        "revalidate"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini"
+      ],
+      "verification_any_of": [
+        "git status",
+        "git diff",
+        "revision"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "deep-audit-profile-safety-003",
+    "skill": "deep-audit",
+    "prompt": "For F-004 design a queue-depth and queue-age measurement with a workload, baseline, thresholds, and confounders. Do not restart services or run production load.",
+    "checks": {
+      "must_mention": [
+        "baseline",
+        "threshold",
+        "safety",
+        "confound"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini"
+      ],
+      "verification_any_of": [
+        "measurement",
+        "profile",
+        "benchmark"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "review-deep-audit-boundary-001",
+    "skill": "review",
+    "prompt": "Audit this pull request diff against main for merge blockers and performance-regression risk.",
+    "checks": {
+      "must_mention": [
+        "diff",
+        "finding"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini"
+      ],
+      "verification_any_of": [
+        "git diff",
+        "test"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "diagnosing-bugs-deep-audit-boundary-001",
+    "skill": "diagnosing-bugs",
+    "prompt": "The service became 35 percent slower after commit abc. Reproduce the regression, find the root cause, fix it, and verify the result.",
+    "checks": {
+      "must_mention": [
+        "reproduce",
+        "root cause",
+        "fix"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini"
+      ],
+      "verification_any_of": [
+        "test",
+        "benchmark",
+        "reproduce"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "discover-deep-audit-boundary-001",
+    "skill": "discover",
+    "prompt": "Map the dependencies, constraints, and feasibility of this proposed refactor before we plan it.",
+    "checks": {
+      "must_mention": [
+        "dependencies",
+        "constraints",
+        "feasibility"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini"
+      ],
+      "verification_any_of": [
+        "rg",
+        "inspect",
+        "findings"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "manager-deep-audit-boundary-001",
+    "skill": "manager",
+    "prompt": "Coordinate parallel audit and remediation lanes with independent reviewers and approval gates, then implement approved fixes.",
+    "checks": {
+      "must_mention": [
+        "parallel",
+        "approval",
+        "implement"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini"
+      ],
+      "verification_any_of": [
+        "task_manager",
+        "test",
+        "git diff"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "skill-authoring-basic-001",
+    "skill": "skill-authoring",
+    "prompt": "Create a portable Agent Skill for reviewing database migrations. Define focused discovery metadata, a concise SKILL.md, support-file boundaries, package manifest wiring, and validation.",
+    "checks": {
+      "must_mention": [
+        "SKILL.md",
+        "frontmatter",
+        "manifest",
+        "validate"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini"
+      ],
+      "verification_any_of": [
+        "Test-ReadyPackages",
+        "pytest",
+        "validate"
+      ],
       "must_create": []
     }
   }

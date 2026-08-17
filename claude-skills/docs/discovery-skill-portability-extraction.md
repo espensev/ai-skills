@@ -5,6 +5,11 @@
 **Status:** complete
 **Recommended next:** Create EXTRACTION-LINEAGE.md and add provenance markers to extracted skills.
 
+> Historical note (2026-08-09): this audit records the March extraction state.
+> The standalone `observer-test` skill was later retired; current observation
+> capture is provided by the `observer` skill and its standalone hooks, while
+> `manager` promotes any worktree-local `observations.jsonl` files.
+
 ---
 
 ## Questions

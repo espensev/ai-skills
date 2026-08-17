@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from task_runtime.merge import merge_runtime
+from task_runtime.merge import git_worktree_inventory, merge_runtime
 
 
 def _stub_state(tasks: dict) -> dict:
@@ -51,6 +51,44 @@ def _make_merge_kwargs(tmp: Path, state: dict, **overrides):
         "run_git_runtime_fn": lambda cmd: MagicMock(returncode=1, stdout="", stderr=""),
         **overrides,
     }
+
+
+class TestGitWorktreeInventoryRootGuard(unittest.TestCase):
+    """Git operations must target the configured repository itself, not a parent."""
+
+    def test_nested_root_is_rejected_before_worktree_inventory(self):
+        configured_root = Path(tempfile.mkdtemp())
+        repository_root = configured_root.parent
+        try:
+            top_level = MagicMock(returncode=0, stdout=f"{repository_root}\n", stderr="")
+            with patch("task_runtime.merge.run_git_runtime", return_value=top_level) as run_git:
+                inventory = git_worktree_inventory(root=configured_root)
+
+            self.assertFalse(inventory["available"])
+            self.assertEqual(inventory["worktrees"], [])
+            self.assertIn("refusing parent-repository operations", inventory["error"])
+            run_git.assert_called_once_with(["rev-parse", "--show-toplevel"], root=configured_root)
+        finally:
+            shutil.rmtree(configured_root)
+
+    def test_exact_repository_root_allows_worktree_inventory(self):
+        configured_root = Path(tempfile.mkdtemp())
+        try:
+            top_level = MagicMock(returncode=0, stdout=f"{configured_root}\n", stderr="")
+            worktrees = MagicMock(
+                returncode=0,
+                stdout=f"worktree {configured_root}\nHEAD abc123\nbranch refs/heads/main\n\n",
+                stderr="",
+            )
+            with patch("task_runtime.merge.run_git_runtime", side_effect=[top_level, worktrees]) as run_git:
+                inventory = git_worktree_inventory(root=configured_root)
+
+            self.assertTrue(inventory["available"])
+            self.assertEqual(inventory["worktrees"][0]["path"], str(configured_root.resolve()))
+            self.assertEqual(inventory["worktrees"][0]["branch"], "main")
+            self.assertEqual(run_git.call_count, 2)
+        finally:
+            shutil.rmtree(configured_root)
 
 
 class TestMergeBackupFailureLogged(unittest.TestCase):

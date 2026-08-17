@@ -19,6 +19,9 @@ FILE_MAP = ROOT / "docs" / "file-map.md"
 EXAMPLES_README = ROOT / "examples" / "README.md"
 MANAGER_SKILL = SKILLS / "manager" / "SKILL.md"
 PLANNER_SKILL = SKILLS / "planner" / "SKILL.md"
+DEEP_AUDIT_SKILL = SKILLS / "deep-audit" / "SKILL.md"
+DEEP_AUDIT_MODE_CONTRACT = SKILLS / "deep-audit" / "references" / "mode-contracts.md"
+DEEP_AUDIT_STATE_CONTRACT = SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md"
 
 
 class TestSkillDocsContract(unittest.TestCase):
@@ -54,11 +57,18 @@ class TestSkillDocsContract(unittest.TestCase):
             ROOT / "scripts" / "task_runtime" / "telemetry.py",
             ROOT / "scripts" / "task_runtime" / "validation.py",
             ROOT / "docs" / "skill-portability-notes.md",
+            SKILLS / "deep-audit" / "SKILL.md",
+            SKILLS / "deep-audit" / "examples" / "depth-test.md",
+            SKILLS / "deep-audit" / "references" / "mode-contracts.md",
+            SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md",
             SKILLS / "discover" / "SKILL.md",
             SKILLS / "manager" / "SKILL.md",
             SKILLS / "planner" / "SKILL.md",
             SKILLS / "qa" / "SKILL.md",
             SKILLS / "ship" / "SKILL.md",
+            SKILLS / "skill-authoring" / "SKILL.md",
+            SKILLS / "usage-stats" / "SKILL.md",
+            SKILLS / "observer" / "references" / "output-contracts.md",
         ]
         for path in expected:
             self.assertTrue(path.exists(), f"Missing exported file: {path}")
@@ -87,6 +97,9 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("planning_context", text)
         self.assertIn("13 standard plan elements", text)
         self.assertIn("--mode refactor", text)
+        self.assertIn("skills/deep-audit", text)
+        self.assertIn("skills/diagnosing-bugs", text)
+        self.assertIn("skills/skill-authoring", text)
 
     def test_readme_has_valid_code_fences_and_no_pasted_python(self):
         text = README.read_text(encoding="utf-8")
@@ -95,6 +108,12 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertNotIn('cp -r ""', text)
         self.assertNotIn("from __future__ import annotations", text)
         self.assertNotIn("unittest.main()", text)
+
+    def test_readme_install_examples_cover_manifest_skills(self):
+        text = README.read_text(encoding="utf-8")
+        manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
+        for skill in manifest["default_skills"] + manifest["optional_skills"]:
+            self.assertIn(f"skills/{skill}", text, skill)
 
     def test_portability_notes_distinguish_package_and_installed_layouts(self):
         text = PORTABILITY_NOTES.read_text(encoding="utf-8")
@@ -120,22 +139,80 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("ship", manifest["default_skills"])
         self.assertIn("delegate", manifest["optional_skills"])
         self.assertIn("delegation-eval", manifest["optional_skills"])
+        self.assertIn("deep-audit", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
-        self.assertIn("session-stats", manifest["optional_skills"])
-        self.assertIn("token-audit", manifest["optional_skills"])
-        self.assertNotIn("observer-test", manifest["optional_skills"])
-        self.assertNotIn("refactor-planner", manifest["optional_skills"])
+        self.assertIn("skill-authoring", manifest["optional_skills"])
+        self.assertIn("usage-stats", manifest["optional_skills"])
         self.assertNotIn("telemetry-live-ops", manifest["optional_skills"])
-        self.assertNotIn("worktree-manager", manifest["optional_skills"])
-        self.assertIn("observer-test", manifest["source_only_skills"])
-        self.assertIn("refactor-planner", manifest["source_only_skills"])
         self.assertIn("telemetry-live-ops", manifest["source_only_skills"])
-        self.assertIn("worktree-manager", manifest["source_only_skills"])
+        for removed in (
+            "agent-report",
+            "observer-test",
+            "refactor-planner",
+            "session-stats",
+            "token-audit",
+            "worktree-manager",
+        ):
+            self.assertNotIn(removed, manifest["optional_skills"])
+            self.assertNotIn(removed, manifest["source_only_skills"])
+            self.assertFalse((SKILLS / removed).exists(), f"Deleted skill still present: {removed}")
         self.assertIn("scripts/task_manager.py", manifest["runtime_files"])
         self.assertIn("scripts/analysis", manifest["runtime_directories"])
         self.assertIn("scripts/hooks", manifest["runtime_directories"])
         self.assertIn("scripts/task_runtime", manifest["runtime_directories"])
+
+    def test_always_off_skills_disable_model_invocation(self):
+        demoted = (
+            "build-gate",
+            "campaign-health",
+            "delegate",
+            "delegation-eval",
+            "diagnosing-bugs",
+            "docs-sync",
+            "observer",
+            "schema-validator",
+            "skill-authoring",
+            "smart-test",
+            "truthpack-drift",
+            "usage-stats",
+            "worktree-preflight",
+        )
+        for skill in demoted:
+            text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("disable-model-invocation: true", text, skill)
+
+    def test_observer_and_manager_use_progressive_disclosure(self):
+        observer = (SKILLS / "observer" / "SKILL.md").read_text(encoding="utf-8")
+        contracts = (SKILLS / "observer" / "references" / "output-contracts.md").read_text(encoding="utf-8")
+        manager = MANAGER_SKILL.read_text(encoding="utf-8")
+        self.assertIn("references/output-contracts.md", observer)
+        self.assertNotIn("### Note Output", observer)
+        self.assertIn("### Note Output", contracts)
+        self.assertNotIn("### `/observer", observer)
+        self.assertNotIn("\n/observer ", observer)
+        self.assertNotIn("`/observer ", observer)
+        self.assertNotIn("### Phase 1: Load context", manager)
+        self.assertIn("planning policy is loaded on demand", manager)
+
+    def test_collision_prone_skills_use_trigger_first_descriptions(self):
+        for skill in (
+            "deep-audit",
+            "diagnosing-bugs",
+            "qa",
+            "planner",
+            "manager",
+            "review",
+            "discover",
+            "campaign-health",
+            "worktree-preflight",
+            "usage-stats",
+        ):
+            text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+            description = next(line for line in text.splitlines() if line.startswith("description:"))
+            description = description.removeprefix("description:").strip().strip('"')
+            self.assertTrue(description.startswith("Use "), skill)
+            self.assertIn("Do not use", description, skill)
 
     def test_current_docs_match_runtime_verify_surface(self):
         self.assertIn("validates build, tests, and readiness", README.read_text(encoding="utf-8"))
@@ -146,6 +223,21 @@ class TestSkillDocsContract(unittest.TestCase):
         json_examples_text = JSON_OUTPUT_EXAMPLES.read_text(encoding="utf-8")
         self.assertIn("does not independently prove each natural-language", json_examples_text)
         self.assertIn("--poll SECONDS", PROGRAM_FLOW.read_text(encoding="utf-8"))
+
+    def test_deep_audit_guards_live_eval_regressions(self):
+        skill_text = DEEP_AUDIT_SKILL.read_text(encoding="utf-8")
+        self.assertIn("ceil(D / I)", skill_text)
+        self.assertIn("redundant = total - required", skill_text)
+        self.assertIn("explicit narrower user restriction", skill_text)
+        self.assertIn("do not claim an activity was skipped", skill_text)
+        state_text = DEEP_AUDIT_STATE_CONTRACT.read_text(encoding="utf-8")
+        self.assertIn("every persisted state", state_text)
+        mode_text = DEEP_AUDIT_MODE_CONTRACT.read_text(encoding="utf-8")
+        self.assertIn("state transition, not an add-only note", mode_text)
+        self.assertIn("denormalized current-state surfaces", mode_text)
+        self.assertIn("live ownership and lifecycle accounting", mode_text)
+        self.assertIn("MUST NOT recommend clearing", mode_text)
+        self.assertIn("`Original:` or `Superseded:`", mode_text)
 
     def test_current_docs_do_not_reference_removed_contracts(self):
         self.assertIn("historical", EXAMPLES_README.read_text(encoding="utf-8").lower())

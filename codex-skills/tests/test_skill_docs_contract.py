@@ -19,6 +19,13 @@ FILE_MAP = ROOT / "docs" / "file-map.md"
 EXAMPLES_README = ROOT / "examples" / "README.md"
 MANAGER_SKILL = SKILLS / "manager" / "SKILL.md"
 PLANNER_SKILL = SKILLS / "planner" / "SKILL.md"
+LOOP_MASTER_SKILL = SKILLS / "loop-master" / "SKILL.md"
+DEEP_AUDIT_SKILL = SKILLS / "deep-audit" / "SKILL.md"
+DEEP_AUDIT_MODE_CONTRACT = SKILLS / "deep-audit" / "references" / "mode-contracts.md"
+DEEP_AUDIT_STATE_CONTRACT = SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md"
+MEMORY_MANAGEMENT_SKILL = SKILLS / "memory-management" / "SKILL.md"
+OBSERVER_SKILL = SKILLS / "observer" / "SKILL.md"
+REPO_CONVENTIONS_SKILL = SKILLS / "repo-conventions" / "SKILL.md"
 
 
 class TestSkillDocsContract(unittest.TestCase):
@@ -54,21 +61,22 @@ class TestSkillDocsContract(unittest.TestCase):
             ROOT / "scripts" / "task_runtime" / "telemetry.py",
             ROOT / "scripts" / "task_runtime" / "validation.py",
             ROOT / "docs" / "skill-portability-notes.md",
-            SKILLS / "api-design" / "SKILL.md",
-            SKILLS / "backend-patterns" / "SKILL.md",
-            SKILLS / "deep-research" / "SKILL.md",
+            SKILLS / "audit-gated-subagents" / "SKILL.md",
+            SKILLS / "deep-audit" / "SKILL.md",
             SKILLS / "discover" / "SKILL.md",
-            SKILLS / "dmux-workflows" / "SKILL.md",
             SKILLS / "documentation-lookup" / "SKILL.md",
-            SKILLS / "e2e-testing" / "SKILL.md",
             SKILLS / "exa-search" / "SKILL.md",
-            SKILLS / "frontend-patterns" / "SKILL.md",
             SKILLS / "manager" / "SKILL.md",
             SKILLS / "mcp-server-patterns" / "SKILL.md",
+            SKILLS / "memory-management" / "SKILL.md",
             SKILLS / "observer" / "SKILL.md",
+            SKILLS / "observer" / "references" / "output-contracts.md",
             SKILLS / "planner" / "SKILL.md",
             SKILLS / "qa" / "SKILL.md",
+            SKILLS / "repo-conventions" / "SKILL.md",
             SKILLS / "ship" / "SKILL.md",
+            SKILLS / "skill-authoring" / "SKILL.md",
+            SKILLS / "usage-stats" / "SKILL.md",
             SKILLS / "verification-loop" / "SKILL.md",
         ]
         for path in expected:
@@ -98,11 +106,14 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("planning_context", text)
         self.assertIn("13 standard plan elements", text)
         self.assertIn("--mode refactor", text)
-        self.assertIn("skills/api-design", text)
+        self.assertIn("skills/repo-conventions", text)
+        self.assertIn("skills/audit-gated-subagents", text)
+        self.assertIn("skills/deep-audit", text)
         self.assertIn("skills/verification-loop", text)
-        self.assertIn("skills/dmux-workflows", text)
         self.assertIn("skills/exa-search", text)
+        self.assertIn("skills/memory-management", text)
         self.assertIn("skills/observer", text)
+        self.assertIn("skills/skill-authoring", text)
 
     def test_readme_has_valid_code_fences_and_no_pasted_python(self):
         text = README.read_text(encoding="utf-8")
@@ -111,6 +122,12 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertNotIn('cp -r ""', text)
         self.assertNotIn("from __future__ import annotations", text)
         self.assertNotIn("unittest.main()", text)
+
+    def test_readme_install_examples_cover_manifest_skills(self):
+        text = README.read_text(encoding="utf-8")
+        manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
+        for skill in manifest["default_skills"] + manifest["optional_skills"]:
+            self.assertIn(f"skills/{skill}", text, skill)
 
     def test_portability_notes_distinguish_package_and_installed_layouts(self):
         text = PORTABILITY_NOTES.read_text(encoding="utf-8")
@@ -134,23 +151,36 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("discover", manifest["default_skills"])
         self.assertIn("qa", manifest["default_skills"])
         self.assertIn("ship", manifest["default_skills"])
-        self.assertIn("api-design", manifest["optional_skills"])
-        self.assertIn("backend-patterns", manifest["optional_skills"])
-        self.assertIn("deep-research", manifest["optional_skills"])
+        self.assertIn("audit-gated-subagents", manifest["optional_skills"])
+        self.assertIn("deep-audit", manifest["optional_skills"])
         self.assertIn("delegate", manifest["optional_skills"])
         self.assertIn("delegation-eval", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])
-        self.assertIn("dmux-workflows", manifest["optional_skills"])
         self.assertIn("documentation-lookup", manifest["optional_skills"])
-        self.assertIn("e2e-testing", manifest["optional_skills"])
         self.assertIn("exa-search", manifest["optional_skills"])
-        self.assertIn("frontend-patterns", manifest["optional_skills"])
         self.assertIn("mcp-server-patterns", manifest["optional_skills"])
+        self.assertIn("memory-management", manifest["optional_skills"])
         self.assertIn("observer", manifest["optional_skills"])
+        self.assertIn("parallel-agents-light", manifest["optional_skills"])
+        self.assertIn("repo-conventions", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
-        self.assertIn("session-stats", manifest["optional_skills"])
-        self.assertIn("token-audit", manifest["optional_skills"])
+        self.assertIn("skill-authoring", manifest["optional_skills"])
+        self.assertIn("usage-stats", manifest["optional_skills"])
         self.assertIn("verification-loop", manifest["optional_skills"])
+        for removed in (
+            "agent-report",
+            "api-design",
+            "backend-patterns",
+            "deep-research",
+            "e2e-testing",
+            "frontend-patterns",
+            "loop",
+            "session-stats",
+            "token-audit",
+        ):
+            self.assertNotIn(removed, manifest["optional_skills"])
+            self.assertNotIn(removed, manifest["source_only_skills"])
+            self.assertFalse((SKILLS / removed).exists(), f"Deleted skill still present: {removed}")
         self.assertNotIn("telemetry-live-ops", manifest["optional_skills"])
         self.assertIn("telemetry-live-ops", manifest["source_only_skills"])
         self.assertIn("scripts/task_manager.py", manifest["runtime_files"])
@@ -158,6 +188,87 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("scripts/skill_feedback_loop.py", manifest["runtime_files"])
         self.assertIn("scripts/analysis", manifest["runtime_directories"])
         self.assertIn("scripts/task_runtime", manifest["runtime_directories"])
+
+    def test_loop_master_is_a_compatibility_alias(self):
+        text = LOOP_MASTER_SKILL.read_text(encoding="utf-8")
+        self.assertIn("Backward-compatible alias", text)
+        self.assertIn("follow `repo-conventions`", text)
+        self.assertIn("follow `planner`", text)
+        self.assertNotIn("## Responsibilities", text)
+
+    def test_repo_conventions_preserves_collapsed_playbooks(self):
+        text = REPO_CONVENTIONS_SKILL.read_text(encoding="utf-8")
+        self.assertIn("name: repo-conventions", text)
+        for heading in (
+            "## Repository-First Workflow",
+            "## Capability Map",
+            "## API Contracts",
+            "## Backend Structure",
+            "## Frontend Structure",
+            "## Browser E2E",
+            "## Current Research",
+            "## Bounded Local Cycle",
+            "## Output Contract",
+        ):
+            self.assertIn(heading, text)
+        for former in (
+            "`api-design` / Start Here",
+            "`backend-patterns` / Workflow",
+            "`frontend-patterns` / Accessibility Rules",
+            "`e2e-testing` / Anti-Flake Rules",
+            "`deep-research` / Research Rules",
+            "`loop` / Output Contract",
+        ):
+            self.assertIn(former, text)
+
+    def test_claude_only_invocation_demotion_does_not_leak_into_codex(self):
+        demoted = (
+            "build-gate",
+            "campaign-health",
+            "delegate",
+            "delegation-eval",
+            "diagnosing-bugs",
+            "docs-sync",
+            "observer",
+            "schema-validator",
+            "skill-authoring",
+            "smart-test",
+            "truthpack-drift",
+            "usage-stats",
+            "worktree-preflight",
+        )
+        for skill in demoted:
+            text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+            self.assertNotIn("disable-model-invocation:", text, skill)
+
+    def test_observer_and_manager_use_progressive_disclosure(self):
+        observer = OBSERVER_SKILL.read_text(encoding="utf-8")
+        contracts = (SKILLS / "observer" / "references" / "output-contracts.md").read_text(encoding="utf-8")
+        manager = MANAGER_SKILL.read_text(encoding="utf-8")
+        self.assertIn("references/output-contracts.md", observer)
+        self.assertNotIn("### Note Output", observer)
+        self.assertIn("### Note Output", contracts)
+        self.assertNotIn("### Phase 1: Load context", manager)
+        self.assertIn("planning policy is loaded on demand", manager)
+
+    def test_collision_prone_skills_use_trigger_first_descriptions(self):
+        for skill in (
+            "deep-audit",
+            "diagnosing-bugs",
+            "qa",
+            "planner",
+            "manager",
+            "review",
+            "discover",
+            "campaign-health",
+            "worktree-preflight",
+            "usage-stats",
+        ):
+            text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+            description = next(line for line in text.splitlines() if line.startswith("description:"))
+            description = description.removeprefix("description:").strip().strip('"')
+            self.assertTrue(description.startswith("Use "), skill)
+            self.assertIn("Do not use", description, skill)
 
     def test_current_docs_match_runtime_verify_surface(self):
         self.assertIn("validates build, tests, and readiness", README.read_text(encoding="utf-8"))
@@ -168,6 +279,41 @@ class TestSkillDocsContract(unittest.TestCase):
         json_examples_text = JSON_OUTPUT_EXAMPLES.read_text(encoding="utf-8")
         self.assertIn("does not independently prove each natural-language", json_examples_text)
         self.assertIn("--poll SECONDS", PROGRAM_FLOW.read_text(encoding="utf-8"))
+
+    def test_deep_audit_guards_live_eval_regressions(self):
+        skill_text = DEEP_AUDIT_SKILL.read_text(encoding="utf-8")
+        self.assertIn("ceil(D / I)", skill_text)
+        self.assertIn("redundant = total - required", skill_text)
+        self.assertIn("explicit narrower user restriction", skill_text)
+        self.assertIn("do not claim an activity was skipped", skill_text)
+        state_text = DEEP_AUDIT_STATE_CONTRACT.read_text(encoding="utf-8")
+        self.assertIn("every persisted state", state_text)
+        mode_text = DEEP_AUDIT_MODE_CONTRACT.read_text(encoding="utf-8")
+        self.assertIn("state transition, not an add-only note", mode_text)
+        self.assertIn("denormalized current-state surfaces", mode_text)
+        self.assertIn("live ownership and lifecycle accounting", mode_text)
+        self.assertIn("MUST NOT recommend clearing", mode_text)
+        self.assertIn("`Original:` or `Superseded:`", mode_text)
+
+    def test_memory_management_uses_native_codex_surfaces(self):
+        memory_text = MEMORY_MANAGEMENT_SKILL.read_text(encoding="utf-8")
+        self.assertIn("Native `memory_summary.md`, generated and read-only", memory_text)
+        self.assertIn("Native `MEMORY.md`, generated and read-only", memory_text)
+        self.assertIn("extensions/ad_hoc/notes", memory_text)
+        self.assertIn("explicitly asks to record, update, or retire", memory_text)
+        self.assertIn("controller_machine_id", memory_text)
+        self.assertIn("target_machine_ids", memory_text)
+        self.assertIn("Current project trackers and verified live state outrank", memory_text)
+        self.assertIn("Codex Authority First", memory_text)
+        self.assertIn("If no write surface is declared, do not write", memory_text)
+        self.assertNotIn("Codex has no per-project auto-memory directory", memory_text)
+        self.assertNotIn("scripts/memory_audit.py", memory_text)
+
+        observer_text = OBSERVER_SKILL.read_text(encoding="utf-8")
+        self.assertIn("not the user's cross-workspace memory store", observer_text)
+        self.assertIn("Do not use observer artifacts as a parallel Codex native-memory store", observer_text)
+        self.assertIn("controller_machine_id", observer_text)
+        self.assertIn("Stop before writing a machine-sensitive observation", observer_text)
 
     def test_current_docs_do_not_reference_removed_contracts(self):
         self.assertIn("historical", EXAMPLES_README.read_text(encoding="utf-8").lower())

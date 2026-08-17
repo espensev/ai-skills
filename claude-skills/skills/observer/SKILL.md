@@ -1,6 +1,7 @@
 ---
 name: observer
-description: "Maintain passive project intelligence by observing, noting, querying, scanning, and synthesizing patterns over time without interfering. Use when the user wants durable project memory, passive observation, drift notes, or repo health synthesis."
+description: "Maintain passive project intelligence by observing, noting, querying, scanning, and synthesizing patterns over time without interfering. Use when the user wants durable project intelligence, passive observation, drift notes, or repo health synthesis."
+disable-model-invocation: true
 argument-hint: "/observe [note|review|list|resolve|stale|scan|synthesize|status|briefing|check|cycle] — project observation system"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Edit, Write
 user-invocable: true
@@ -14,6 +15,17 @@ time. Records decisions, spots patterns, flags drift, and synthesizes a living
 intelligence document — without interrupting active work.
 
 The observer never runs automatically. It only acts when you invoke it.
+This is not the user's cross-workspace memory store — durable personal
+memory belongs to `/memory-management`.
+
+## Scope
+
+- Prefer this skill for passive observation and project-health summaries.
+- Prefer `/discover` when the goal is bounded pre-change research for
+  one question set.
+- Prefer `/qa` when the user wants test execution or failure triage.
+- Prefer `/review` when the goal is diff review, not longitudinal
+  observation.
 
 **Storage:** File-based JSONL at `data/observations.jsonl` by default. Repos with
 a richer backend (e.g., SQLite campaign DB) can configure `[observer].backend`
@@ -84,16 +96,26 @@ Every observation has these fields:
 | `warning` | Needs attention | Drift, soft threshold crossings, growing debt |
 | `critical` | Blocks progress | Build failures, enforcement breaches, regressions |
 
+For machine-sensitive observations, also capture `machine_scope`, the verified
+`controller_machine_id`, explicit `target_machine_ids`, and `transport`. Never
+infer a machine from paths, repository history, or peer snapshot filenames.
+Stop before writing a machine-sensitive observation if the controller or any
+target identity cannot be verified. Do not substitute a hostname, alias,
+username, path, or prose mention for a verified machine ID. Use `unknown` only
+for clearly labelled legacy data.
+
 ---
 
 ## Feedback Prioritization
 
-Prefer recording these signals:
+Prefer recording these signals, in this order:
 
-- explicit user corrections
-- failing verification commands with concrete output
+- explicit user corrections or rejections
+- failing build, lint, typecheck, smoke-test, or verification commands with
+  concrete output
 - repeated workarounds or repeated reviewer findings
 - drift that changes how the next agent should plan or verify
+- successful fixes that closed a real regression
 
 Do not turn a one-off weak signal into durable project memory unless it is
 evidence-backed and likely to change future behavior.
@@ -102,156 +124,10 @@ evidence-backed and likely to change future behavior.
 
 ## Output Contracts
 
-Every command supports `--format json` for machine-readable output. When
-`--format json` is passed, the command outputs **only** a single JSON object
-to stdout — no preamble, no markdown, no commentary.
-
-### Note Output
-
-```json
-{
-  "action": "note",
-  "recorded": true,
-  "observation": {
-    "ts": "2026-03-21T14:30:00Z",
-    "cat": "risk",
-    "summary": "no tests for payment module",
-    "severity": "warning",
-    "status": "open",
-    "confidence": 0.5
-  }
-}
-```
-
-If deduplicated (skipped):
-```json
-{
-  "action": "note",
-  "recorded": false,
-  "reason": "duplicate",
-  "existing": {"cat": "risk", "summary": "no tests for payment module"}
-}
-```
-
-### List Output
-
-```json
-{
-  "action": "list",
-  "count": 3,
-  "filters": {"category": "risk", "status": "open"},
-  "observations": [
-    {"ts": "2026-03-21T09:15:00Z", "cat": "risk", "summary": "no tests for payment module", "severity": "warning", "status": "open", "confidence": 0.8, "files": ["src/payment.py"]},
-    {"ts": "2026-03-21T14:30:00Z", "cat": "risk", "summary": "API keys in env without rotation", "severity": "critical", "status": "open", "confidence": 0.9, "files": []}
-  ]
-}
-```
-
-### Status Output
-
-```json
-{
-  "action": "status",
-  "total": 23,
-  "by_status": {"open": 18, "resolved": 3, "stale": 2},
-  "by_severity": {"info": 18, "warning": 4, "critical": 1},
-  "by_category": {
-    "decision": {"open": 3, "resolved": 1, "stale": 1},
-    "risk": {"open": 3, "resolved": 1, "stale": 0}
-  },
-  "last_observation": "2026-03-21T14:30:00Z",
-  "last_synthesis": "2026-03-20T10:00:00Z",
-  "metrics_tracked": 3
-}
-```
-
-### Scan Output
-
-```json
-{
-  "action": "scan",
-  "probes_run": 5,
-  "metrics_updated": [
-    {"key": "dirty_file_count", "value": 5, "previous": 3, "delta": 2},
-    {"key": "todo_count", "value": 42, "previous": 38, "delta": 4}
-  ],
-  "observations_emitted": [
-    {"cat": "drift", "summary": "TODO count increased by 4 (now 42)", "severity": "warning", "recorded": true}
-  ],
-  "observations_resolved": [
-    {"cat": "risk", "summary": "dirty file count above threshold", "reason": "metric recovered"}
-  ]
-}
-```
-
-### Briefing Output
-
-```json
-{
-  "action": "briefing",
-  "status": "warning",
-  "health": "degraded",
-  "summary": "2 warnings, 0 critical — 15 open observations",
-  "critical": [],
-  "warnings": [
-    {"cat": "risk", "summary": "no tests for payment module", "files": ["src/payment.py"]},
-    {"cat": "drift", "summary": "auth module untouched for 3 weeks", "files": ["src/auth/"]}
-  ],
-  "metrics": {
-    "dirty_file_count": 3,
-    "todo_count": 42,
-    "plans_executing": 1
-  },
-  "open_count": 15,
-  "next_actions": [
-    "Add test coverage for payment module",
-    "Review auth module for staleness"
-  ]
-}
-```
-
-`health` values: `healthy` (0 critical, 0 warning), `degraded` (warnings only),
-`unhealthy` (any critical).
-
-### Check Output
-
-```json
-{
-  "action": "check",
-  "gate": "pass",
-  "blockers": [],
-  "warnings": ["no tests for payment module"],
-  "open_critical": 0,
-  "open_blockers": 0,
-  "open_regressions": 0
-}
-```
-
-Exit code: `0` if gate=pass, `1` if gate=fail.
-
-### Cycle Output
-
-```json
-{
-  "action": "cycle",
-  "scan": {"probes_run": 5, "metrics_updated": 3, "observations_emitted": 1},
-  "stale": {"marked": 2},
-  "synthesize": {"file": "docs/observer/project-intelligence.md", "sections": 9},
-  "status": {"total": 23, "open": 16, "critical": 0, "warning": 3}
-}
-```
-
-### Resolve Output
-
-```json
-{
-  "action": "resolve",
-  "id": "2026-03-21T09:15:00Z:risk:no tests for payment module",
-  "status": "resolved",
-  "resolved_at": "2026-03-22T10:00:00Z",
-  "resolved_detail": "Added pytest coverage in test_payment.py"
-}
-```
+Read [`references/output-contracts.md`](references/output-contracts.md) when
+implementing or parsing `--format json`, or when verifying command exit-code
+semantics. The main skill keeps routing and operational rules in the invocation
+path; full example payloads stay behind this progressive-disclosure boundary.
 
 ---
 
@@ -796,6 +672,12 @@ provides the full configuration:
 **Timeout guidance:** All hook scripts complete in < 1s. Set 5s for
 PostToolUse, 10s for SessionStart/SubagentStop.
 
+> This section, and Non-Interference Contract rules 7-8, differ between the
+> Claude and Codex packages because the mechanism exists on one side only:
+> Claude ships portable observer hook scripts, Codex ships none. The asymmetry
+> is defensible only while that stays true. Expiry condition and what to
+> revisit: `docs/observer-hook-asymmetry.md` in the Ai-Skills repo.
+
 ---
 
 ## Non-Interference Contract
@@ -813,3 +695,47 @@ PostToolUse, 10s for SessionStart/SubagentStop.
 8. **Hook traceability** — all hook-recorded observations are tagged with
    `actor: "hook:<name>"` so they can be distinguished from skill-recorded
    observations in queries and synthesis.
+
+---
+
+## Promotion Rules
+
+- Record one-off incidents as observations when they explain the current state.
+- Promote recurring regressions and blockers by keeping them `open` with
+  raised severity so `/observe check` gates on them, and surface them in
+  `/manager verify` reports.
+- Only turn user preference into a reusable pattern after repetition or an
+  explicit request to codify it.
+
+---
+
+## Rules
+
+- Do not invent backend commands that the repo does not implement.
+- Do not auto-record speculative observations from weak signals.
+- Do not use observer artifacts as a parallel Claude Code native-memory store.
+- Do not replace `/discover`, `/planner`, `/manager`, or
+  `/qa`; enrich them.
+- When a finding is really a blocking bug or regression, say so explicitly
+  rather than burying it in a vague summary.
+
+---
+
+## Package Fit
+
+In `claude-skills`, observer is an optional engineering skill that keeps durable
+notes about drift and recurring risks, summarizes cross-session project
+health, gives `/discover` and `/planner` richer context when the
+user asks for it, and stays file-based and stdlib-friendly. It is not a
+guaranteed runtime command surface in `scripts/task_manager.py`.
+
+---
+
+## Output
+
+Default response shape:
+
+1. current observation state or requested synthesis
+2. evidence-backed observations to add or update
+3. resulting artifacts changed
+4. next useful command or follow-up skill

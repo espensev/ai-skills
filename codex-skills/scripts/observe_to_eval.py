@@ -16,7 +16,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OBS = ROOT / "data" / "observations.jsonl"
 PROVIDER_LEAKAGE_TERMS = [

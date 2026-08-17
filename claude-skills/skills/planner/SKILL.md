@@ -1,6 +1,6 @@
 ---
 name: planner
-description: "Design structured multi-agent campaign plans. Use when you want to plan work decomposition, define agent tasks, map dependencies, or draft a campaign before execution. Supports --mode refactor for phased refactors, migrations, and modularization."
+description: "Use when the user wants a structured multi-agent campaign designed before execution: work decomposition, agent tasks, dependencies, gates, or a phased refactor/migration. Do not use to execute an approved campaign (use manager) or for one bounded local change."
 argument-hint: "<description> [--mode refactor] — describe what you want to build or change"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true
@@ -110,12 +110,17 @@ python scripts/task_manager.py plan finalize <plan-id> \
     --documentation-update "..."
 ```
 
-Then approve and execute:
+Then approve and execute the plan record:
 
 ```bash
 python scripts/task_manager.py plan approve <plan-id>
 python scripts/task_manager.py plan execute <plan-id>
 ```
+
+These are plan-state transitions, not work execution: `plan execute` registers
+the agents in runtime state and generates spec template files for Phase 5. It
+launches nothing — actually launching agents stays with `/manager run`,
+consistent with this skill's design-only role.
 
 `plan create` writes the full plan JSON into `[paths].plans` and keeps only a
 summary in runtime state.

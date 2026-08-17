@@ -3,6 +3,10 @@
 Tracks which skills were extracted from project-specific implementations,
 what was parameterized, and when.
 
+> Current-state note (2026-08-09): `observer-test`, `worktree-manager`, and
+> `refactor-planner` were later retired as standalone skills. They remain below
+> as lineage records, not current install surfaces.
+
 ## Extracted Skills
 
 | Skill | Origin Project | Extracted | Hardening | What Changed |
@@ -21,20 +25,22 @@ what was parameterized, and when.
 |-------|--------|-------|
 | discover | AI-Skills repo | Portable from inception |
 | planner | AI-Skills repo | Portable from inception |
-| manager | AI-Skills repo | Portable from inception; chain fixes added 2026-03-26 (preflight + observer-test injection) |
+| manager | AI-Skills repo | Portable from inception; March chain fixes added preflight and the then-current observer-test integration; current observation capture is owned by observer hooks |
 | qa | AI-Skills repo | Portable from inception |
 | ship | AI-Skills repo | Portable from inception |
 | observer | AI-Skills repo | Portable from inception |
-| observer-test | AI-Skills repo | Portable from inception |
-| worktree-manager | AI-Skills repo | Portable from inception |
-| refactor-planner | AI-Skills repo | Deprecated — use `/planner --mode refactor` |
+| observer-test | AI-Skills repo | Retired 2026-08-09; use `observer` and its standalone hooks |
+| worktree-manager | AI-Skills repo | Retired 2026-08-09; use `manager` and its task runtime |
+| refactor-planner | AI-Skills repo | Retired 2026-08-09; use `/planner --mode refactor` |
 
 ## Chain Fixes Applied (2026-03-26)
 
 During extraction, chain audit revealed 6 integration gaps that were fixed:
 
 1. **manager → worktree-preflight**: manager now runs preflight before agent launch
-2. **manager → observer-test**: manager now injects observer-test init into agent prompts
+2. **manager → observer-test** (historical): manager injected observation init
+   during the March audit; the standalone skill was later retired, and current
+   `manager` promotes worktree-local logs produced through `observer` hooks
 3. **observer → campaign-health**: campaign-health now reads `[observer].storage`
 4. **smart-test ↔ qa ↔ build-gate**: documented as scope tiers, not sequential chain
 5. **schema-validator + truthpack-drift + docs-sync**: documented as parallel drift family

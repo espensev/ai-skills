@@ -1,0 +1,19 @@
+{
+  "description": "Reconcile the verified DevHome hook projection when Codex starts.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/Sync-DevHomeCodexHooks.ps1\" -SourcePackageRoot \"D:/Development/AI-related/Ai-Skills/codex-skills/local-hooks/devhome-lifecycle\" -Quiet",
+            "commandWindows": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/Sync-DevHomeCodexHooks.ps1\" -SourcePackageRoot \"D:/Development/AI-related/Ai-Skills/codex-skills/local-hooks/devhome-lifecycle\" -Quiet",
+            "timeout": 20,
+            "statusMessage": "Synchronizing DevHome lifecycle hooks from AI Skills"
+          }
+        ]
+      }
+    ]
+  }
+}

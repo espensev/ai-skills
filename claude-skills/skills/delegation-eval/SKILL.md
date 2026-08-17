@@ -1,6 +1,7 @@
 ---
 name: delegation-eval
 description: "Evaluate and tune local Ollama delegation using ollama-telemetry eval runs, judge packets, usage metrics, and dispatch recommendations. Use when comparing local models for bounded helper tasks, running controller-assistant or no-interference eval packs, judging eval outputs, reviewing dispatch-rules drift, or deciding whether /delegate model routing should change."
+disable-model-invocation: true
 argument-hint: "<command> [args] - status | run | judge | recommend | update-rules"
 allowed-tools: Read, Glob, Grep, Bash, Edit
 user-invocable: true
@@ -213,8 +214,8 @@ Report the exact mapping changes, evidence counts, and tests run.
 
 - `/delegate` is for live bounded work; `/delegation-eval` is for measuring
   whether that routing should exist.
-- `/token-audit` and `/session-stats` consume measured usage/cost from the
-  telemetry API; `/delegation-eval` consumes eval outcomes and recommendations.
+- `/usage-stats` consumes measured usage/cost from the telemetry API;
+  `/delegation-eval` consumes eval outcomes and recommendations.
 - `telemetry-live-ops` is machine-local and should stay out of portable
   install manifests.
 - The controller owns all judgments and all routing changes.

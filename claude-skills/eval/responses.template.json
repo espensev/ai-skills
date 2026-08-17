@@ -1,7 +1,43 @@
 [
   {
-    "id": "discover-basic-001",
-    "selected_skill": "discover",
+    "id": "deep-audit-basic-001",
+    "selected_skill": "deep-audit",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "deep-audit-profile-safety-003",
+    "selected_skill": "deep-audit",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "deep-audit-resume-002",
+    "selected_skill": "deep-audit",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "delegate-basic-001",
+    "selected_skill": "delegate",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "diagnosing-bugs-deep-audit-boundary-001",
+    "selected_skill": "diagnosing-bugs",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -18,8 +54,8 @@
     "notes": ""
   },
   {
-    "id": "planner-basic-001",
-    "selected_skill": "planner",
+    "id": "discover-basic-001",
+    "selected_skill": "discover",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -27,8 +63,8 @@
     "notes": ""
   },
   {
-    "id": "planner-edge-002",
-    "selected_skill": "planner",
+    "id": "discover-deep-audit-boundary-001",
+    "selected_skill": "discover",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -37,6 +73,15 @@
   },
   {
     "id": "manager-basic-001",
+    "selected_skill": "manager",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "manager-deep-audit-boundary-001",
     "selected_skill": "manager",
     "output": "",
     "created_files": [],
@@ -54,35 +99,8 @@
     "notes": ""
   },
   {
-    "id": "qa-basic-001",
-    "selected_skill": "qa",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "qa-triage-002",
-    "selected_skill": "qa",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "ship-basic-001",
-    "selected_skill": "ship",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "ship-edge-002",
-    "selected_skill": "ship",
+    "id": "memory-management-basic-001",
+    "selected_skill": "memory-management",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -108,8 +126,8 @@
     "notes": ""
   },
   {
-    "id": "observer-test-basic-001",
-    "selected_skill": "observer-test",
+    "id": "planner-basic-001",
+    "selected_skill": "planner",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -117,8 +135,8 @@
     "notes": ""
   },
   {
-    "id": "refactor-planner-basic-001",
-    "selected_skill": "refactor-planner",
+    "id": "planner-edge-002",
+    "selected_skill": "planner",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -126,8 +144,8 @@
     "notes": ""
   },
   {
-    "id": "refactor-planner-edge-002",
-    "selected_skill": "refactor-planner",
+    "id": "qa-basic-001",
+    "selected_skill": "qa",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -135,8 +153,8 @@
     "notes": ""
   },
   {
-    "id": "worktree-manager-basic-001",
-    "selected_skill": "worktree-manager",
+    "id": "qa-triage-002",
+    "selected_skill": "qa",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -144,8 +162,8 @@
     "notes": ""
   },
   {
-    "id": "worktree-manager-merge-002",
-    "selected_skill": "worktree-manager",
+    "id": "review-deep-audit-boundary-001",
+    "selected_skill": "review",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -153,8 +171,8 @@
     "notes": ""
   },
   {
-    "id": "delegate-basic-001",
-    "selected_skill": "delegate",
+    "id": "ship-basic-001",
+    "selected_skill": "ship",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -162,8 +180,17 @@
     "notes": ""
   },
   {
-    "id": "memory-management-basic-001",
-    "selected_skill": "memory-management",
+    "id": "ship-edge-002",
+    "selected_skill": "ship",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "skill-authoring-basic-001",
+    "selected_skill": "skill-authoring",
     "output": "",
     "created_files": [],
     "verification_commands": [],

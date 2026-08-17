@@ -42,6 +42,16 @@ Invoke-Step "Provider skill package generation" {
     }
 }
 
+# Deliberately NOT behind -SkipParityReport: the human-readable report below is
+# optional, this enforcement is not. Invoke-Step does not propagate child exit
+# codes, hence the explicit $LASTEXITCODE guard.
+Invoke-Step "Provider parity enforcement" {
+    & (Join-Path $ScriptRoot "Compare-ProviderSkillParity.ps1") -FailOnUndeclaredFork
+    if ($LASTEXITCODE -ne 0) {
+        throw "Provider parity enforcement failed"
+    }
+}
+
 if (-not $SkipUnitTests) {
     Invoke-Step "Codex, Claude, and local plugin contract tests" {
         python -m unittest codex-skills.tests.test_skill_docs_contract codex-skills.tests.test_local_plugin_contract claude-skills.tests.test_skill_docs_contract

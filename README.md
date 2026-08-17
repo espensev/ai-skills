@@ -189,8 +189,11 @@ in the release gate. Support files ship verbatim from
 `skills-src/<skill>/files-claude/` and `skills-src/<skill>/files-codex/` (one
 provider). `telemetry-live-ops` is the only remaining
 `provider_owned_shared_skills` entry: it is a declared whole-document fork,
-recorded with its reason in `declared_provider_forks`, and its cross-provider
-state is reported by `scripts/Compare-ProviderSkillParity.ps1`.
+recorded with its reason in `declared_provider_forks`. Every shared pair that is
+neither generated nor declared fails the release gate:
+`scripts/Compare-ProviderSkillParity.ps1 -FailOnUndeclaredFork` exits non-zero
+on an undeclared fork, and on a generated pair whose `description:` diverges
+without a `{{#claude}}` / `{{#codex}}` block in the canon declaring it.
 
 ## License
 

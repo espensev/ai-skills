@@ -28,8 +28,10 @@ Run the full local release gate before shipping. The repo scripts require
 ```
 
 The wrapper runs ready-package validation, README manifest count checks, the
-single-source skill regeneration check, Codex and Claude contract tests, isolated machine-local lifecycle catalog/cache/runtime
-contracts, provider parity reporting, and git whitespace checks. The lifecycle
+single-source skill regeneration check, provider parity enforcement, Codex and Claude contract tests, isolated machine-local lifecycle catalog/cache/runtime
+contracts, provider parity reporting, and git whitespace checks. Parity
+*enforcement* is a separate, non-skippable step: `-SkipParityReport` silences
+the human-readable table but never the gate. The lifecycle
 Pester tests use disposable fixtures; this source-only gate does not invoke the
 installed Claude Remember plugin or prove that the user has trusted the Codex
 SessionStart hook.
@@ -41,7 +43,31 @@ Individual checks are also available when narrowing a failure:
 .\scripts\Update-ReadmePackageCounts.ps1 -Check
 .\scripts\Build-ProviderSkillPackages.ps1 -Check
 .\scripts\Compare-ProviderSkillParity.ps1 -MaxRows 20
+.\scripts\Compare-ProviderSkillParity.ps1 -FailOnUndeclaredFork
 ```
+
+## Provider Parity Enforcement
+
+`Compare-ProviderSkillParity.ps1` compares every skill that ships in both
+`claude-skills/skills/` and `codex-skills/skills/`, including pairs held out of
+the portable release. It classifies each pair:
+
+- **Generator-enforced** — listed in `generated_skills`. Body differences are
+  produced by the generator and byte-verified by
+  `Build-ProviderSkillPackages.ps1 -Check`, so they are not reported as drift.
+  These pairs are instead linted for description declaration: each provider's
+  canon must resolve to exactly one `description:` line, and if the two
+  providers' descriptions differ, each must come from its own
+  `{{#claude}}` / `{{#codex}}` conditional block. A description that diverges
+  without a conditional block declaring it is an error.
+- **Declared fork** — listed in `declared_provider_forks` in
+  `skills-src/manifest.json` with a reason. Reported, never failed.
+- **Undeclared fork** — a pair that differs, is not generated, and is not
+  declared. This is the failure case.
+
+`-FailOnUndeclaredFork` exits 1 naming the offending skill. It runs as its own
+release-gate step with an explicit `$LASTEXITCODE` guard, because `Invoke-Step`
+does not propagate child exit codes.
 
 ## Single-Source Skill Layer
 
@@ -56,10 +82,14 @@ provider packages with:
 The generated `SKILL.md` files stay committed package outputs, so installers
 and exporters are unchanged. Edit the canonical source, regenerate, and commit
 both together; never hand-edit a generated `SKILL.md`. Skills not listed in
-`generated_skills` (including the parity-kept `provider_owned_shared_skills`)
-are provider-owned and untouched by the generator; the check mode also fails
-on unplanned `.md` files inside a generated skill's package directory and on
+`generated_skills` (including `provider_owned_shared_skills`) are
+provider-owned and untouched by the generator; the check mode also fails on
+unplanned `.md` files inside a generated skill's package directory and on
 CRLF-corrupted `SKILL.src.md` sources.
+
+Verbatim support files live under `skills-src/<skill>/files/` (copied to both
+providers) or `skills-src/<skill>/files-claude/` and
+`skills-src/<skill>/files-codex/` (copied to that provider only).
 
 ## Export Flow
 

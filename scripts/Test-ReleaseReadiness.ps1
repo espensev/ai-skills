@@ -35,6 +35,13 @@ Invoke-Step "README manifest counts" {
     & (Join-Path $ScriptRoot "Update-ReadmePackageCounts.ps1") -Check
 }
 
+Invoke-Step "Provider skill package generation" {
+    & (Join-Path $ScriptRoot "Build-ProviderSkillPackages.ps1") -Check
+    if ($LASTEXITCODE -ne 0) {
+        throw "Provider skill package check failed"
+    }
+}
+
 if (-not $SkipUnitTests) {
     Invoke-Step "Codex, Claude, and local plugin contract tests" {
         python -m unittest codex-skills.tests.test_skill_docs_contract codex-skills.tests.test_local_plugin_contract claude-skills.tests.test_skill_docs_contract

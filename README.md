@@ -169,9 +169,15 @@ ready and applies the `portable-runtime` strategy to Claude and Codex.
 ```
 codex-skills/       Codex package — skills, contracts, Python runtime
 claude-skills/      Claude package — skills, contracts, Python runtime
+skills-src/         Single-source canon for shared skills (generated into both packages)
 scripts/            Export automation
 docs/               Release notes and readiness tracking
 ```
+
+Shared skills listed in `skills-src/manifest.json` are authored once and
+regenerated into both provider packages by
+`scripts/Build-ProviderSkillPackages.ps1`; the generated `SKILL.md` files
+remain committed build outputs.
 
 ## License
 

@@ -25,8 +25,8 @@ Run the full local release gate before shipping:
 .\scripts\Test-ReleaseReadiness.ps1
 ```
 
-The wrapper runs ready-package validation, README manifest count checks, Codex
-and Claude contract tests, isolated machine-local lifecycle catalog/cache/runtime
+The wrapper runs ready-package validation, README manifest count checks, the
+single-source skill regeneration check, Codex and Claude contract tests, isolated machine-local lifecycle catalog/cache/runtime
 contracts, provider parity reporting, and git whitespace checks. The lifecycle
 Pester tests use disposable fixtures; this source-only gate does not invoke the
 installed Claude Remember plugin or prove that the user has trusted the Codex
@@ -37,8 +37,25 @@ Individual checks are also available when narrowing a failure:
 
 ```powershell
 .\scripts\Update-ReadmePackageCounts.ps1 -Check
+.\scripts\Build-ProviderSkillPackages.ps1 -Check
 .\scripts\Compare-ProviderSkillParity.ps1 -MaxRows 20
 ```
+
+## Single-Source Skill Layer
+
+Skills listed in `skills-src/manifest.json` under `generated_skills` are
+authored once in `skills-src/<skill>/SKILL.src.md` and regenerated into both
+provider packages with:
+
+```powershell
+.\scripts\Build-ProviderSkillPackages.ps1
+```
+
+The generated `SKILL.md` files stay committed package outputs, so installers
+and exporters are unchanged. Edit the canonical source, regenerate, and commit
+both together; never hand-edit a generated `SKILL.md`. Skills not listed in
+`generated_skills` (including the drifted `provider_owned_shared_skills`) are
+provider-owned and untouched by the generator.
 
 ## Export Flow
 

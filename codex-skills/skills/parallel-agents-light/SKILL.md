@@ -13,9 +13,9 @@ verification, and the final answer.
 
 Choose the lightest mode that can finish the task safely:
 
-1. **Local loop**: use the main Codex thread when the work is one objective in
-   one tight file set. Pull in `$loop` if repeated inspect/edit/verify cycles
-   are enough.
+1. **Local cycle**: use the main Codex thread when the work is one objective in
+   one tight file set. Pull in `$repo-conventions` if repeated
+   inspect/edit/verify cycles are enough.
 2. **Read-only sidecars**: launch 1-3 bounded subagents for independent
    evidence gathering, review, docs drift checks, test mapping, or risk scans.
    Keep all writes with the controller.

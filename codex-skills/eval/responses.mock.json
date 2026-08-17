@@ -61,9 +61,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "loop-basic-001",
-    "selected_skill": "loop",
-    "output": "Mock eval response for loop. objective. verification. next risk. Verification coverage is listed in verification_commands.",
+    "id": "repo-conventions-cycle-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "Mock eval response for repo-conventions. objective. verification. next risk. Verification coverage is listed in verification_commands.",
     "created_files": [],
     "verification_commands": [
       "verification",
@@ -217,9 +217,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "loop-edge-002",
-    "selected_skill": "loop",
-    "output": "Mock eval response for loop. objective. verification. Verification coverage is listed in verification_commands.",
+    "id": "repo-conventions-cycle-edge-002",
+    "selected_skill": "repo-conventions",
+    "output": "Mock eval response for repo-conventions. objective. verification. Verification coverage is listed in verification_commands.",
     "created_files": [],
     "verification_commands": [
       "verification",
@@ -230,9 +230,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "api-design-basic-001",
-    "selected_skill": "api-design",
-    "output": "Mock eval response for api-design. endpoint. status code. Verification coverage is listed in verification_commands.",
+    "id": "repo-conventions-api-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "Mock eval response for repo-conventions API guidance. endpoint. status code. Verification coverage is listed in verification_commands.",
     "created_files": [],
     "verification_commands": [
       "test",
@@ -242,9 +242,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "backend-patterns-basic-001",
-    "selected_skill": "backend-patterns",
-    "output": "Mock eval response for backend-patterns. handler. validation. Verification coverage is listed in verification_commands.",
+    "id": "repo-conventions-backend-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "Mock eval response for repo-conventions backend guidance. handler. validation. Verification coverage is listed in verification_commands.",
     "created_files": [],
     "verification_commands": [
       "test",
@@ -254,9 +254,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "deep-research-basic-001",
-    "selected_skill": "deep-research",
-    "output": "Mock eval response for deep-research. source. finding.",
+    "id": "repo-conventions-research-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "Mock eval response for repo-conventions research guidance. source. finding.",
     "created_files": [],
     "verification_commands": [],
     "acceptability": "accept",
@@ -272,9 +272,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "e2e-testing-basic-001",
-    "selected_skill": "e2e-testing",
-    "output": "Mock eval response for e2e-testing. test. selector. Verification coverage is listed in verification_commands.",
+    "id": "repo-conventions-e2e-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "Mock eval response for repo-conventions E2E guidance. test. selector. Verification coverage is listed in verification_commands.",
     "created_files": [],
     "verification_commands": [
       "playwright",
@@ -293,9 +293,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "frontend-patterns-basic-001",
-    "selected_skill": "frontend-patterns",
-    "output": "Mock eval response for frontend-patterns. component. accessible. Verification coverage is listed in verification_commands.",
+    "id": "repo-conventions-frontend-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "Mock eval response for repo-conventions frontend guidance. component. accessible. Verification coverage is listed in verification_commands.",
     "created_files": [],
     "verification_commands": [
       "test",

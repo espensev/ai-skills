@@ -65,8 +65,7 @@ for its operator contract.
 | Discover | `$discover` | Research codebase before planning (supports optimization discovery) |
 | QA | `$qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
 | Ship | `$ship` | Stage, commit, and push with smart file classification |
-| Loop | `$loop` | Drive a bounded inspect-edit-verify loop for one objective |
-| Loop Master | `$loop-master` | Backward-compatible alias that routes immediate work to `loop` and durable campaigns to `planner`/`manager` |
+| Loop Master | `$loop-master` | Backward-compatible alias that routes immediate work to `repo-conventions` and durable campaigns to `planner`/`manager` |
 
 ### Optional Engineering Skills
 
@@ -75,22 +74,18 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 
 | Skill | Trigger | Purpose |
 |---|---|---|
-| API Design | auto | Design consistent HTTP APIs: resources, status codes, pagination, idempotency, and error contracts |
 | Audit-Gated Subagents | auto | Run review-first multi-agent audits with PASS 0 maps, chief/operator gates, lane ownership, independent reviewers, and safety stops |
-| Backend Patterns | auto | Structure backend handlers, services, validation, data access, caching, and background work without overengineering |
 | Deep Audit | auto | Run evidence-first, resumable runtime-efficiency audits across hot paths, allocation/retention, I/O, concurrency, queues, retries, scaling, and lifecycle behavior |
-| Deep Research | auto | Run current, cited research workflows using built-in web search first and optional MCP accelerators when available |
 | Delegate | auto | Route one bounded, already-fetched transform to local Ollama via the `ollama-telemetry` MCP tools when readiness and task class allow it |
 | Delegation Eval | auto | Run and judge local-model helper evals from `ollama-telemetry`, then compare measured results against dispatch rules |
 | Diagnosing Bugs | auto | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | Documentation Lookup | auto | Fetch current framework and library docs before answering library-specific questions |
-| E2E Testing | auto | Build and debug Playwright E2E suites using stable selectors, app-aware setup, and artifact review |
 | Exa Search | auto | Use Exa as an optional accelerator for semantic web, code, company, or people search when Exa MCP is available |
-| Frontend Patterns | auto | Build React and Next.js UI work that respects existing design systems, accessibility, and compiler guidance |
 | MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
 | Memory Management | auto | Govern explicit updates to native Codex memory, keep generated registries read-only, enforce index budgets, and label controller/target machine provenance |
 | Observer | auto | Keep optional project intelligence in repo-owned observation logs, metrics, and health notes without creating a parallel native-memory store |
 | Parallel Agents Light | auto | Route Codex work between local execution, bounded sidecar subagents, split implementation, and full manager campaigns |
+| Repository Conventions | auto | Follow the target repo first, with fallback playbooks for API/backend/frontend structure, Playwright E2E, current research, and bounded local cycles |
 | Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | Skill Authoring | auto | Create and revise Agent Skills with focused discovery metadata, progressive disclosure, and package wiring |
 | Usage Stats | auto | Analyze tokens, costs, budgets, forecasts, session/tool activity, and agent performance, preferring measured telemetry API data when available |
@@ -142,29 +137,24 @@ for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
   cp -r "$d" <project>/.codex/skills/
 done
 
-# Optional loops and engineering skills
+# Optional engineering skills
 for d in \
-  skills/loop \
   skills/loop-master \
-  skills/api-design \
   skills/audit-gated-subagents \
-  skills/backend-patterns \
   skills/build-gate \
   skills/campaign-health \
   skills/deep-audit \
-  skills/deep-research \
   skills/delegate \
   skills/delegation-eval \
   skills/diagnosing-bugs \
   skills/docs-sync \
   skills/documentation-lookup \
-  skills/e2e-testing \
   skills/exa-search \
-  skills/frontend-patterns \
   skills/mcp-server-patterns \
   skills/memory-management \
   skills/observer \
   skills/parallel-agents-light \
+  skills/repo-conventions \
   skills/review \
   skills/schema-validator \
   skills/skill-authoring \
@@ -201,29 +191,24 @@ for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
   cp -r "$d" ~/.codex/skills/
 done
 
-# Optional loops and engineering skills
+# Optional engineering skills
 for d in \
-  skills/loop \
   skills/loop-master \
-  skills/api-design \
   skills/audit-gated-subagents \
-  skills/backend-patterns \
   skills/build-gate \
   skills/campaign-health \
   skills/deep-audit \
-  skills/deep-research \
   skills/delegate \
   skills/delegation-eval \
   skills/diagnosing-bugs \
   skills/docs-sync \
   skills/documentation-lookup \
-  skills/e2e-testing \
   skills/exa-search \
-  skills/frontend-patterns \
   skills/mcp-server-patterns \
   skills/memory-management \
   skills/observer \
   skills/parallel-agents-light \
+  skills/repo-conventions \
   skills/review \
   skills/schema-validator \
   skills/skill-authoring \

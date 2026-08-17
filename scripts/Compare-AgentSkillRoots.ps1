@@ -21,6 +21,16 @@ $ErrorActionPreference = "Stop"
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptRoot
 $Rows = New-Object System.Collections.Generic.List[object]
+$RetiredSkillsPath = Join-Path $ScriptRoot "retired-skills.json"
+
+if (-not (Test-Path -LiteralPath $RetiredSkillsPath -PathType Leaf)) {
+    throw "Retired skill registry missing: $RetiredSkillsPath"
+}
+$RetiredRegistry = Get-Content -Raw -LiteralPath $RetiredSkillsPath | ConvertFrom-Json
+if ($RetiredRegistry.schema -ne "ai-skills/retired-skills/v1") {
+    throw "Unsupported retired skill registry schema: $($RetiredRegistry.schema)"
+}
+$RetiredSkills = @($RetiredRegistry.retired_skills)
 
 function Test-GeneratedPackageArtifact {
     param ([string]$Path)
@@ -231,6 +241,23 @@ function Compare-ProviderPackage {
             continue
         }
 
+        foreach ($Retired in $RetiredSkills) {
+            $RetiredName = [string]$Retired.name
+            if ($RetiredName -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+                throw "Unsafe retired skill name in registry: $RetiredName"
+            }
+            $RetiredPath = Join-Path $TargetRoot $RetiredName
+            if (Test-Path -LiteralPath $RetiredPath) {
+                Add-Row `
+                    $ProviderName `
+                    $TargetRoot `
+                    "RetiredSkill" `
+                    $RetiredName `
+                    "RetiredInstalled" `
+                    "Replace with $([string]$Retired.replacement); rerun Install-AgentSkills.ps1"
+            }
+        }
+
         foreach ($File in $Files) {
             Test-FileMatch -ProviderName $ProviderName -TargetRoot $TargetRoot -SourceRoot $PackageRoot -RelativePath $File -Kind "File"
         }
@@ -276,7 +303,7 @@ if ($Rows.Count -eq 0) {
 
 $Rows | Sort-Object Provider, Target, Status, Kind, Path | Format-Table -AutoSize
 
-$Blocking = @($Rows | Where-Object { $_.Status -in @("Missing", "Stale", "SourceMissing") })
+$Blocking = @($Rows | Where-Object { $_.Status -in @("Missing", "Stale", "SourceMissing", "RetiredInstalled") })
 if ($FailOnMissingOrStale -and $Blocking.Count -gt 0) {
-    throw "Local agent skill roots have $($Blocking.Count) missing or stale manifest-listed entries"
+    throw "Local agent skill roots have $($Blocking.Count) missing, stale, or retired entries"
 }

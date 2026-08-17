@@ -724,8 +724,8 @@ the scan probes. The portable skill tracks git-derived metrics only.
 
 This package ships no observer hook layer. Do not claim hooks, agents, or
 slash commands exist unless they are actually present in the current package.
-For periodic collection, run `$observer cycle --auto` manually or via `$loop`
-when a recurring pass is wanted.
+For periodic collection, run `$observer cycle --auto` manually or via
+`$repo-conventions` when a recurring local pass is wanted.
 
 > This section, and Non-Interference Contract rules 7-8, differ between the
 > Claude and Codex packages because the mechanism exists on one side only:

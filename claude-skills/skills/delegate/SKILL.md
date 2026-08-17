@@ -1,6 +1,7 @@
 ---
 name: delegate
 description: "Decide whether a narrow, well-scoped sub-task should go to a LOCAL Ollama model vs stay with the controller, and route it if so. Grounded in the ollama-telemetry MCP delegation tools, with a static-guidance fallback when the MCP server is unavailable. Use when offloading a bounded transform (summarize/classify/extract/rewrite/review/draft) on material the controller already fetched."
+disable-model-invocation: true
 argument-hint: "<command|task> — guidance | check | batch | <task description>"
 allowed-tools: Read, Glob, Grep, mcp__ollama-delegate__ollama_usage_guidance, mcp__ollama-delegate__ollama_readiness, mcp__ollama-delegate__ollama_delegate, mcp__ollama-delegate__ollama_batch_delegate, mcp__ollama-delegate__ollama_fleet_status
 user-invocable: true

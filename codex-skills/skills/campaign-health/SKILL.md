@@ -219,7 +219,7 @@ Writes report to `docs/artifacts/campaign-health-report.md`.
 | `$manager` | Campaign-health goes deeper - stuck detection, orphan finding |
 | `$manager verify` | Include health check in campaign exit criteria |
 | `$observer` | Record health findings as `drift` or `debt` observations |
-| `$loop` | Good candidate for periodic sweep passes |
+| `$repo-conventions` | Good candidate for periodic local sweep passes |
 | `$planner` | Check health before planning to avoid stacking on stuck plans |
 
 ---

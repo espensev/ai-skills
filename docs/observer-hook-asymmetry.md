@@ -9,7 +9,7 @@
   `scripts/hooks/settings-hooks.template.json` configuration.
 - Codex gets **Automation** — a short statement that the package ships no
   observer hook layer, and that periodic collection is run manually with
-  `$observer cycle --auto` or `$loop`.
+  `$observer cycle --auto` or `$repo-conventions`.
 
 The Non-Interference Contract has the matching shape: rules 7 and 8 (hooks
 record automatically, hook traceability) exist in a `{{#claude}}` block only.

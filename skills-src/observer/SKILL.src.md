@@ -2,6 +2,7 @@
 name: observer
 description: "Maintain passive project intelligence by observing, noting, querying, scanning, and synthesizing patterns over time without interfering. Use when the user wants durable project intelligence, passive observation, drift notes, or repo health synthesis."
 {{#claude}}
+disable-model-invocation: true
 argument-hint: "/observe [note|review|list|resolve|stale|scan|synthesize|status|briefing|check|cycle] — project observation system"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Edit, Write
 user-invocable: true
@@ -1000,8 +1001,8 @@ PostToolUse, 10s for SessionStart/SubagentStop.
 {{#codex}}
 This package ships no observer hook layer. Do not claim hooks, agents, or
 slash commands exist unless they are actually present in the current package.
-For periodic collection, run `$observer cycle --auto` manually or via `$loop`
-when a recurring pass is wanted.
+For periodic collection, run `$observer cycle --auto` manually or via
+`$repo-conventions` when a recurring local pass is wanted.
 {{/codex}}
 
 > This section, and Non-Interference Contract rules 7-8, differ between the

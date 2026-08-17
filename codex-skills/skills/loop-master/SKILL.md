@@ -1,6 +1,6 @@
 ---
 name: loop-master
-description: Backward-compatible alias for multi-round orchestration. Routes to loop for the immediate bounded step and to planner/manager for durable multi-agent campaigns. Use when older references invoke loop-master; do not implement separate orchestration logic here.
+description: Backward-compatible alias for multi-round orchestration. Routes to repo-conventions for the immediate bounded step and to planner/manager for durable multi-agent campaigns. Use when older references invoke loop-master; do not implement separate orchestration logic here.
 ---
 
 # Loop Master - Alias
@@ -10,7 +10,8 @@ older references keep resolving.
 
 Route the request to the narrow owning skill:
 
-- **Immediate bounded step** - follow `loop` for one inspect-edit-verify objective.
+- **Immediate bounded step** - follow `repo-conventions` for one
+  inspect-edit-verify objective.
 - **Bounded unknown before planning or editing** - follow `discover`.
 - **Durable multi-agent campaign design** - follow `planner` (add
   `--mode refactor` for phased refactors or migrations).

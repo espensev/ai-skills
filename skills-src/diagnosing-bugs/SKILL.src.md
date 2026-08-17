@@ -2,6 +2,7 @@
 name: diagnosing-bugs
 description: "Build and use a tight feedback loop for hard bugs, failing tests, runtime errors, flaky behavior, and performance regressions. Use when the user asks to diagnose, debug, or fix something broken, throwing, failing, slow, flaky, or regressed."
 {{#claude}}
+disable-model-invocation: true
 argument-hint: "[<symptom|command>] - loop | perf | fix | postmortem"
 allowed-tools: Read, Glob, Grep, Bash, Write
 user-invocable: true

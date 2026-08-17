@@ -2,6 +2,7 @@
 name: delegation-eval
 {{#claude}}
 description: "Evaluate and tune local Ollama delegation using ollama-telemetry eval runs, judge packets, usage metrics, and dispatch recommendations. Use when comparing local models for bounded helper tasks, running controller-assistant or no-interference eval packs, judging eval outputs, reviewing dispatch-rules drift, or deciding whether /delegate model routing should change."
+disable-model-invocation: true
 argument-hint: "<command> [args] - status | run | judge | recommend | update-rules"
 allowed-tools: Read, Glob, Grep, Bash, Edit
 user-invocable: true

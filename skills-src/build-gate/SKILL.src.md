@@ -2,6 +2,7 @@
 name: build-gate
 {{#claude}}
 description: "Validate multi-target build chains, verify artifacts, plan what needs building, and run tests. Use when project.toml defines build-gate targets or coordinated build/test validation is needed."
+disable-model-invocation: true
 argument-hint: "<command> [target] — verify | plan | test | build | all"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true

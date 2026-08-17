@@ -2,6 +2,7 @@
 name: campaign-health
 {{#claude}}
 description: "Analyze campaign/workflow state for health signals: stuck plans, orphaned agents, stale worktrees, state integrity, and complexity trends. Use when reviewing campaign readiness or recovering blocked multi-agent work."
+disable-model-invocation: true
 argument-hint: "<status|stuck|complexity|full> — workflow health check"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true
@@ -230,7 +231,7 @@ Writes report to `docs/artifacts/campaign-health-report.md`.
 | `{{cmd}}manager verify` | Include health check in campaign exit criteria |
 | `{{cmd}}observer` | Record health findings as `drift` or `debt` observations |
 {{#codex}}
-| `{{cmd}}loop` | Good candidate for periodic sweep passes |
+| `{{cmd}}repo-conventions` | Good candidate for periodic local sweep passes |
 {{/codex}}
 | `{{cmd}}planner` | Check health before planning to avoid stacking on stuck plans |
 

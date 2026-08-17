@@ -7,7 +7,8 @@
   - `skills/manager/SKILL.md` for execution orchestration with `scripts/task_manager.py`.
   - `skills/qa/SKILL.md` for test execution, failure triage, and regression coverage.
   - `skills/ship/SKILL.md` for staging and commit packaging.
-  - `skills/loop/SKILL.md` for a single-objective inspect-edit-verify loop.
+  - `skills/repo-conventions/SKILL.md` for repository-first engineering or a
+    single-objective inspect-edit-verify cycle.
   - `skills/loop-master/SKILL.md` for multi-round or multi-agent supervision.
 
 ## Repo Conventions

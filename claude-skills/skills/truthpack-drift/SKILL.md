@@ -1,6 +1,7 @@
 ---
 name: truthpack-drift
 description: "Compare declared truth files (JSON/YAML/TOML fact stores) against the actual codebase to detect divergence. Catches stale single-source-of-truth references. Use when a project ships truth stores like routes.json, schemas.json, or features.toml."
+disable-model-invocation: true
 argument-hint: "<check|file|regen> — validate truth store accuracy against code"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true

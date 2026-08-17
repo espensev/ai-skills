@@ -25,6 +25,7 @@ DEEP_AUDIT_MODE_CONTRACT = SKILLS / "deep-audit" / "references" / "mode-contract
 DEEP_AUDIT_STATE_CONTRACT = SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md"
 MEMORY_MANAGEMENT_SKILL = SKILLS / "memory-management" / "SKILL.md"
 OBSERVER_SKILL = SKILLS / "observer" / "SKILL.md"
+REPO_CONVENTIONS_SKILL = SKILLS / "repo-conventions" / "SKILL.md"
 
 
 class TestSkillDocsContract(unittest.TestCase):
@@ -60,22 +61,18 @@ class TestSkillDocsContract(unittest.TestCase):
             ROOT / "scripts" / "task_runtime" / "telemetry.py",
             ROOT / "scripts" / "task_runtime" / "validation.py",
             ROOT / "docs" / "skill-portability-notes.md",
-            SKILLS / "api-design" / "SKILL.md",
             SKILLS / "audit-gated-subagents" / "SKILL.md",
-            SKILLS / "backend-patterns" / "SKILL.md",
             SKILLS / "deep-audit" / "SKILL.md",
-            SKILLS / "deep-research" / "SKILL.md",
             SKILLS / "discover" / "SKILL.md",
             SKILLS / "documentation-lookup" / "SKILL.md",
-            SKILLS / "e2e-testing" / "SKILL.md",
             SKILLS / "exa-search" / "SKILL.md",
-            SKILLS / "frontend-patterns" / "SKILL.md",
             SKILLS / "manager" / "SKILL.md",
             SKILLS / "mcp-server-patterns" / "SKILL.md",
             SKILLS / "memory-management" / "SKILL.md",
             SKILLS / "observer" / "SKILL.md",
             SKILLS / "planner" / "SKILL.md",
             SKILLS / "qa" / "SKILL.md",
+            SKILLS / "repo-conventions" / "SKILL.md",
             SKILLS / "ship" / "SKILL.md",
             SKILLS / "skill-authoring" / "SKILL.md",
             SKILLS / "usage-stats" / "SKILL.md",
@@ -108,7 +105,7 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("planning_context", text)
         self.assertIn("13 standard plan elements", text)
         self.assertIn("--mode refactor", text)
-        self.assertIn("skills/api-design", text)
+        self.assertIn("skills/repo-conventions", text)
         self.assertIn("skills/audit-gated-subagents", text)
         self.assertIn("skills/deep-audit", text)
         self.assertIn("skills/verification-loop", text)
@@ -147,27 +144,33 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("discover", manifest["default_skills"])
         self.assertIn("qa", manifest["default_skills"])
         self.assertIn("ship", manifest["default_skills"])
-        self.assertIn("api-design", manifest["optional_skills"])
         self.assertIn("audit-gated-subagents", manifest["optional_skills"])
-        self.assertIn("backend-patterns", manifest["optional_skills"])
         self.assertIn("deep-audit", manifest["optional_skills"])
-        self.assertIn("deep-research", manifest["optional_skills"])
         self.assertIn("delegate", manifest["optional_skills"])
         self.assertIn("delegation-eval", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])
         self.assertIn("documentation-lookup", manifest["optional_skills"])
-        self.assertIn("e2e-testing", manifest["optional_skills"])
         self.assertIn("exa-search", manifest["optional_skills"])
-        self.assertIn("frontend-patterns", manifest["optional_skills"])
         self.assertIn("mcp-server-patterns", manifest["optional_skills"])
         self.assertIn("memory-management", manifest["optional_skills"])
         self.assertIn("observer", manifest["optional_skills"])
         self.assertIn("parallel-agents-light", manifest["optional_skills"])
+        self.assertIn("repo-conventions", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
         self.assertIn("skill-authoring", manifest["optional_skills"])
         self.assertIn("usage-stats", manifest["optional_skills"])
         self.assertIn("verification-loop", manifest["optional_skills"])
-        for removed in ("agent-report", "session-stats", "token-audit"):
+        for removed in (
+            "agent-report",
+            "api-design",
+            "backend-patterns",
+            "deep-research",
+            "e2e-testing",
+            "frontend-patterns",
+            "loop",
+            "session-stats",
+            "token-audit",
+        ):
             self.assertNotIn(removed, manifest["optional_skills"])
             self.assertNotIn(removed, manifest["source_only_skills"])
             self.assertFalse((SKILLS / removed).exists(), f"Deleted skill still present: {removed}")
@@ -182,9 +185,54 @@ class TestSkillDocsContract(unittest.TestCase):
     def test_loop_master_is_a_compatibility_alias(self):
         text = LOOP_MASTER_SKILL.read_text(encoding="utf-8")
         self.assertIn("Backward-compatible alias", text)
-        self.assertIn("follow `loop`", text)
+        self.assertIn("follow `repo-conventions`", text)
         self.assertIn("follow `planner`", text)
         self.assertNotIn("## Responsibilities", text)
+
+    def test_repo_conventions_preserves_collapsed_playbooks(self):
+        text = REPO_CONVENTIONS_SKILL.read_text(encoding="utf-8")
+        self.assertIn("name: repo-conventions", text)
+        for heading in (
+            "## Repository-First Workflow",
+            "## Capability Map",
+            "## API Contracts",
+            "## Backend Structure",
+            "## Frontend Structure",
+            "## Browser E2E",
+            "## Current Research",
+            "## Bounded Local Cycle",
+            "## Output Contract",
+        ):
+            self.assertIn(heading, text)
+        for former in (
+            "`api-design` / Start Here",
+            "`backend-patterns` / Workflow",
+            "`frontend-patterns` / Accessibility Rules",
+            "`e2e-testing` / Anti-Flake Rules",
+            "`deep-research` / Research Rules",
+            "`loop` / Output Contract",
+        ):
+            self.assertIn(former, text)
+
+    def test_claude_only_invocation_demotion_does_not_leak_into_codex(self):
+        demoted = (
+            "build-gate",
+            "campaign-health",
+            "delegate",
+            "delegation-eval",
+            "diagnosing-bugs",
+            "docs-sync",
+            "observer",
+            "schema-validator",
+            "skill-authoring",
+            "smart-test",
+            "truthpack-drift",
+            "usage-stats",
+            "worktree-preflight",
+        )
+        for skill in demoted:
+            text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+            self.assertNotIn("disable-model-invocation:", text, skill)
 
     def test_current_docs_match_runtime_verify_surface(self):
         self.assertIn("validates build, tests, and readiness", README.read_text(encoding="utf-8"))

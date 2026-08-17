@@ -10,12 +10,12 @@ deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-55 install-ready skills ship across two provider-specific packages:
+50 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
 | **claude-skills** | 21 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
-| **codex-skills** | 34 | Extended toolkit for Codex: API/engineering patterns, gated audits, deep research, Playwright e2e, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
+| **codex-skills** | 29 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
 
 > Counts reflect each ready package's `package/install-manifest.json`.
 > Explicit `source_only_skills` entries and unmanifested imported material stay as
@@ -54,6 +54,11 @@ Compare the installed Codex and Claude roots against the manifests:
 .\scripts\Compare-AgentSkillRoots.ps1 -Provider Both -FailOnMissingOrStale
 ```
 
+Package installs also prune retired standalone skill directories. The one
+authoritative retirement registry, including each replacement route, is
+[`scripts/retired-skills.json`](scripts/retired-skills.json); both the installer
+and root comparator consume it directly.
+
 ## What's Inside
 
 ### Core campaign skills (shared across packages)
@@ -69,8 +74,9 @@ Compare the installed Codex and Claude roots against the manifests:
 | **ship** | Stage, commit, push validated work with campaign-aware commit grouping |
 | **observer** | Passive project intelligence — observe patterns over time without interfering |
 
-`loop` (codex-skills only) runs focused work loops with repeated
-inspect-edit-verify cycles; it has no claude-skills counterpart.
+`repo-conventions` (codex-skills only) starts from the target repository's own
+rules, then supplies fallback playbooks for APIs, backend/frontend structure,
+Playwright E2E, current research, and bounded inspect-edit-verify cycles.
 
 ### Ops & analytics suite (shared across packages)
 

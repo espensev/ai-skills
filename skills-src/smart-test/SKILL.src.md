@@ -2,6 +2,7 @@
 name: smart-test
 description: "Map changed files to the minimal useful test subset instead of running the full suite. Use for fast feedback before full QA, commit, merge, or build validation."
 {{#claude}}
+disable-model-invocation: true
 argument-hint: "<files|--diff|--map> — run targeted tests or show the source-to-test map"
 allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true

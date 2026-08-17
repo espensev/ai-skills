@@ -2,6 +2,7 @@
 name: skill-authoring
 description: "Create or revise Agent Skills with concise discovery metadata, progressive disclosure, and portable support files. Use when adding a new SKILL.md, changing skill frontmatter, splitting long instructions into references, or preparing Codex/Claude skill packages."
 {{#claude}}
+disable-model-invocation: true
 argument-hint: "<new|revise|audit> <skill-name>"
 user-invocable: true
 {{/claude}}

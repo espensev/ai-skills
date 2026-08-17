@@ -70,6 +70,14 @@ if (-not $SkipUnitTests) {
             throw "DevHome lifecycle contracts failed: $($LifecycleResult.FailedCount)"
         }
     }
+
+    Invoke-Step "Installer retirement contracts" {
+        $InstallerTestPath = Join-Path $RepoRoot "scripts\tests\Install-AgentSkills.Tests.ps1"
+        $InstallerResult = Invoke-Pester -Path $InstallerTestPath -Output Normal -PassThru
+        if ($InstallerResult.FailedCount -ne 0) {
+            throw "Installer retirement contracts failed: $($InstallerResult.FailedCount)"
+        }
+    }
 }
 
 if (-not $SkipParityReport) {

@@ -155,6 +155,26 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("scripts/hooks", manifest["runtime_directories"])
         self.assertIn("scripts/task_runtime", manifest["runtime_directories"])
 
+    def test_always_off_skills_disable_model_invocation(self):
+        demoted = (
+            "build-gate",
+            "campaign-health",
+            "delegate",
+            "delegation-eval",
+            "diagnosing-bugs",
+            "docs-sync",
+            "observer",
+            "schema-validator",
+            "skill-authoring",
+            "smart-test",
+            "truthpack-drift",
+            "usage-stats",
+            "worktree-preflight",
+        )
+        for skill in demoted:
+            text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("disable-model-invocation: true", text, skill)
+
     def test_current_docs_match_runtime_verify_surface(self):
         self.assertIn("validates build, tests, and readiness", README.read_text(encoding="utf-8"))
         self.assertIn("readiness check", PLANNER_SKILL.read_text(encoding="utf-8"))

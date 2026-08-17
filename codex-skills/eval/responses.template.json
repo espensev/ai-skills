@@ -1,25 +1,7 @@
 [
   {
-    "id": "api-design-basic-001",
-    "selected_skill": "api-design",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
     "id": "audit-gated-subagents-basic-001",
     "selected_skill": "audit-gated-subagents",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "backend-patterns-basic-001",
-    "selected_skill": "backend-patterns",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -47,15 +29,6 @@
   {
     "id": "deep-audit-resume-002",
     "selected_skill": "deep-audit",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "deep-research-basic-001",
-    "selected_skill": "deep-research",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -126,44 +99,8 @@
     "notes": ""
   },
   {
-    "id": "e2e-testing-basic-001",
-    "selected_skill": "e2e-testing",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
     "id": "exa-search-basic-001",
     "selected_skill": "exa-search",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "frontend-patterns-basic-001",
-    "selected_skill": "frontend-patterns",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "loop-basic-001",
-    "selected_skill": "loop",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "loop-edge-002",
-    "selected_skill": "loop",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -299,6 +236,69 @@
   {
     "id": "qa-triage-003",
     "selected_skill": "qa",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-api-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-backend-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-cycle-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-cycle-edge-002",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-e2e-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-frontend-basic-001",
+    "selected_skill": "repo-conventions",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "repo-conventions-research-basic-001",
+    "selected_skill": "repo-conventions",
     "output": "",
     "created_files": [],
     "verification_commands": [],

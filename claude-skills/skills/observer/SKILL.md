@@ -1,6 +1,7 @@
 ---
 name: observer
 description: "Maintain passive project intelligence by observing, noting, querying, scanning, and synthesizing patterns over time without interfering. Use when the user wants durable project intelligence, passive observation, drift notes, or repo health synthesis."
+disable-model-invocation: true
 argument-hint: "/observe [note|review|list|resolve|stale|scan|synthesize|status|briefing|check|cycle] — project observation system"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Edit, Write
 user-invocable: true

@@ -106,8 +106,8 @@
     }
   },
   {
-    "id": "loop-basic-001",
-    "skill": "loop",
+    "id": "repo-conventions-cycle-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Iterate locally on a bounded cleanup of skill frontmatter until done.",
     "checks": {
       "must_mention": [
@@ -376,8 +376,8 @@
     }
   },
   {
-    "id": "loop-edge-002",
-    "skill": "loop",
+    "id": "repo-conventions-cycle-edge-002",
+    "skill": "repo-conventions",
     "prompt": "Keep running the test suite every 5 minutes until all tests pass.",
     "checks": {
       "must_mention": [
@@ -397,8 +397,8 @@
     }
   },
   {
-    "id": "api-design-basic-001",
-    "skill": "api-design",
+    "id": "repo-conventions-api-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Design a REST API for the new billing service with proper status codes and pagination.",
     "checks": {
       "must_mention": [
@@ -417,8 +417,8 @@
     }
   },
   {
-    "id": "backend-patterns-basic-001",
-    "skill": "backend-patterns",
+    "id": "repo-conventions-backend-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Structure the new payment handler with proper validation, caching, and error handling.",
     "checks": {
       "must_mention": [
@@ -437,8 +437,8 @@
     }
   },
   {
-    "id": "deep-research-basic-001",
-    "skill": "deep-research",
+    "id": "repo-conventions-research-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Research current best practices for database connection pooling in serverless environments.",
     "checks": {
       "must_mention": [
@@ -471,8 +471,8 @@
     }
   },
   {
-    "id": "e2e-testing-basic-001",
-    "skill": "e2e-testing",
+    "id": "repo-conventions-e2e-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Write a Playwright E2E test for the login flow using stable selectors.",
     "checks": {
       "must_mention": [
@@ -508,8 +508,8 @@
     }
   },
   {
-    "id": "frontend-patterns-basic-001",
-    "skill": "frontend-patterns",
+    "id": "repo-conventions-frontend-basic-001",
+    "skill": "repo-conventions",
     "prompt": "Build an accessible React form component that follows our design system.",
     "checks": {
       "must_mention": [

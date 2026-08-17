@@ -12,8 +12,8 @@ Do not assume Exa exists in every Codex environment.
 
 - Required: none
 - Optional: Exa MCP tools
-- Fallback: built-in web search, primary-source browsing, and the broader
-  `deep-research` workflow
+- Fallback: built-in web search, primary-source browsing, and the current
+  research playbook in `repo-conventions`
 
 ## When to Use
 

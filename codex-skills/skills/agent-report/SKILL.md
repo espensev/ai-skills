@@ -1,20 +1,22 @@
 ---
 name: agent-report
-description: "Analyze agent and subagent performance: tool usage per agent, duration, success rates, model efficiency, and cross-campaign trends. Use when reviewing how a campaign performed or planning model selection for the next one."
+description: "Analyze agent and subagent performance: tool usage per agent, duration, success rates, model efficiency, and cross-campaign trends. Use when reviewing how a campaign performed, comparing agents, or planning model selection for future work."
 ---
 
-# Agent Report - Agent Performance Metrics
+# Agent Report — Agent Performance Metrics
 
 Deep analytics on agent and subagent performance across sessions and campaigns.
 Tracks per-agent tool usage, duration, success rates, model selection efficiency,
 and cross-campaign optimization trends.
 
-Works with campaign agents (from `$manager` orchestration). Complements
-`$campaign-health` (state and stuck detection) with performance-focused metrics.
+Works with campaign agents (from `$manager` orchestration) and, when
+hooks instrumentation is available, ad-hoc subagent spawns. Complements
+`$campaign-health` (state and stuck detection) with performance-focused
+metrics.
 
 **All commands run to completion autonomously.**
 
-**Config:** `.codex/skills/project.toml` - uses `[paths]` for campaign state
+**Config:** `.codex/skills/project.toml` — uses `[paths]` for campaign state
 
 ---
 
@@ -35,7 +37,17 @@ Default to `summary` if no command given.
 
 Before any command, locate agent-relevant data sources:
 
-1. **Campaign state** (orchestrated agents - primary source):
+1. **Hooks JSONL log** (subagent events with timestamps and tool attribution
+   — if hooks instrumentation is configured for this installation; fall back
+   gracefully when missing):
+   ```bash
+   grep -c 'SubagentStart\|SubagentStop' .codex/hooks/logs/hooks-log.jsonl 2>/dev/null
+   ```
+   SubagentStart/Stop events contain agent_type, agent_id, timestamps.
+   PreToolUse/PostToolUse events within agent context carry the agent_id field.
+
+2. **Campaign state** (orchestrated agents — primary source when hooks are
+   absent):
    Read `[paths].state` from project.toml (default: `data/tasks.json`).
    ```bash
    python3 -c "
@@ -48,86 +60,100 @@ Before any command, locate agent-relevant data sources:
    " 2>/dev/null
    ```
 
-2. **Plan files** (agent assignments, complexity tiers, file ownership):
+3. **Plan files** (agent assignments, complexity tiers, file ownership):
    ```bash
    ls data/plans/*.json 2>/dev/null
    ```
 
-3. **Agent spec files** (scope and instructions):
+4. **Agent spec files** (scope and instructions):
    ```bash
    ls agents/agent-*.md 2>/dev/null
    ```
 
-4. **Git log** (per-agent commits via worktree branches):
+5. **Git log** (per-agent commits via worktree branches):
    ```bash
    git log --all --format="%H %ai %s" | grep -i "agent\|worktree\|wt-" | head -20
    ```
 
-5. **Observer data** (agent-linked observations):
+6. **Observer data** (agent-linked observations):
    ```bash
    grep '"agent"' data/observations.jsonl 2>/dev/null | head -5
-   ```
-
-6. **Hooks JSONL log** (optional - if hooks instrumentation is configured for
-   this Codex installation; falls back gracefully if missing):
-   ```bash
-   ls .codex/hooks/logs/hooks-log.jsonl 2>/dev/null
    ```
 
 Report which sources were found. Adapt analysis to available data.
 
 ---
 
-## Command: `summary` - Agent Overview
+## Command: `summary` — Agent Overview
 
 ### Steps
 
-1. **Collect campaign agents** from tasks.json (if exists):
+1. **Collect subagent data** from hooks log (skip if hooks instrumentation
+   is not active):
+   - Parse SubagentStart events: extract agent_id, agent_type, timestamp
+   - Parse SubagentStop events: extract completion timestamp, outcome
+   - Match start/stop pairs by agent_id to compute duration
+   - Filter to current or most recent session (by session_id)
+
+2. **Collect tool usage per agent** (if hooks log available): Filter hooks
+   log PreToolUse/PostToolUse events by the agent_id field. Count tools per
+   agent. Track PostToolUseFailure events for per-agent error rates.
+
+3. **Collect campaign agents** from tasks.json (if exists):
    - Agent name, model, status (pending/running/done/failed), complexity tier
    - Files owned, dependency relationships
    - Start and completion timestamps
 
-2. **Per-agent tool usage** (if hooks log available):
-   - Filter PreToolUse/PostToolUse events by agent_id
-   - Count tools per agent
-   - Track PostToolUseFailure events for per-agent error rates
+4. **Merge data sources**: Combine subagent hook events with campaign agent
+   records. Correlate by timing window and worktree name where possible.
 
-3. **Compute aggregates**:
-   - Total agents in active and recent plans
+5. **Compute aggregates**:
+   - Total agents: session subagents + campaign agents
    - Completion rate: done / (done + failed)
    - Average duration per agent
+   - Average tool calls per agent
    - Model distribution across agents
 
 ### Report
 
 ```
-Agent Report - Summary
+Agent Report — Summary
+
+  Subagents (this session, when hooks instrumentation is active):
+    Total:       4 spawned, 4 completed, 0 failed
+    Avg duration: 1m 24s
+    Avg tools:   11.8 per agent
+
+    Type         Count  Avg Duration  Avg Tools  Success
+    ──────────────────────────────────────────────────────
+    research       2      0:58          10         100%
+    general        1      3:22          24         100%
+    plan           1      0:18           3         100%
 
   Campaign Agents (active campaign):
     Total:       6 agents across 1 plan
     Status:      4 done, 1 running, 1 pending
 
     Agent            Model    Status   Files  Complexity
-    ------------------------------------------------------
-    A-contracts      mini     done       3    low
-    B-core-refactor  standard done       5    medium
-    C-migration      standard done       4    medium
-    D-integration    max      done       2    high
-    E-tests          mini     running    3    low
-    F-docs           mini     pending    2    low
+    ──────────────────────────────────────────────────────
+    A-contracts      mini    done       3    low
+    B-core-refactor  standard   done       5    medium
+    C-migration      standard   done       4    medium
+    D-integration    max     done       2    high
+    E-tests          mini    running    3    low
+    F-docs           mini    pending    2    low
 ```
-
-If hooks instrumentation is active, include a Tool Usage section per agent.
 
 ---
 
-## Command: `detail` - Single Agent Deep Dive
+## Command: `detail` — Single Agent Deep Dive
 
 ### Steps
 
 1. **Identify agent** by ID. Accept:
+   - Subagent ID from hooks log (e.g., `agent-abc123`), when hooks are active
    - Campaign agent name (e.g., `B-core-refactor`)
-   - Positional reference (e.g., `#2` for the second agent in the plan)
+   - Positional reference (e.g., `#2` for the second agent in the session)
 
 2. **Tool breakdown** (from hooks log if available, else from git log):
    Count each tool type used by this agent. Track the chronological tool
@@ -141,12 +167,13 @@ If hooks instrumentation is active, include a Tool Usage section per agent.
 
 4. **Timeline**: Chronological list of tool calls with relative timestamps.
 
-5. **Cost estimate**: Based on estimated tokens and model pricing.
+5. **Cost estimate**: Based on estimated tokens (input from tool results,
+   output from tool calls) and model pricing.
 
 ### Report
 
 ```
-Agent Report - Detail: B-core-refactor
+Agent Report — Detail: B-core-refactor
 
   Type:        Campaign agent (Plan: plan-012)
   Model:       standard
@@ -154,12 +181,20 @@ Agent Report - Detail: B-core-refactor
   Status:      done
   Duration:    12m 45s
 
+  Tool Usage:
+    Read:    12 calls (avg 1.8 KB result)
+    Edit:     8 calls (7 succeeded, 1 failed)
+    Bash:     4 calls (3 test runs, 1 git command)
+    Grep:     3 calls
+    Write:    1 call
+    Total:   28 calls
+
   Files Touched:
     Modified: src/core/engine.py (+45/-12), src/core/config.py (+8/-3)
               src/core/types.py (+22/-0), tests/test_engine.py (+38/-5)
     Read-only: src/utils.py, src/api/handler.py, docs/architecture.md
 
-  Estimated Cost: $0.42 (input ~35K, output ~8K at standard-tier rates)
+  Estimated Cost: $0.42 (input ~35K, output ~8K at standard rates)
 
   Timeline (if hooks log available):
     00:00  Read src/core/engine.py (full file)
@@ -168,28 +203,30 @@ Agent Report - Detail: B-core-refactor
     01:45  Edit src/core/types.py (add new type)
     03:20  Edit src/core/engine.py (4 sequential edits)
     08:00  Bash: run tests
+    09:30  Edit tests/test_engine.py (add tests)
     11:00  Bash: run tests (all pass)
     12:45  DONE
 ```
 
 ---
 
-## Command: `efficiency` - Model Selection Analysis
+## Command: `efficiency` — Model Selection Analysis
 
 ### Steps
 
 1. **Load campaign agents** with their model assignments and complexity tiers
    from tasks.json and plan files.
 
-2. **Calculate cost scenarios**:
+2. **Calculate cost scenarios** using `estimate_campaign_savings()` from
+   telemetry.py or equivalent logic:
    - Tiered cost (actual model assignments)
-   - All-max cost (what if every agent used the strongest tier)
-   - All-mini cost (what if every agent used the lowest-cost tier)
-   - Savings from tiered selection vs all-max
+   - All-Max cost (what if every agent used Max)
+   - All-Mini cost (what if every agent used Mini)
+   - Savings from tiered selection vs all-Max
 
 3. **Evaluate model-task fit**:
-   - Did high-complexity tasks assigned to `max` succeed without retries?
-   - Did low-complexity tasks assigned to `mini` succeed?
+   - Did high-complexity tasks assigned to Max succeed without retries?
+   - Did low-complexity tasks assigned to Mini succeed?
    - Any failures suggesting the assigned model was underpowered?
    - Any successes suggesting the model was overpowered (could downgrade)?
 
@@ -200,31 +237,45 @@ Agent Report - Detail: B-core-refactor
 ### Report
 
 ```
-Agent Report - Model Efficiency
+Agent Report — Model Efficiency
 
   Campaign: plan-012 (6 agents)
 
   Cost Comparison:
     Tiered (actual):  $1.85
-    All-max:          $3.40
-    All-mini:         $0.68
-    Savings vs max:   $1.55 (45.6%)
+    All-Max:         $3.40
+    All-Mini:        $0.68
+    Savings vs Max:  $1.55 (45.6%)
 
   Model Distribution:
-    mini:     3 agents (low complexity)    - $0.21 avg, 100% success
-    standard: 2 agents (medium complexity) - $0.42 avg, 100% success
-    max:      1 agent  (high complexity)   - $0.38 avg, 100% success
+    mini:   3 agents (low complexity)   — $0.21 avg, 100% success
+    standard:  2 agents (medium complexity) — $0.42 avg, 100% success
+    max:    1 agent  (high complexity)   — $0.38 avg, 100% success
 
   Model-Task Fit:
     All agents completed successfully with assigned models.
     No retries or failures suggesting underpowered model selection.
 
+  Per-Model Tool Efficiency (when hooks data is available):
+    Model    Avg Tools/Agent  Avg Duration  Cost/Tool
+    ─────────────────────────────────────────────────
+    mini      8.3             4m 20s       $0.025
+    standard    16.0            12m 30s       $0.026
+    max      22.0            18m 45s       $0.017
+
   Recommendation: Current tiered selection is efficient.
+```
+
+If inefficiencies detected:
+```
+  Recommendation:
+    - Agent A-contracts used max for a low-complexity task — consider mini
+    - Agent E-tests failed twice with mini — consider upgrading to standard
 ```
 
 ---
 
-## Command: `trends` - Cross-Campaign Trends
+## Command: `trends` — Cross-Campaign Trends
 
 ### Steps
 
@@ -234,14 +285,14 @@ Agent Report - Model Efficiency
 2. **Extract per-campaign metrics**:
    - Agent count and model breakdown
    - Completion rate (done / total) and failure rate
-   - Estimated total cost
+   - Estimated total cost (from telemetry data or recalculated)
    - Campaign duration (plan approval to verify completion)
 
 3. **Compute trends over time**:
    - Are campaigns growing larger (more agents per campaign)?
    - Is cost per agent increasing or decreasing?
    - Is the success rate improving?
-   - Is model selection becoming more aggressive (shifting toward `mini`)?
+   - Is model selection becoming more aggressive (shifting toward mini)?
 
 4. **Generate actionable recommendations**:
    - Rising failure rate: suggest more conservative model selection or smaller scope
@@ -252,10 +303,10 @@ Agent Report - Model Efficiency
 ### Report
 
 ```
-Agent Report - Trends (last 5 campaigns)
+Agent Report — Trends (last 5 campaigns)
 
   Campaign          Date      Agents  Success  Cost    Avg Cost/Agent
-  ----------------------------------------------------------------------
+  ──────────────────────────────────────────────────────────────────────
   plan-012          Mar 28      6      100%    $1.85      $0.31
   plan-011          Mar 25      4      100%    $1.52      $0.38
   plan-010          Mar 22      5       80%    $2.10      $0.42
@@ -266,11 +317,11 @@ Agent Report - Trends (last 5 campaigns)
     Success rate:    improving (88% -> 100%)
     Cost/agent:      decreasing ($0.40 -> $0.31, -22%)
     Agents/campaign: stable (5.2 avg)
-    Mini usage:      increasing (25% -> 50%)
+    Mini usage:     increasing (25% -> 50%)
 
   Recommendations:
     Success rate is strong. Consider:
-    - Moving more medium-complexity tasks to `mini` for further savings
+    - Moving more medium-complexity tasks to mini for further savings
     - Current tiered strategy saves ~45% vs all-max
 ```
 
@@ -280,6 +331,8 @@ Agent Report - Trends (last 5 campaigns)
 
 | Skill | How Agent Report Helps |
 |-------|------------------------|
+| `$session-stats` | Provides tool counts that feed per-agent efficiency analysis |
+| `$token-audit` | Provides cost data for per-agent cost attribution |
 | `$campaign-health` | Agent-report adds performance dimension to health checks |
 | `$planner` | Trend data informs model selection for future campaign planning |
 | `$manager verify` | Include agent efficiency in campaign verification checks |
@@ -290,8 +343,10 @@ Agent Report - Trends (last 5 campaigns)
 ## Conventions
 
 - Read-only: never modify campaign state, plans, or agent specs
-- Adapt to available data - campaign agents from tasks.json are the primary surface;
-  hooks log is optional enrichment
+- Adapt to available data — campaign agents from tasks.json are the primary
+  surface; hook-captured subagent events are optional enrichment on an
+  independent data path
 - Report clearly which data sources were found and used
 - Cost estimates use `[pricing]` config when available, else module defaults
-- When comparing models, normalize by complexity tier (do not compare `mini` on easy tasks against `max` on hard tasks)
+- Agent IDs from hooks may not match campaign agent names — correlate by timing and worktree
+- When comparing models, normalize by complexity tier (don't compare mini on easy tasks against max on hard tasks)

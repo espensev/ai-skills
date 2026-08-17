@@ -10,8 +10,9 @@ portable-since: 2026-03-28
 
 # Session Stats — Session Usage Analytics
 
-On-demand analytics dashboard for Claude Code sessions. Parses conversation
-transcripts and hooks logs to provide tool usage breakdown, agent activity
+On-demand analytics dashboard for Claude Code sessions. Parses available
+data sources (telemetry, hooks logs, conversation transcripts, campaign state,
+git activity, observer data) to provide tool usage breakdown, agent activity
 metrics, cost tracking, and cross-session comparisons.
 
 Complements claude-lens (real-time statusline) with deeper, historical analysis.
@@ -69,7 +70,8 @@ cover. Always report WHICH tier produced the numbers.
    If port 8099 is unreachable, fall through **silently** to tier 2/3 — never
    hard-fail and never block on it.
 
-2. **Hooks JSONL log** (tier 2 — richest local source for tool events):
+2. **Hooks JSONL log** (tier 2 — richest local source for tool events, if
+   hooks instrumentation is configured for this installation):
    ```bash
    ls -la .claude/hooks/logs/hooks-log.jsonl 2>/dev/null
    ```
@@ -143,9 +145,12 @@ If **no data sources found**, report clearly and suggest:
    print(f'  Total: {sum(c.values())}')
    "
    ```
-   If hooks log unavailable, parse conversation transcript for tool_use blocks.
+   If hooks log unavailable, parse the conversation transcript for tool_use
+   blocks; failing that, fall back to git log + observer data for a coarser
+   picture.
 
-3. **Count agent spawns** (SubagentStart/SubagentStop events):
+3. **Count agent spawns** (SubagentStart/SubagentStop events, if hooks
+   instrumentation is active):
    ```bash
    grep -c '"SubagentStart"' .claude/hooks/logs/hooks-log.jsonl 2>/dev/null
    ```
@@ -159,7 +164,7 @@ If **no data sources found**, report clearly and suggest:
    git diff --stat HEAD~3 2>/dev/null | tail -1
    ```
 
-6. **Rate limit position**: Read from Claude Code statusline cache if accessible
+6. **Rate limit position**: Read from any accessible rate-limit cache
    (e.g., `/tmp/claude-sl-usage` on Unix).
 
 ### Report
@@ -182,8 +187,11 @@ Session Stats — Summary
 
   Git:         3 commits, 8 files, +142/-37 lines
 
-  Rate Limit:  5h: 32% used | 7d: 15% used
+  Rate Limit:  5h: 32% used | 7d: 15% used   (if available)
 ```
+
+If hooks log is missing, omit the Tool Calls and Agents sections and report
+only the git-derived metrics.
 
 ---
 
@@ -197,7 +205,9 @@ Session Stats — Summary
    Label counts **measured**. If unreachable, skip silently and use tier 2/3.
 
 1. **Load all tool events** from telemetry (tier 1) or, if unavailable, from
-   hooks log or conversation transcript.
+   hooks log or conversation transcript. If none of these sources exists,
+   report that telemetry or hooks instrumentation is required for this
+   command and exit with guidance.
 
 2. **Group by tool name** — count calls per tool:
    - Core: Read, Edit, Write, Bash, Grep, Glob, Agent
@@ -265,12 +275,14 @@ Session Stats — Tool Usage
    Label counts **measured**. If unreachable, skip silently and use tier 2/3.
 
 1. **Load agent events** from telemetry (tier 1), or from hooks log
-   (SubagentStart, SubagentStop) or conversation transcript (Agent tool calls).
+   (SubagentStart, SubagentStop), conversation transcript (Agent tool calls),
+   or `data/tasks.json` for orchestrated campaign agents.
 
 2. **Per-agent metrics**:
    - Agent type (Explore, Plan, general-purpose, custom)
    - Duration (start timestamp to stop timestamp)
-   - Tool calls within agent context (filter by agent_id field in hooks log)
+   - Tool calls within agent context (filter by agent_id in hooks log, when
+     available)
    - Outcome (completed, error, timeout)
 
 3. **Agent type distribution**: Count by type, average duration per type.
@@ -314,8 +326,8 @@ Session Stats — Agent Activity
 
 ### Steps
 
-1. **Build event timeline** from hooks log or conversation transcript, ordered
-   by timestamp.
+1. **Build event timeline** from hooks log, conversation transcript, or git
+   log, ordered by timestamp.
 
 2. **Identify phases** by clustering consecutive tool calls:
    - Research: majority Read, Grep, Glob
@@ -358,8 +370,9 @@ Session Stats — Timeline
 
 ### Steps
 
-1. **Find recent sessions**: Group hooks log events by session_id, or list
-   conversation files sorted by modification time.
+1. **Find recent sessions**: Group hooks log events by session_id, list
+   conversation files sorted by modification time, or fall back to git
+   activity grouped by day.
 
 2. **Extract per-session metrics**: tool count, agent count, duration, dominant
    tool, top tool percentage.
@@ -476,5 +489,6 @@ Optional `[session-stats]` section:
   through silently to tier 2/3.
 - Report which data sources were found and used in every report
 - Use plain text for reports (no ANSI colors — terminal-portable)
-- Session boundaries: use session_id from hooks, or conversation file boundaries
+- Session boundaries: use session_id from hooks, conversation file
+  boundaries, or git activity windows
 - Tool names use Claude Code canonical names (Read, Edit, Write, Bash, Grep, Glob, Agent)

@@ -14,9 +14,10 @@ Deep analytics on agent and subagent performance across sessions and campaigns.
 Tracks per-agent tool usage, duration, success rates, model selection efficiency,
 and cross-campaign optimization trends.
 
-Works with both ad-hoc subagents (Agent tool calls) and campaign agents (from
-`/manager` orchestration). Complements `/campaign-health` (state and stuck
-detection) with performance-focused metrics.
+Works with campaign agents (from `/manager` orchestration) and, when
+hooks instrumentation is available, ad-hoc subagent spawns. Complements
+`/campaign-health` (state and stuck detection) with performance-focused
+metrics.
 
 **All commands run to completion autonomously.**
 
@@ -41,14 +42,17 @@ Default to `summary` if no command given.
 
 Before any command, locate agent-relevant data sources:
 
-1. **Hooks JSONL log** (subagent events with timestamps and tool attribution):
+1. **Hooks JSONL log** (subagent events with timestamps and tool attribution
+   — if hooks instrumentation is configured for this installation; fall back
+   gracefully when missing):
    ```bash
    grep -c 'SubagentStart\|SubagentStop' .claude/hooks/logs/hooks-log.jsonl 2>/dev/null
    ```
    SubagentStart/Stop events contain agent_type, agent_id, timestamps.
    PreToolUse/PostToolUse events within agent context carry the agent_id field.
 
-2. **Campaign state** (orchestrated agents):
+2. **Campaign state** (orchestrated agents — primary source when hooks are
+   absent):
    Read `[paths].state` from project.toml (default: `data/tasks.json`).
    ```bash
    python3 -c "
@@ -89,15 +93,16 @@ Report which sources were found. Adapt analysis to available data.
 
 ### Steps
 
-1. **Collect subagent data** from hooks log:
+1. **Collect subagent data** from hooks log (skip if hooks instrumentation
+   is not active):
    - Parse SubagentStart events: extract agent_id, agent_type, timestamp
    - Parse SubagentStop events: extract completion timestamp, outcome
    - Match start/stop pairs by agent_id to compute duration
    - Filter to current or most recent session (by session_id)
 
-2. **Collect tool usage per agent**: Filter hooks log PreToolUse/PostToolUse
-   events by the agent_id field. Count tools per agent. Track
-   PostToolUseFailure events for per-agent error rates.
+2. **Collect tool usage per agent** (if hooks log available): Filter hooks
+   log PreToolUse/PostToolUse events by the agent_id field. Count tools per
+   agent. Track PostToolUseFailure events for per-agent error rates.
 
 3. **Collect campaign agents** from tasks.json (if exists):
    - Agent name, model, status (pending/running/done/failed), complexity tier
@@ -119,7 +124,7 @@ Report which sources were found. Adapt analysis to available data.
 ```
 Agent Report — Summary
 
-  Subagents (this session):
+  Subagents (this session, when hooks instrumentation is active):
     Total:       4 spawned, 4 completed, 0 failed
     Avg duration: 1m 24s
     Avg tools:   11.8 per agent
@@ -151,12 +156,13 @@ Agent Report — Summary
 ### Steps
 
 1. **Identify agent** by ID. Accept:
-   - Subagent ID from hooks log (e.g., `agent-abc123`)
+   - Subagent ID from hooks log (e.g., `agent-abc123`), when hooks are active
    - Campaign agent name (e.g., `B-core-refactor`)
    - Positional reference (e.g., `#2` for the second agent in the session)
 
-2. **Tool breakdown**: Count each tool type used by this agent. Track the
-   chronological tool sequence from first call to last.
+2. **Tool breakdown** (from hooks log if available, else from git log):
+   Count each tool type used by this agent. Track the chronological tool
+   sequence from first call to last.
 
 3. **File activity** (from git log filtered to agent's worktree branch, or
    from campaign state files_owned list):
@@ -195,7 +201,7 @@ Agent Report — Detail: B-core-refactor
 
   Estimated Cost: $0.42 (input ~35K, output ~8K at sonnet rates)
 
-  Timeline:
+  Timeline (if hooks log available):
     00:00  Read src/core/engine.py (full file)
     00:15  Grep for usage of old interface
     00:30  Read 3 dependent files
@@ -255,7 +261,7 @@ Agent Report — Model Efficiency
     All agents completed successfully with assigned models.
     No retries or failures suggesting underpowered model selection.
 
-  Per-Model Tool Efficiency:
+  Per-Model Tool Efficiency (when hooks data is available):
     Model    Avg Tools/Agent  Avg Duration  Cost/Tool
     ─────────────────────────────────────────────────
     haiku      8.3             4m 20s       $0.025
@@ -342,7 +348,9 @@ Agent Report — Trends (last 5 campaigns)
 ## Conventions
 
 - Read-only: never modify campaign state, plans, or agent specs
-- Adapt to available data — campaign agents and ad-hoc subagents are independent data paths
+- Adapt to available data — campaign agents from tasks.json are the primary
+  surface; hook-captured subagent events are optional enrichment on an
+  independent data path
 - Report clearly which data sources were found and used
 - Cost estimates use `[pricing]` config when available, else module defaults
 - Agent IDs from hooks may not match campaign agent names — correlate by timing and worktree

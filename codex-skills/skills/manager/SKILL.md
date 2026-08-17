@@ -41,10 +41,20 @@ backend primitives now include `go`, `attach`, `result`, `recover`, `merge`,
 | `merge` | `$manager merge` | Skill-level workflow: merge completed agent worktrees into main working tree |
 | `verify` | `$manager verify` | Skill-level workflow: post-merge validation + readiness assessment |
 | `new` | `$manager new <name> [scope]` | Quick-add a single agent |
-| `review` | `$manager review <agents>` | Skill-level workflow: review completed work and update tracker |
+| `review` | `$manager review <agent>` | Review a completed agent's work: read spec, check diff, mark complete |
 | `next` | `$manager next` | Auto-advance: launch whatever is ready |
 
 Default to `status` if no command given.
+
+### When to use `go` vs `plan` + `run`
+
+| Scenario | Use | Why |
+|----------|-----|-----|
+| Feature work with clear scope | `$manager go` | End-to-end autonomous; fastest path |
+| First campaign in unfamiliar codebase | `$manager plan` then review, then `$manager run ready` | Lets you inspect the plan and specs before committing |
+| Refactor with high coordination cost | `$manager plan` then review | Refactors benefit from human sign-off on decomposition |
+| Quick fix (1-2 agents) | `$manager go` | Overhead of review outweighs risk |
+| Follow-up campaign after a failure | `$manager plan` then review | Understand what went wrong before re-executing |
 
 ---
 
@@ -99,13 +109,13 @@ UI surfaces, and high-overlap hotspots.
 
 Use feedback in this order:
 
-1. explicit user correction or changed requirement
-2. build, typecheck, lint, smoke, or test failure with concrete output
-3. blocker, regression, or workaround evidence from prior runs
+1. explicit user correction or requirement change
+2. failing build, test, lint, or verify output
+3. `$observer` blocker or regression signals
 4. plan drift between JSON, docs, tracker, and code
 
-A single weak signal should shape the current run only. Reusable or repeated
-signals should be turned into durable feedback artifacts or eval cases.
+Treat single weak signals as local context. Promote repeated or reusable ones
+into observer records or eval cases so future runs start from better evidence.
 
 ### Autonomous Addition Policy
 
@@ -301,6 +311,19 @@ the user can launch with `$manager run ready`.
 Launch agents in parallel isolated worktrees. **Always auto-advances through
 all dependency groups until every agent is done or failed.**
 
+### Pre-launch spec validation
+
+Before launching any agent, validate all spec files for the agents about to run:
+
+1. Read each spec file (`agents/agent-{letter}-{name}.md`)
+2. Reject any spec that contains `TODO` placeholders — report the offending
+   file and stop. The planner (or user) must fill the spec before launch.
+3. Confirm the spec has a non-empty `## Task` section and a `## Verification`
+   section with at least one command.
+
+If any spec fails validation, report the issue and do not launch. This prevents
+agents from starting work with broken or incomplete instructions.
+
 ### Steps:
 
 1. **Get launch specs:**
@@ -310,25 +333,20 @@ all dependency groups until every agent is done or failed.**
    If the backend is waiting for execution, it outputs JSON with agent prompts.
 
 2. **Parse the JSON.** For each agent in the `agents` array, launch:
-   - `subagent_type`: `"general-purpose"`
-   - `model`: honor the JSON `model` field as the requested launch tier
-   - `isolation`: `"worktree"`
-   - `run_in_background`: `true`
-   - `prompt`: from the JSON `prompt` field
+   a background worker in an isolated worktree with the JSON `prompt` field
+   as its task, honoring the JSON `model` field as the requested launch tier.
 
-   For Codex launches, treat the backend `model` field as an abstract tier:
-   - `mini` -> prefer `GPT-5.3-Codex-Spark` when available
-   - `standard` -> use the normal general-purpose coding model
-   - `max` -> use the strongest available coding model
-
-   Prefer `GPT-5.3-Codex-Spark` for bounded background subagents, sidecar
-   research, docs, and test-focused work when the task fits the low tier. This
-   preserves higher-capability model budget for integration-heavy or ambiguous
-   tasks, and it may use separate limits when Codex exposes them separately.
-   If the preferred model is unavailable, fall back to the closest stronger
+   Map the backend `model` tier to the Codex model lineup: `mini` → the
+   current low-cost Codex tier, `standard` → the normal general-purpose
+   coding model, `max` → the strongest available coding model. Prefer the
+   low tier for bounded background subagents, sidecar research, docs, and
+   test-focused work when the task fits it — this preserves
+   stronger-model budget for integration-heavy or ambiguous tasks, and it
+   may use separate limits when Codex exposes them separately. If the
+   preferred model is unavailable, fall back to the closest stronger
    available model rather than blocking launch.
 
-   **CRITICAL:** Launch ALL agents in a SINGLE message with multiple Agent tool calls.
+   **CRITICAL:** Launch all agents of a group together so they run in parallel.
 
 3. **Report launch status.**
 
@@ -418,6 +436,18 @@ state directly.
 - **Same-group agents** — manual merge, keep both contributions.
 - **Never silently drop changes** — report every conflict and resolution.
 
+### Observation promotion
+
+After merging worktrees, check each merged worktree path for `observations.jsonl`.
+If present, promote observations to the project-level log:
+
+1. Read and parse the JSONL file from the worktree root
+2. Append each observation to `data/observations.jsonl`
+3. Report promoted observation count per worktree
+
+This feeds `$observer synthesize` with execution-time signals (test results,
+build errors, churn, blockers) that improve future planning.
+
 ---
 
 ## Command: `verify` — Post-Merge Validation
@@ -495,14 +525,41 @@ Produce a summary with:
 - **Drift findings**: optional follow-up audit findings, if any
 - **Stale state**: items cleaned up (or "none")
 - **Blockers**: anything that would prevent the next `go` from succeeding
+- **Observer flags**: if `data/observations.jsonl` contains recent `blocker` (warning), `regression` (failure), or `workaround` (warning/debt) observations
 - **Feedback handoff**: which findings should stay local, enter observer
-  artifacts, or become eval cases
+  records, or become eval cases — recorded for future planning, not just
+  mentioned in the current report
+
+### Refactor-aware verification
+
+When the active plan includes refactor elements (R1, R2, R3 from the planning
+contract's refactor mode), verify adds these checks:
+
+- **R2 — Behavioral invariants:** For each invariant listed in the plan, confirm
+  the behavior is preserved (run the test or command that exercises it). Report
+  any broken invariant as a verify failure.
+- **R3 — Rollback strategy:** Confirm the rollback mechanism described in the
+  plan is still viable (e.g., the backup branch exists, the migration has a
+  down path). Report as a warning if rollback readiness cannot be confirmed.
 
 ### Integration with `go`:
 
 The `go` command's full lifecycle is: `plan` → backend `go` → `merge` → `verify`.
 If `verify` finds test failures or build errors after merge, it reports them
 but does not attempt auto-fixes (that would exceed merge scope).
+
+### Discovery-replan during execution
+
+If during `run` or `merge` an agent reports a blocker that requires more
+research (e.g., an undocumented API, an unexpected dependency):
+
+1. Mark the agent as `failed` with a clear reason.
+2. Continue with remaining agents (standard error recovery).
+3. In the final summary, recommend: `$discover {targeted question}` followed by
+   re-planning to address the gap.
+
+Do not pause the entire pipeline for discovery — complete what can be completed,
+then report what needs further research.
 
 ### Optional durable feedback
 
@@ -556,14 +613,23 @@ Then fill in the spec file with Edit tool.
 
 ## Command: `review`
 
-1. Read agent spec + diff/changes
-2. Run verification from spec
-3. Generate compliance report
-4. Update backend:
+Skill-level workflow (no dedicated backend primitive — orchestrates existing
+primitives and tools):
+
+1. **Read** the agent spec (`agents/agent-<letter>-<name>.md`) and the agent's
+   reported diff/changes (from `result` payload or worktree inspection)
+2. **Run verification** steps listed in the spec's `## Verification` section
+3. **Assess compliance**: do the changes satisfy the spec's scope and exit
+   criteria?
+4. **Mark complete** via backend:
    ```bash
-   python scripts/task_manager.py complete <letter> -s "<summary>"
+   python scripts/task_manager.py complete <letter> -s "<one-line summary>"
    ```
-5. Edit the tracker file with a tracker entry
+   If the work does not meet criteria, mark failed instead:
+   ```bash
+   python scripts/task_manager.py fail <letter> -r "<reason>"
+   ```
+5. **Update tracker** file with a tracker entry (if tracker is configured)
 
 ---
 
@@ -601,6 +667,35 @@ Report failures in the final summary. Do not halt the pipeline for a single fail
 
 ---
 
+## Tracker File
+
+The tracker file (configured in `[paths].tracker` in project.toml) is a
+markdown file that records completed work across campaigns. It provides
+continuity between campaigns so planners and managers can see what was done
+recently.
+
+**Format:** Markdown table with these columns:
+
+```markdown
+| ID | Status | Owner | Scope | Issue | Update |
+|---|---|---|---|---|---|
+| PROJ-001 | Done | agent-a | `src/app.py` | Add endpoint | Added /api/foo route |
+```
+
+**When to update:**
+- After `$manager review` marks an agent complete (step 5 of review)
+- After `$manager verify` passes (append a campaign summary row)
+- After `$manager go` completes the full lifecycle
+
+**Who updates:** The manager (or the agent, if the spec includes a
+post-completion tracker section). Never update the tracker before the work
+is verified — tracker entries represent completed, validated work.
+
+**Ship behavior:** `$ship` classifies the tracker file as a "warn" file —
+it will be staged for commit but flagged for review.
+
+---
+
 ## Conventions
 
 - Read `.codex/skills/project.toml` for all project-specific paths and commands
@@ -609,5 +704,5 @@ Report failures in the final summary. Do not halt the pipeline for a single fail
 - Specs: `agents/agent-{letter}-{name}.md` (or path from `[paths].specs`)
 - Letters sequential (a-z, then aa, ab, etc.)
 - Always honor the backend `model` tier when launching subagents
-- Always `isolation: "worktree"` for launches
+- Always launch agents in isolated worktrees
 - Always verify before declaring done

@@ -118,7 +118,7 @@ Use feedback in this order:
 4. plan drift between JSON, docs, tracker, and code
 
 Treat single weak signals as local context. Promote repeated or reusable ones
-into observer records so future runs start from better evidence.
+into observer records or eval cases so future runs start from better evidence.
 
 ### Autonomous Addition Policy
 
@@ -337,9 +337,18 @@ agents from starting work with broken or incomplete instructions.
 
 2. **Parse the JSON.** For each agent in the `agents` array, launch:
    - `subagent_type`: `"general-purpose"`
+   - `model`: honor the JSON `model` field as the requested launch tier
    - `isolation`: `"worktree"`
    - `run_in_background`: `true`
    - `prompt`: from the JSON `prompt` field
+
+   Map the backend `model` tier to Claude models: `mini` → Haiku,
+   `standard` → Sonnet, `max` → Opus. Prefer the low tier for bounded
+   background subagents, sidecar research, docs, and test-focused work when
+   the task fits it — this preserves stronger-model budget for
+   integration-heavy or ambiguous tasks. If the preferred model is
+   unavailable, fall back to the closest stronger available model rather
+   than blocking launch.
 
    **CRITICAL:** Launch ALL agents in a SINGLE message with multiple Agent tool calls.
 
@@ -521,8 +530,9 @@ Produce a summary with:
 - **Stale state**: items cleaned up (or "none")
 - **Blockers**: anything that would prevent the next `go` from succeeding
 - **Observer flags**: if `data/observations.jsonl` contains recent `blocker` (warning), `regression` (failure), or `workaround` (warning/debt) observations
-- **Feedback handoff**: which findings should be recorded for future planning,
-  not just mentioned in the current report
+- **Feedback handoff**: which findings should stay local, enter observer
+  records, or become eval cases — recorded for future planning, not just
+  mentioned in the current report
 
 ### Refactor-aware verification
 
@@ -554,6 +564,17 @@ research (e.g., an undocumented API, an unexpected dependency):
 
 Do not pause the entire pipeline for discovery — complete what can be completed,
 then report what needs further research.
+
+### Optional durable feedback
+
+If the repo already uses observer artifacts, or the user explicitly asks for a
+feedback trail:
+
+- record evidence-backed blockers, regressions, and drift in
+  `data/observations.jsonl`
+- refresh `docs/observer/project-intelligence.md` when the summary is stale
+- convert recurring blocker/regression patterns into durable observations via
+  `/observe note` so the next campaign starts from better evidence
 
 ---
 
@@ -686,5 +707,6 @@ it will be staged for commit but flagged for review.
 - Plan documents: `docs/campaign-{plan-id}-{slug}.md`
 - Specs: `agents/agent-{letter}-{name}.md` (or path from `[paths].specs`)
 - Letters sequential (a-z, then aa, ab, etc.)
-- Always `isolation: "worktree"` for launches
+- Always honor the backend `model` tier when launching subagents
+- Always launch agents in isolated worktrees
 - Always verify before declaring done

@@ -12,8 +12,9 @@ portable-since: 2026-03-28
 
 Deep-dive into token consumption patterns across sessions. Tracks per-turn
 token estimates, cost attribution by tool type, budget management, and
-rate-limit forecasting. Complements claude-lens (real-time quota display)
-with analytical depth and historical tracking.
+rate-limit forecasting.
+Complements claude-lens (real-time quota display) with analytical depth and
+historical tracking.
 
 **All commands run to completion autonomously.**
 
@@ -84,12 +85,13 @@ Always report WHICH tier produced the numbers.
    ```
    Find the latest file matching the current project directory hash.
 
-2. **Hooks JSONL log** (Tier 2 — tool call metadata with timestamps):
+2. **Hooks JSONL log** (Tier 2 — tool call metadata with timestamps, if hooks
+   instrumentation is configured for this installation):
    ```bash
    ls .claude/hooks/logs/hooks-log.jsonl 2>/dev/null
    ```
 
-3. **Claude Code rate-limit cache** (if lens or similar is active):
+3. **Rate-limit cache** (if a statusline or similar surface is active):
    ```bash
    ls /tmp/claude-sl-usage 2>/dev/null    # Unix lens cache
    ```
@@ -104,8 +106,8 @@ Always report WHICH tier produced the numbers.
    ls data/token-history.jsonl 2>/dev/null
    ```
 
-6. **Pricing config** in project.toml `[pricing]` section (falls back to
-   module defaults if absent).
+6. **Pricing config** in project.toml `[pricing]` section (when absent,
+   follow the *Model pricing* rule in the estimation method below).
 
 ---
 
@@ -136,13 +138,11 @@ fall back to this estimation pipeline (Tier 2/3):
    - Grep/Glob: result set -> input tokens
    - Write: file content -> output tokens
 
-4. **Model pricing** from `[pricing]` config or defaults:
-
-   | Model | Input ($/1M tokens) | Output ($/1M tokens) |
-   |-------|---------------------|----------------------|
-   | Haiku | $1.00 | $5.00 |
-   | Sonnet | $3.00 | $15.00 |
-   | Opus | $5.00 | $25.00 |
+4. **Model pricing** from the `[pricing]` config. Never price from memory:
+   when `[pricing]` is absent, prefer Tier 1 telemetry cost totals (already
+   priced at ingestion time); otherwise look up the provider's current
+   published rates and label the source. If neither is available, report token
+   counts without dollar figures rather than inventing prices.
 
 All estimates are clearly labelled as approximate. Actual API billing may differ
 due to caching, batching, and prompt caching discounts.
@@ -197,7 +197,7 @@ Token Audit — Status
     Current:   ~145K tokens/hour
     Sustained: ~120K tokens/hour (session average)
 
-  Rate Limits:
+  Rate Limits (if available):
     5h window: 32% used, 3h 28m remaining
     7d window: 15% used, 6d 2h remaining
 
@@ -261,7 +261,7 @@ Token Audit — Breakdown
 
   Heaviest Turns:
     Turn 5:  ~45K tokens (large file read: src/engine.py, 1200 lines)
-    Turn 12: ~38K tokens (agent spawn: Explore codebase)
+    Turn 12: ~38K tokens (agent spawn: codebase research)
     Turn 8:  ~22K tokens (bash: full test suite output)
 
   Optimization Tips:
@@ -325,7 +325,7 @@ spend tracking.
 
 ### Steps
 
-1. **Current rate limit position**: Parse from Claude Code statusline cache,
+1. **Current rate limit position**: Parse from any available rate-limit cache,
    hooks log event frequency, or conversation transcript size growth.
 
 2. **Calculate depletion time**: At the current burn rate, when does each
@@ -368,7 +368,7 @@ If pace is tight:
     - Reduce effort level (effort=default instead of high)
     - Use Read with offset/limit to avoid full-file reads
     - Batch related questions into fewer turns
-    - Prefer Haiku agents for research tasks
+    - Prefer `haiku`-tier agents for research tasks
 ```
 
 ---
@@ -494,4 +494,6 @@ the canonical `*_input` / `*_output` key wins.
 - Write targets limited to: `data/token-budget.json`, `data/token-history.jsonl`
 - Always report which data tier (1/2/3) produced the numbers
 - Use conservative estimates (round up) when tracking against budgets
-- Pricing defaults match Anthropic public list pricing; override in `[pricing]`
+- Any built-in pricing values are package placeholders, not live rates;
+  override them in `[pricing]` with current published rates for the models in
+  use

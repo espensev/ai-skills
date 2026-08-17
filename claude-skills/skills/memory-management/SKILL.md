@@ -8,18 +8,27 @@ extracted-from: jau123/claude-memory-manager
 portable-since: 2026-07-02
 ---
 
-# Memory Management — Typed Schema, Locality Routing, Index Budget
+# Memory Management — Durable Memory Hygiene
 
-Keeps the auto-memory library searchable as it grows: a typed write spec, a
-routing rule for where each fact belongs, and a character-accurate budget for
-the index — plus an audit tool that flags drift before it costs recall.
+Keeps durable project memory searchable as it grows: a typed write spec, a
+routing rule for where each fact belongs, and budget discipline for the
+always-loaded surface — plus an audit pass that flags drift before it costs
+recall.
 
-**Scope:** `/observer` owns passive project intelligence (observation logs,
-synthesis). Memory-management owns memory hygiene — schema, placement,
-budget, and audits. Prefer `/observer` for "watch and record patterns over
-time"; prefer this skill for "write, reorganize, or audit durable memory."
+## Scope
 
----
+`/observe` owns passive project intelligence (observation logs,
+synthesized health notes). Memory-management owns memory hygiene — schema,
+placement, budget, and audits for durable conventions and lessons. Prefer
+`/observe` when the ask is "watch and record patterns over time";
+prefer this skill when the ask is "write, reorganize, or audit durable
+memory."
+
+## Dependencies
+
+- Required: none.
+- Optional: `/observe` for the observation log this skill promotes
+  lessons from.
 
 ## Commands
 
@@ -33,13 +42,12 @@ time"; prefer this skill for "write, reorganize, or audit durable memory."
 Default to `route` when the request is a bare fact, `record` when it is
 explicitly a lesson to save.
 
----
-
 ## Discipline Core
 
-> These principles are provider-portable, but Claude and Codex memory mechanics
-> intentionally differ. Review the sibling package when changing this section;
-> do not copy provider-specific paths or write contracts blindly.
+> Shared core: sections 1–8 are kept identical across the claude-skills and
+> codex-skills packages; the provider mechanics sections below intentionally
+> differ. Change both packages together, and never copy provider-specific
+> paths or write contracts across sides.
 
 ### 1. Decide whether it is worth recording
 
@@ -221,11 +229,41 @@ the package checkout with `--dir`.
 
 ---
 
+## Machine Provenance
+
+Machine-sensitive memories must distinguish the controller from any target:
+
+- `machine_scope`: `local`, `remote`, `shared`, `portable`, or `unknown`
+- `controller_machine_id`: the verified machine running the agent
+- `target_machine_ids`: explicitly named remote targets, if any
+- `transport`: `local`, `ssh`, `shared`, or `unknown`
+
+Never infer a machine from a working directory, username, repository history,
+snapshot filename, or prose mention. For new machine-sensitive memory, stop if
+controller or target identity cannot be verified. Historical material stays
+`unknown` unless provenance can be proved; do not manufacture certainty during
+backfill.
+
+---
+
+## Workflow
+
+1. Classify the request: recall → read; explicit lesson → propose/record;
+   correction → update; bare fact → route; "clean up memory" → audit.
+2. For recall: search the always-loaded index first, then only the one or two
+   backing topic files needed; verify drift-prone facts live when practical.
+3. For `record` or `update`: apply the gate and schema, determine machine
+   scope, then write the topic file and index entry per the mechanics above.
+4. For `audit`: run the provider audit surface described in the mechanics
+   section and report violations without auto-fixing them.
+
+---
+
 ## Integration
 
 | Skill | How Memory Management Helps |
 |-------|------------------------------|
-| `/observer` | Observer records observations; memory-management routes durable lessons into schema-clean memory |
+| `/observe` | Observer records observations; memory-management routes durable lessons into schema-clean memory |
 | `/docs-sync` | Docs drift checks complement memory audits — different truth surfaces |
 | `/review` | Review findings worth keeping become `feedback` entries with a Why |
 | `/qa` | Repeated QA findings are second-hit signals — record them |
@@ -237,6 +275,19 @@ the package checkout with `--dir`.
 - Propose-then-confirm for vague triggers; never bulk-write memory unprompted.
 - Update before create; no new index groups once grouping is frozen.
 - Descriptions carry scenario keywords + conclusion, ≤ 160 chars.
-- The audit tool is read-only; violations are reported, never auto-fixed.
-- Keep provider-neutral discipline aligned where applicable, while preserving
-  each provider's distinct memory authority and write surface.
+- Audits are read-only; violations are reported, never auto-fixed.
+- Current project trackers and verified live state outrank historical memory.
+- Do not report unverified historical or machine-specific claims as current.
+- Keep provider-neutral discipline aligned across the sibling packages, while
+  preserving each provider's distinct memory authority and write surface.
+
+---
+
+## Output
+
+Default response shape:
+
+1. Placement decision or findings, including machine scope when relevant.
+2. What was written (entry, update, or note), when the user authorized a write.
+3. Self-check or audit results.
+4. Anything deferred for confirmation or follow-up.

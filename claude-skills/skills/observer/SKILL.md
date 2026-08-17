@@ -1,6 +1,6 @@
 ---
 name: observer
-description: "Maintain passive project intelligence by observing, noting, querying, scanning, and synthesizing patterns over time without interfering. Use when the user wants durable project memory, passive observation, drift notes, or repo health synthesis."
+description: "Maintain passive project intelligence by observing, noting, querying, scanning, and synthesizing patterns over time without interfering. Use when the user wants durable project intelligence, passive observation, drift notes, or repo health synthesis."
 argument-hint: "/observe [note|review|list|resolve|stale|scan|synthesize|status|briefing|check|cycle] — project observation system"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Edit, Write
 user-invocable: true
@@ -14,6 +14,17 @@ time. Records decisions, spots patterns, flags drift, and synthesizes a living
 intelligence document — without interrupting active work.
 
 The observer never runs automatically. It only acts when you invoke it.
+This is not the user's cross-workspace memory store — durable personal
+memory belongs to `/memory-management`.
+
+## Scope
+
+- Prefer this skill for passive observation and project-health summaries.
+- Prefer `/discover` when the goal is bounded pre-change research for
+  one question set.
+- Prefer `/qa` when the user wants test execution or failure triage.
+- Prefer `/review` when the goal is diff review, not longitudinal
+  observation.
 
 **Storage:** File-based JSONL at `data/observations.jsonl` by default. Repos with
 a richer backend (e.g., SQLite campaign DB) can configure `[observer].backend`
@@ -84,16 +95,26 @@ Every observation has these fields:
 | `warning` | Needs attention | Drift, soft threshold crossings, growing debt |
 | `critical` | Blocks progress | Build failures, enforcement breaches, regressions |
 
+For machine-sensitive observations, also capture `machine_scope`, the verified
+`controller_machine_id`, explicit `target_machine_ids`, and `transport`. Never
+infer a machine from paths, repository history, or peer snapshot filenames.
+Stop before writing a machine-sensitive observation if the controller or any
+target identity cannot be verified. Do not substitute a hostname, alias,
+username, path, or prose mention for a verified machine ID. Use `unknown` only
+for clearly labelled legacy data.
+
 ---
 
 ## Feedback Prioritization
 
-Prefer recording these signals:
+Prefer recording these signals, in this order:
 
-- explicit user corrections
-- failing verification commands with concrete output
+- explicit user corrections or rejections
+- failing build, lint, typecheck, smoke-test, or verification commands with
+  concrete output
 - repeated workarounds or repeated reviewer findings
 - drift that changes how the next agent should plan or verify
+- successful fixes that closed a real regression
 
 Do not turn a one-off weak signal into durable project memory unless it is
 evidence-backed and likely to change future behavior.
@@ -813,3 +834,47 @@ PostToolUse, 10s for SessionStart/SubagentStop.
 8. **Hook traceability** — all hook-recorded observations are tagged with
    `actor: "hook:<name>"` so they can be distinguished from skill-recorded
    observations in queries and synthesis.
+
+---
+
+## Promotion Rules
+
+- Record one-off incidents as observations when they explain the current state.
+- Promote recurring regressions and blockers by keeping them `open` with
+  raised severity so `/observe check` gates on them, and surface them in
+  `/manager verify` reports.
+- Only turn user preference into a reusable pattern after repetition or an
+  explicit request to codify it.
+
+---
+
+## Rules
+
+- Do not invent backend commands that the repo does not implement.
+- Do not auto-record speculative observations from weak signals.
+- Do not use observer artifacts as a parallel Claude Code native-memory store.
+- Do not replace `/discover`, `/planner`, `/manager`, or
+  `/qa`; enrich them.
+- When a finding is really a blocking bug or regression, say so explicitly
+  rather than burying it in a vague summary.
+
+---
+
+## Package Fit
+
+In `claude-skills`, observer is an optional engineering skill that keeps durable
+notes about drift and recurring risks, summarizes cross-session project
+health, gives `/discover` and `/planner` richer context when the
+user asks for it, and stays file-based and stdlib-friendly. It is not a
+guaranteed runtime command surface in `scripts/task_manager.py`.
+
+---
+
+## Output
+
+Default response shape:
+
+1. current observation state or requested synthesis
+2. evidence-backed observations to add or update
+3. resulting artifacts changed
+4. next useful command or follow-up skill

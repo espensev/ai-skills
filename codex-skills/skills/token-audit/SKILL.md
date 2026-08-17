@@ -1,9 +1,9 @@
 ---
 name: token-audit
-description: "Track token consumption, cost attribution, budget management, and rate-limit forecasting across sessions. Use when reviewing session cost or setting per-session budgets."
+description: "Track token consumption, cost attribution, budget management, and rate-limit forecasting across sessions. Use when reviewing session cost, setting budgets, or forecasting rate-limit pressure."
 ---
 
-# Token Audit - Token & Cost Intelligence
+# Token Audit — Token & Cost Intelligence
 
 Deep-dive into token consumption patterns across sessions. Tracks per-turn
 token estimates, cost attribution by tool type, budget management, and
@@ -11,7 +11,7 @@ rate-limit forecasting.
 
 **All commands run to completion autonomously.**
 
-**Config:** `.codex/skills/project.toml` - `[token-audit]` and `[pricing]` sections (optional)
+**Config:** `.codex/skills/project.toml` — `[token-audit]` and `[pricing]` sections (optional)
 
 ---
 
@@ -32,26 +32,26 @@ Default to `status` if no command given.
 ## Setup: Discover Token Data
 
 Before any command, locate token-relevant data sources. They form a strict
-**precedence ladder** - always prefer a higher tier and report which tier
+**precedence ladder** — always prefer a higher tier and report which tier
 produced the numbers:
 
-- **Tier 1 - Telemetry HTTP API (measured, authoritative):** real,
+- **Tier 1 — Telemetry HTTP API (measured, authoritative):** real,
   hook-captured token/cost data from the local ollama-telemetry service.
-- **Tier 2 - Hooks JSONL log (semi-measured):** tool call metadata with
+- **Tier 2 — Hooks JSONL log (semi-measured):** tool call metadata with
   timestamps; sizing derived from logged tool inputs/outputs.
-- **Tier 3 - Character heuristic (estimated ~approximate):** last-resort
+- **Tier 3 — Character heuristic (estimated ~approximate):** last-resort
   ~4-chars/token estimate from transcript/log text.
 
 Always report WHICH tier produced the numbers.
 
-0. **Telemetry HTTP API** (Tier 1 - preferred when reachable). A local
+0. **Telemetry HTTP API** (Tier 1 — preferred when reachable). A local
    telemetry service (the ollama-telemetry repo) may expose real, hook-captured
    token/cost data over HTTP. The base URL is configurable via
    `[token-audit].telemetry_url` (default `http://127.0.0.1:8099`). It is
-   **optional** - probe it, never hard-require it:
+   **optional** — probe it, never hard-require it:
    ```bash
    # Reachability probe gates the API path (2s budget). If this fails,
-   # fall through silently to Tier 2/3 - never block on it.
+   # fall through silently to Tier 2/3 — never block on it.
    curl -s --max-time 2 http://127.0.0.1:8099/health
    ```
    When reachable, read real totals (camelCase JSON under `/api/llm`):
@@ -65,24 +65,23 @@ Always report WHICH tier produced the numbers.
    ```
    Response fields are camelCase: `totalInputTokens`, `totalOutputTokens`,
    `totalCostUsd`, `cacheReadTokens`, plus session-level totals. (snake_case
-   such as `cache_read_tokens` is ONLY the `/api/llm/ingest` request body -
+   such as `cache_read_tokens` is ONLY the `/api/llm/ingest` request body —
    never read it from responses.) Numbers from this tier are **measured** and
    should be labelled as such; they supersede the character heuristic below.
 
-1. **Hooks JSONL log** (Tier 2 - if hooks instrumentation is configured for this
-   Codex installation - provides tool call metadata with timestamps):
+1. **Conversation transcripts** (Tier 2/3 input for per-message sizing):
+   Location varies by Codex installation; check the user home and common
+   defaults. Read available transcripts to estimate input/output sizing, and
+   fall back to hooks-log tool sizes if no transcript is accessible.
+
+2. **Hooks JSONL log** (Tier 2 — tool call metadata with timestamps, if hooks
+   instrumentation is configured for this installation):
    ```bash
    ls .codex/hooks/logs/hooks-log.jsonl 2>/dev/null
    ```
 
-2. **Codex conversation transcripts** (primary source for per-message sizing -
-   location varies by Codex installation; check the user home and common
-   defaults):
-   - Read available transcripts to estimate input/output sizing.
-   - If no transcript is accessible, fall back to hooks log tool sizes.
-
-3. **Rate-limit cache** (if a Codex statusline or similar surface is active):
-   - Read whatever rate-limit file the installation provides.
+3. **Rate-limit cache** (if a statusline or similar surface is active):
+   Read whatever rate-limit file the installation provides.
 
 4. **Budget file** (managed by this skill):
    ```bash
@@ -94,15 +93,15 @@ Always report WHICH tier produced the numbers.
    ls data/token-history.jsonl 2>/dev/null
    ```
 
-6. **Pricing config** in project.toml `[pricing]` section (falls back to
-   module defaults if absent).
+6. **Pricing config** in project.toml `[pricing]` section (when absent,
+   follow the *Model pricing* rule in the estimation method below).
 
 ---
 
 ## Token Estimation Method
 
 When the telemetry HTTP API (Tier 1) is reachable, prefer its **measured**
-totals - that retires the limitation below. Codex transcripts do not always
+totals — that retires the limitation below. Codex transcripts do not
 expose exact per-message token counts, so when telemetry is **not** reachable
 fall back to this estimation pipeline (Tier 2/3):
 
@@ -126,20 +125,18 @@ fall back to this estimation pipeline (Tier 2/3):
    - Grep/Glob: result set -> input tokens
    - Write: file content -> output tokens
 
-4. **Model pricing** from `[pricing]` config or defaults:
-
-   | Model | Input ($/1M tokens) | Output ($/1M tokens) |
-   |-------|---------------------|----------------------|
-   | Haiku | $1.00 | $5.00 |
-   | Sonnet | $3.00 | $15.00 |
-   | Opus | $5.00 | $25.00 |
+4. **Model pricing** from the `[pricing]` config. Never price from memory:
+   when `[pricing]` is absent, prefer Tier 1 telemetry cost totals (already
+   priced at ingestion time); otherwise look up the provider's current
+   published rates and label the source. If neither is available, report token
+   counts without dollar figures rather than inventing prices.
 
 All estimates are clearly labelled as approximate. Actual API billing may differ
 due to caching, batching, and prompt caching discounts.
 
 ---
 
-## Command: `status` - Current Token Position
+## Command: `status` — Current Token Position
 
 ### Steps
 
@@ -158,7 +155,7 @@ due to caching, batching, and prompt caching discounts.
 2. **Calculate session cost**: Tier 1 uses `totalCostUsd` directly (measured);
    Tier 2/3 multiplies token estimates by model pricing (estimated). If the
    session totals expose a cache-read or savings figure (e.g. `cacheReadTokens`
-   / a session-level savings total), add a "real cost avoided" note - do not
+   / a session-level savings total), add a "real cost avoided" note — do not
    invent field names beyond the verified contract.
 
 3. **Rate limit position** (if rate-limit data available):
@@ -172,10 +169,10 @@ due to caching, batching, and prompt caching discounts.
 ### Report
 
 ```
-Token Audit - Status
+Token Audit — Status
 
-  Data tier: Tier 1 - telemetry API (measured)
-             [or: Tier 3 - character heuristic (estimated ~approximate)]
+  Data tier: Tier 1 — telemetry API (measured)
+             [or: Tier 3 — character heuristic (estimated ~approximate)]
 
   Session Tokens (measured):
     Input:     285K tokens   ($1.43)
@@ -198,7 +195,7 @@ Token Audit - Status
 
 ---
 
-## Command: `breakdown` - Cost Attribution
+## Command: `breakdown` — Cost Attribution
 
 ### Steps
 
@@ -231,18 +228,18 @@ Token Audit - Status
 ### Report
 
 ```
-Token Audit - Breakdown
+Token Audit — Breakdown
 
   By Tool (estimated tokens consumed):
     Tool       Calls  Input Tokens  Output Tokens  Est. Cost
-    ----------------------------------------------------------
+    ──────────────────────────────────────────────────────────
     Read         18     180K            0.5K        $0.90
     Bash          8      45K            2K          $0.28
     Agent         1      25K            8K          $0.33
     Edit         12       2K           18K          $0.46
     Grep          5      12K            0.3K        $0.06
     Write         3       0.2K          8K          $0.20
-    ----------------------------------------------------------
+    ──────────────────────────────────────────────────────────
     Subtool      47     264K           37K          $2.24
     Overhead*                                       $0.24
     Total                                           $2.48
@@ -251,7 +248,7 @@ Token Audit - Breakdown
 
   Heaviest Turns:
     Turn 5:  ~45K tokens (large file read: src/engine.py, 1200 lines)
-    Turn 12: ~38K tokens (agent spawn: research codebase)
+    Turn 12: ~38K tokens (agent spawn: codebase research)
     Turn 8:  ~22K tokens (bash: full test suite output)
 
   Optimization Tips:
@@ -262,7 +259,7 @@ Token Audit - Breakdown
 
 ---
 
-## Command: `budget` - Budget Management
+## Command: `budget` — Budget Management
 
 ### Subcommands
 
@@ -294,10 +291,10 @@ Check current estimated spend against configured budget.
 4. Report: ON TRACK / WARNING (>= alert threshold) / EXCEEDED
 
 ```
-Token Audit - Budget Check
+Token Audit — Budget Check
 
   Session:  $2.48 / $5.00 (49.6%)  ON TRACK
-  Daily:    $7.23 / $10.00 (72.3%) WARNING - approaching 80% threshold
+  Daily:    $7.23 / $10.00 (72.3%) WARNING — approaching 80% threshold
 
   At current burn rate:
     Session budget exhausts in: ~1h 45m
@@ -311,7 +308,7 @@ spend tracking.
 
 ---
 
-## Command: `forecast` - Rate Limit Forecast
+## Command: `forecast` — Rate Limit Forecast
 
 ### Steps
 
@@ -334,7 +331,7 @@ spend tracking.
 ### Report
 
 ```
-Token Audit - Forecast
+Token Audit — Forecast
 
   5-Hour Window:
     Used: 32% | Remaining: 3h 28m
@@ -349,7 +346,7 @@ Token Audit - Forecast
     Pace: COMFORTABLE
 
   Recommendations:
-    (none - usage is well within limits)
+    (none — usage is well within limits)
 ```
 
 If pace is tight:
@@ -358,12 +355,12 @@ If pace is tight:
     - Reduce effort level
     - Use Read with offset/limit to avoid full-file reads
     - Batch related questions into fewer turns
-    - Prefer Haiku agents for research tasks
+    - Prefer `mini`-tier agents for research tasks
 ```
 
 ---
 
-## Command: `history` - Usage Trends
+## Command: `history` — Usage Trends
 
 ### Steps
 
@@ -384,7 +381,7 @@ If pace is tight:
 
 3. **Compute trends**: daily average cost, tokens per session, cost per
    session, tools per session. Report which tier produced the numbers (mixed
-   rows are possible - note when a row is measured vs estimated).
+   rows are possible — note when a row is measured vs estimated).
 
 4. **Identify anomalies**: sessions whose cost is more than 2 standard
    deviations above the mean.
@@ -392,10 +389,10 @@ If pace is tight:
 ### Report
 
 ```
-Token Audit - History (last 7 sessions)
+Token Audit — History (last 7 sessions)
 
   Date        Session    Duration  Tokens   Cost    Tools
-  ---------------------------------------------------------
+  ─────────────────────────────────────────────────────────
   Mar 28      abc123     2h 15m    ~327K    $2.48     47
   Mar 27      def456     1h 40m    ~210K    $1.62     32
   Mar 26      ghi789     3h 05m    ~520K    $3.89     68
@@ -437,8 +434,8 @@ Pricing overrides in `[pricing]` section (shared with telemetry.py).
 works on every host.** The canonical family is the generic runtime tier
 (`mini` / `standard` / `max`); the Anthropic-named family
 (`haiku` / `sonnet` / `opus`) is accepted as an alias mapped to the same tiers
-(haiku->mini, sonnet->standard, opus->max). If both are present for the same
-tier, the canonical `*_input` / `*_output` key wins.
+(haiku→mini, sonnet→standard, opus→max). If both are present for the same tier,
+the canonical `*_input` / `*_output` key wins.
 
 ```toml
 [pricing]
@@ -449,7 +446,7 @@ tier, the canonical `*_input` / `*_output` key wins.
 # standard_output = 15.00
 # max_input = 5.00
 # max_output = 25.00
-# --- Accepted aliases (haiku->mini, sonnet->standard, opus->max) ---
+# --- Accepted aliases (haiku→mini, sonnet→standard, opus→max) ---
 # haiku_input = 1.00
 # haiku_output = 5.00
 # sonnet_input = 3.00
@@ -477,12 +474,13 @@ tier, the canonical `*_input` / `*_output` key wins.
 
 - Token counts are **measured** when sourced from the telemetry API (Tier 1)
   and **estimated ~approximate** when derived from the character heuristic
-  (Tier 3) - always label which, and never present heuristic numbers as exact
+  (Tier 3) — always label which, and never present heuristic numbers as exact
 - The telemetry API is optional: probe with a 2s budget, fall through silently
   to Tier 2/3 if unreachable, and never hard-fail or block on it
 - Never modify conversation transcripts or hooks logs
 - Write targets limited to: `data/token-budget.json`, `data/token-history.jsonl`
 - Always report which data tier (1/2/3) produced the numbers
 - Use conservative estimates (round up) when tracking against budgets
-- Pricing defaults are package placeholders; override them in `[pricing]` with
-  the current prices for the models used by your Codex installation.
+- Any built-in pricing values are package placeholders, not live rates;
+  override them in `[pricing]` with current published rates for the models in
+  use

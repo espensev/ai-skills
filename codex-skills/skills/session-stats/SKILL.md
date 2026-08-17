@@ -1,18 +1,18 @@
 ---
 name: session-stats
-description: "Analyze session tool usage, agent activity, and timing from available data sources (campaign state, git activity, observer data, optional hooks). Use for cross-session comparisons or end-of-session summaries."
+description: "Analyze session tool usage, agent activity, timing, and cost metrics from conversation transcripts, hooks logs, and telemetry where available. Use for cross-session comparisons or end-of-session summaries."
 ---
 
-# Session Stats - Session Usage Analytics
+# Session Stats — Session Usage Analytics
 
-On-demand analytics dashboard for Codex sessions. Parses available data
-sources (campaign state, git activity, observer data, and optional hooks
-instrumentation) to provide tool usage breakdown, agent activity metrics,
-and cross-session comparisons.
+On-demand analytics dashboard for Codex sessions. Parses available
+data sources (telemetry, hooks logs, conversation transcripts, campaign state,
+git activity, observer data) to provide tool usage breakdown, agent activity
+metrics, cost tracking, and cross-session comparisons.
 
 **All commands run to completion autonomously.**
 
-**Config:** `.codex/skills/project.toml` - `[session-stats]` section (optional)
+**Config:** `.codex/skills/project.toml` — `[session-stats]` section (optional)
 
 ---
 
@@ -37,7 +37,7 @@ Before any command, discover available data sources in **precedence order**.
 The first reachable tier is authoritative; lower tiers fill gaps it does not
 cover. Always report WHICH tier produced the numbers.
 
-1. **Telemetry HTTP API** (tier 1 - authoritative, real hook-captured
+1. **Telemetry HTTP API** (tier 1 — authoritative, real hook-captured
    measurements). A local telemetry service (the ollama-telemetry repo)
    optionally exposes real per-session token/cost/tool data over HTTP.
    This tier is **optional**: probe it first, but never hard-require it.
@@ -58,40 +58,41 @@ cover. Always report WHICH tier produced the numbers.
    ```
    Response JSON is **camelCase**: `totalInputTokens`, `totalOutputTokens`,
    `totalCostUsd`, `cacheReadTokens`, plus session-level totals. (snake_case
-   like `cache_read_tokens` is ONLY the `/api/llm/ingest` request body - never
+   like `cache_read_tokens` is ONLY the `/api/llm/ingest` request body — never
    read it from responses.) Label all numbers from this tier as **measured**.
-   If port 8099 is unreachable, fall through **silently** to tier 2/3 - never
+   If port 8099 is unreachable, fall through **silently** to tier 2/3 — never
    hard-fail and never block on it.
 
-2. **Hooks JSONL log** (tier 2 - richest local source for tool events, if hooks
-   instrumentation is configured for this Codex installation):
+2. **Hooks JSONL log** (tier 2 — richest local source for tool events, if
+   hooks instrumentation is configured for this installation):
    ```bash
    ls -la .codex/hooks/logs/hooks-log.jsonl 2>/dev/null
    ```
    If exists: contains timestamped tool events with session_id, tool_name,
-   tool_input, agent_id.
+   tool_input, agent_id. Parse with jq or python3 json module.
 
-3. **Git activity** (code-level metrics for the session window):
+3. **Codex conversations** (per-message detail):
+   The location varies by Codex installation and is not stable across
+   versions; check the user's home directory for the active session log and
+   degrade gracefully if it cannot be found.
+
+4. **Git activity** (code-level metrics for the session window):
    ```bash
    git log --oneline --since="8 hours ago" --format="%H %ai %s"
    ```
 
-4. **Observer data** (if observer skill is active):
+5. **Observer data** (if observer skill is active):
    ```bash
    ls data/observations.jsonl 2>/dev/null
    ```
 
-5. **Campaign state** (if campaign skills are active):
+6. **Campaign state** (if campaign skills are active):
    ```bash
    ls data/tasks.json data/plans/*.json 2>/dev/null
    ```
 
-6. **Codex conversation history** (varies by Codex installation - check the
-   user's home directory for the active session log; the location is not
-   stable across versions, so degrade gracefully if not found).
-
 Report which sources were found, and which tier produced each number.
-Commands adapt to available data - more sources produce richer analysis.
+Commands adapt to available data — more sources produce richer analysis.
 
 If **no data sources found**, report clearly and suggest:
 - Install hooks for tool-level tracking
@@ -100,7 +101,7 @@ If **no data sources found**, report clearly and suggest:
 
 ---
 
-## Command: `summary` - Quick Session Overview
+## Command: `summary` — Quick Session Overview
 
 ### Steps
 
@@ -112,18 +113,38 @@ If **no data sources found**, report clearly and suggest:
    unreachable, skip silently and use the tiers below exactly as today.
 
 1. **Identify current session**: Find the most recent session_id from telemetry
-   (tier 1) or the hooks log, or use the current working window.
+   (tier 1) or the hooks log, or the latest conversation file.
 
-2. **Count tool calls** by type - from telemetry per-session data when tier 1
-   is available; otherwise from hooks log PreToolUse events (if available).
-   If hooks log unavailable, fall back to git log + observer data for a
-   coarser picture.
+2. **Count tool calls** by type — from telemetry per-session data when tier 1
+   is available; otherwise from hooks log PreToolUse events:
+   ```bash
+   python3 -c "
+   import sys, json
+   from collections import Counter
+   c = Counter()
+   for line in open('.codex/hooks/logs/hooks-log.jsonl'):
+       try:
+           e = json.loads(line)
+           if e.get('event') == 'PreToolUse':
+               c[e.get('tool_name', 'unknown')] += 1
+       except: pass
+   for k, v in c.most_common():
+       print(f'  {k}: {v}')
+   print(f'  Total: {sum(c.values())}')
+   "
+   ```
+   If hooks log unavailable, parse the conversation transcript for tool_use
+   blocks; failing that, fall back to git log + observer data for a coarser
+   picture.
 
-3. **Count agent spawns** (SubagentStart/SubagentStop events) if hooks
-   instrumentation is active.
+3. **Count agent spawns** (SubagentStart/SubagentStop events, if hooks
+   instrumentation is active):
+   ```bash
+   grep -c '"SubagentStart"' .codex/hooks/logs/hooks-log.jsonl 2>/dev/null
+   ```
 
 4. **Session duration**: Derive from first to last event timestamp within the
-   current session_id, or fall back to first/last commit in the session window.
+   current session_id.
 
 5. **Git activity during session**: Commits, files changed, insertions/deletions.
    ```bash
@@ -131,15 +152,18 @@ If **no data sources found**, report clearly and suggest:
    git diff --stat HEAD~3 2>/dev/null | tail -1
    ```
 
+6. **Rate limit position**: Read from any accessible rate-limit cache
+   the installation provides, if any.
+
 ### Report
 
 ```
-Session Stats - Summary
+Session Stats — Summary
 
   Session:     abc123 (started 2h 15m ago)
   Duration:    2h 15m active
 
-  Tool Calls:  47 total       (from hooks log)
+  Tool Calls:  47 total
     Read:      18 (38%)
     Edit:      12 (26%)
     Bash:       8 (17%)
@@ -150,6 +174,8 @@ Session Stats - Summary
   Agents:      1 spawned (1 completed)
 
   Git:         3 commits, 8 files, +142/-37 lines
+
+  Rate Limit:  5h: 32% used | 7d: 15% used   (if available)
 ```
 
 If hooks log is missing, omit the Tool Calls and Agents sections and report
@@ -157,7 +183,7 @@ only the git-derived metrics.
 
 ---
 
-## Command: `tools` - Tool Usage Breakdown
+## Command: `tools` — Tool Usage Breakdown
 
 ### Steps
 
@@ -166,56 +192,68 @@ only the git-derived metrics.
    `/api/llm/sessions/<sessionId>`) over the char/heuristic and git-only paths.
    Label counts **measured**. If unreachable, skip silently and use tier 2/3.
 
-1. **Load all tool events** from telemetry (tier 1) or, if unavailable, the
-   hooks log (required for the hooks-based breakdown).
+1. **Load all tool events** from telemetry (tier 1) or, if unavailable, from
+   hooks log or conversation transcript. If none of these sources exists,
+   report that telemetry or hooks instrumentation is required for this
+   command and exit with guidance.
 
-2. **Group by tool name** - count calls per tool:
+2. **Group by tool name** — count calls per tool:
    - Core: Read, Edit, Write, Bash, Grep, Glob, Agent
-   - Extended: MCP tools, WebFetch, WebSearch
+   - Extended: MCP tools (mcp__*), WebFetch, WebSearch
    - Any other tool types discovered
 
 3. **Success/failure ratio**: Cross-reference PreToolUse with PostToolUse vs
    PostToolUseFailure for each tool.
 
-4. **Tool sequences** - identify common two-tool patterns:
+4. **Tool sequences** — identify common two-tool patterns:
    - Read then Edit (read-before-modify)
    - Grep then Read (search-then-read)
    - Edit then Bash (edit-then-test)
+   Count the top 5 most frequent two-tool sequences by scanning consecutive
+   PreToolUse events.
 
-5. **Tool input sizes** - estimate per-call data volume.
+5. **Tool input sizes** — estimate per-call data volume:
+   - Bash: command string length
+   - Read: file content size from tool result
+   - Edit: old_string + new_string character count
+   - Agent: prompt length
+   - Grep/Glob: result set size
 
-6. **Hourly distribution** - if session spans more than one hour, bucket tool
+6. **Hourly distribution** — if session spans more than one hour, bucket tool
    calls per clock hour to show activity waves.
 
 ### Report
 
 ```
-Session Stats - Tool Usage
+Session Stats — Tool Usage
 
   Tool          Calls  Success  Failed  Avg Input Size
-  ------------------------------------------------------
+  ──────────────────────────────────────────────────────
   Read            18      18       0     2.1 KB
   Edit            12      11       1     1.4 KB
   Bash             8       7       1     0.3 KB
   Grep             5       5       0     0.1 KB
   Write            3       3       0     3.8 KB
   Agent            1       1       0     2.2 KB
-  ------------------------------------------------------
+  ──────────────────────────────────────────────────────
   Total           47      45       2     1.6 KB avg
 
   Common Sequences:
     Read -> Edit           8x (read-modify pattern)
     Grep -> Read           4x (search-read pattern)
     Edit -> Bash           3x (edit-test pattern)
-```
+    Bash -> Read           2x
+    Read -> Read           2x
 
-If neither the telemetry API (tier 1) nor the hooks log (tier 2) is available,
-this command reports that telemetry or hooks instrumentation is required and
-exits with guidance.
+  Hourly Distribution:
+    14:00  ============ 18
+    15:00  ================ 22
+    16:00  ===== 7
+```
 
 ---
 
-## Command: `agents` - Subagent Metrics
+## Command: `agents` — Subagent Metrics
 
 ### Steps
 
@@ -225,34 +263,45 @@ exits with guidance.
    Label counts **measured**. If unreachable, skip silently and use tier 2/3.
 
 1. **Load agent events** from telemetry (tier 1), or from hooks log
-   (SubagentStart, SubagentStop) or `data/tasks.json` for orchestrated
-   campaign agents.
+   (SubagentStart, SubagentStop), conversation transcript (Agent tool calls),
+   or `data/tasks.json` for orchestrated campaign agents.
 
 2. **Per-agent metrics**:
-   - Agent type
+   - Agent type (Explore, Plan, general-purpose, custom)
    - Duration (start timestamp to stop timestamp)
-   - Tool calls within agent context (if hooks log available)
+   - Tool calls within agent context (filter by agent_id in hooks log, when
+     available)
    - Outcome (completed, error, timeout)
 
 3. **Agent type distribution**: Count by type, average duration per type.
 
-4. **Campaign agent cross-reference** (if data/tasks.json exists):
+4. **Nesting depth**: Detect agents that spawned sub-agents (agent_id present
+   on SubagentStart events within another agent context).
+
+5. **Campaign agent cross-reference** (if data/tasks.json exists):
    - Match hook agent events to campaign agent records
    - Report files owned, model selection, complexity tier
 
 ### Report
 
 ```
-Session Stats - Agent Activity
+Session Stats — Agent Activity
 
   Total Agents Spawned: 4
 
   Agent  Type             Duration  Tools  Outcome
-  -------------------------------------------------
+  ─────────────────────────────────────────────────
   #1     Explore          0:45      8      completed
   #2     Explore          1:12      12     completed
   #3     general-purpose  3:22      24     completed
   #4     Plan             0:18      3      completed
+
+  By Type:
+    Explore:          2 (50%)  avg 0:58
+    general-purpose:  1 (25%)  avg 3:22
+    Plan:             1 (25%)  avg 0:18
+
+  Nesting: 0 nested spawns (flat)
 
   Campaign Agents (if active):
     Agent A: 4 files, model=standard, status=done
@@ -261,19 +310,22 @@ Session Stats - Agent Activity
 
 ---
 
-## Command: `timeline` - Activity Timeline
+## Command: `timeline` — Activity Timeline
 
 ### Steps
 
-1. **Build event timeline** from hooks log or git log, ordered by timestamp.
+1. **Build event timeline** from hooks log, conversation transcript, or git
+   log, ordered by timestamp.
 
 2. **Identify phases** by clustering consecutive tool calls:
    - Research: majority Read, Grep, Glob
    - Implementation: majority Edit, Write
-   - Testing: Bash calls containing test/pytest/npm test patterns
+   - Testing: Bash calls containing test/pytest/npm test/dotnet test patterns
    - Review: Read with small Edit changes
+   A phase boundary occurs when the dominant tool category shifts.
 
-3. **Mark milestones**: git commits, agent completions, plan state transitions.
+3. **Mark milestones**: git commits (from git log timestamps), agent
+   completions, plan state transitions.
 
 4. **Calculate idle gaps**: periods longer than 5 minutes without tool activity
    (configurable via `[session-stats].phase_idle_threshold_min`).
@@ -281,7 +333,7 @@ Session Stats - Agent Activity
 ### Report
 
 ```
-Session Stats - Timeline
+Session Stats — Timeline
 
   14:02  SESSION START
   14:02  ---- Research Phase (12 min) ----
@@ -289,6 +341,8 @@ Session Stats - Timeline
   14:14  ---- Implementation Phase (28 min) ----
          Edit x6, Write x2, Read x4, Bash x3
   14:20  [commit] fix: resolve auth token refresh bug
+  14:42  ---- Agent: Explore (1 min) ----
+         Read x5, Grep x3
   14:43  ---- Testing Phase (8 min) ----
          Bash x4 (test runs), Edit x2 (fixes)
   14:51  [commit] test: add regression tests for token refresh
@@ -300,12 +354,13 @@ Session Stats - Timeline
 
 ---
 
-## Command: `compare` - Cross-Session Comparison
+## Command: `compare` — Cross-Session Comparison
 
 ### Steps
 
-1. **Find recent sessions**: Group hooks log events by session_id, or list
-   git activity by day if hooks are unavailable.
+1. **Find recent sessions**: Group hooks log events by session_id, list
+   conversation files sorted by modification time, or fall back to git
+   activity grouped by day.
 
 2. **Extract per-session metrics**: tool count, agent count, duration, dominant
    tool, top tool percentage.
@@ -318,10 +373,10 @@ Session Stats - Timeline
 ### Report
 
 ```
-Session Stats - Comparison (last 5 sessions)
+Session Stats — Comparison (last 5 sessions)
 
   Session      Date        Duration  Tools  Agents  Top Tool
-  -----------------------------------------------------------
+  ───────────────────────────────────────────────────────────
   abc123 <-    today       2h 15m    47     1       Read (38%)
   def456       yesterday   1h 40m    32     0       Edit (41%)
   ghi789       2 days ago  3h 05m    68     3       Read (35%)
@@ -330,11 +385,16 @@ Session Stats - Comparison (last 5 sessions)
 
   Averages:    2h 03m    42.8 tools/session    1.2 agents/session
   This session: +12m      +4.2 tools           -0.2 agents
+
+  Trends:
+    Tool usage: stable (+/- 10%)
+    Agent usage: decreasing (-40% over 5 sessions)
+    Session length: stable
 ```
 
 ---
 
-## Command: `export` - Export as JSON
+## Command: `export` — Export as JSON
 
 Export all session metrics as a single JSON object for external tooling or
 downstream skill consumption.
@@ -342,7 +402,7 @@ downstream skill consumption.
 ### Steps
 
 1. Run the same collection pipeline as `summary` + `tools` + `agents`.
-2. Output as a single JSON object - no markdown, no commentary.
+2. Output as a single JSON object — no markdown, no commentary.
 
 ### Output
 
@@ -359,6 +419,7 @@ downstream skill consumption.
   },
   "agents": {
     "total": 1,
+    "by_type": {"Explore": 0, "general-purpose": 1, "Plan": 0},
     "completed": 1,
     "failed": 0
   },
@@ -408,13 +469,16 @@ Optional `[session-stats]` section:
 ## Conventions
 
 - Read-only: never modify logs, conversations, or state files
-- Adapt to available data sources - degrade gracefully, never hard-fail
-- Data-tier precedence: (1) telemetry HTTP API -> label **measured**;
-  (2) hooks JSONL log / conversation transcript -> tier 2; (3) character
-  heuristic -> label **estimated ~approximate**. The telemetry service is
+- Adapt to available data sources — degrade gracefully, never hard-fail
+- Data-tier precedence: (1) telemetry HTTP API → label **measured**;
+  (2) hooks JSONL log / conversation transcript → tier 2; (3) character
+  heuristic → label **estimated ~approximate**. The telemetry service is
   optional; a 2s `/health` probe gates it and an unreachable port falls
   through silently to tier 2/3.
 - Report which data sources were found and used in every report
-- Use plain text for reports (no ANSI colors - terminal-portable)
-- Session boundaries: use session_id from hooks, or fall back to git activity windows
-- Hooks log path varies by Codex installation; check both `.codex/hooks/logs/` and the install default
+- Use plain text for reports (no ANSI colors — terminal-portable)
+- Session boundaries: use session_id from hooks, conversation file
+  boundaries, or git activity windows
+- Tool names use Codex canonical names (Read, Edit, Write, Bash, Grep, Glob, Agent)
+- Hooks log path varies by Codex installation; check both `.codex/hooks/logs/`
+  and the install default

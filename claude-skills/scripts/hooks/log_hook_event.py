@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Universal hook event logger — writes every hook event to a JSONL log.
 
-This is the data source for /session-stats, /agent-report, and /token-audit.
-Those skills read .claude/hooks/logs/hooks-log.jsonl to compute analytics.
+This is the data source for /usage-stats, which reads
+.claude/hooks/logs/hooks-log.jsonl to compute analytics.
 
 Standalone — no dependency on skill scripts or task_manager.
 Attach to every hook event you want to track in settings.json.

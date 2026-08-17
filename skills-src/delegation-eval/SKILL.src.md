@@ -224,8 +224,8 @@ Report the exact mapping changes, evidence counts, and tests run.
 
 - `{{cmd}}delegate` is for live bounded work; `{{cmd}}delegation-eval` is for measuring
   whether that routing should exist.
-- `{{cmd}}token-audit` and `{{cmd}}session-stats` consume measured usage/cost from the
-  telemetry API; `{{cmd}}delegation-eval` consumes eval outcomes and recommendations.
+- `{{cmd}}usage-stats` consumes measured usage/cost from the telemetry API;
+  `{{cmd}}delegation-eval` consumes eval outcomes and recommendations.
 - `telemetry-live-ops` is machine-local and should stay out of portable
   install manifests.
 - The controller owns all judgments and all routing changes.

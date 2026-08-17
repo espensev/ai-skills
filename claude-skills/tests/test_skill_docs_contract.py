@@ -67,6 +67,7 @@ class TestSkillDocsContract(unittest.TestCase):
             SKILLS / "qa" / "SKILL.md",
             SKILLS / "ship" / "SKILL.md",
             SKILLS / "skill-authoring" / "SKILL.md",
+            SKILLS / "usage-stats" / "SKILL.md",
         ]
         for path in expected:
             self.assertTrue(path.exists(), f"Missing exported file: {path}")
@@ -134,12 +135,18 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("deep-audit", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
-        self.assertIn("session-stats", manifest["optional_skills"])
         self.assertIn("skill-authoring", manifest["optional_skills"])
-        self.assertIn("token-audit", manifest["optional_skills"])
+        self.assertIn("usage-stats", manifest["optional_skills"])
         self.assertNotIn("telemetry-live-ops", manifest["optional_skills"])
         self.assertIn("telemetry-live-ops", manifest["source_only_skills"])
-        for removed in ("observer-test", "refactor-planner", "worktree-manager"):
+        for removed in (
+            "agent-report",
+            "observer-test",
+            "refactor-planner",
+            "session-stats",
+            "token-audit",
+            "worktree-manager",
+        ):
             self.assertNotIn(removed, manifest["optional_skills"])
             self.assertNotIn(removed, manifest["source_only_skills"])
             self.assertFalse((SKILLS / removed).exists(), f"Deleted skill still present: {removed}")

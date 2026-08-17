@@ -10,12 +10,12 @@ deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-59 install-ready skills ship across two provider-specific packages:
+55 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 23 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
-| **codex-skills** | 36 | Extended toolkit for Codex: API/engineering patterns, gated audits, deep research, Playwright e2e, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
+| **claude-skills** | 21 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
+| **codex-skills** | 34 | Extended toolkit for Codex: API/engineering patterns, gated audits, deep research, Playwright e2e, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
 
 > Counts reflect each ready package's `package/install-manifest.json`.
 > Explicit `source_only_skills` entries and unmanifested imported material stay as
@@ -82,11 +82,9 @@ inspect-edit-verify cycles; it has no claude-skills counterpart.
 | **schema-validator** | Validate a schema is consumed correctly across data → API → test layers; report drift |
 | **truthpack-drift** | Detect drift between declared reusable "truth" facts and the current source |
 | **docs-sync** | Detect and fix drift between docs and code (versions, paths, conflict markers) |
-| **session-stats** | Session tool/agent/timeline analytics, with a telemetry-first measured tier |
+| **usage-stats** | Token/cost/budget/forecast intelligence, session tool/agent/timeline analytics, and agent performance/cost reports — telemetry-first with heuristic fallback |
 | **deep-audit** | Run evidence-backed, resumable runtime-efficiency audits with explicit safety and evidence boundaries |
 | **skill-authoring** | Create or revise Agent Skills with focused discovery metadata, progressive disclosure, support files, and package wiring |
-| **token-audit** | Token/cost/budget/forecast intelligence — uses real telemetry data when available, heuristic otherwise |
-| **agent-report** | Structured agent handoff and performance/cost reports |
 | **worktree-preflight** | Pre-launch conflict gate over branch/worktree/file-ownership (unified OK / WARNING / CONFLICT contract) |
 
 ### Lightweight Codex parallelism
@@ -102,11 +100,11 @@ inspect-edit-verify cycles; it has no claude-skills counterpart.
 | **delegate** | Decide whether a narrow, well-scoped sub-task should go to a **local Ollama model** vs stay with the controller, and route it if so. Grounded in the local `ollama-telemetry` MCP delegation tools (`ollama_readiness` / `ollama_delegate` / `ollama_batch_delegate`), with a static-guidance fallback when the MCP server is unavailable. The controller always verifies the result. |
 | **delegation-eval** | Evaluate whether local model routing is worth keeping. Uses `ollama-telemetry` eval runs, judge packets, usage metrics, and `dispatch_recommendations` to compare helper models and propose reviewed `dispatch-rules.json` changes. |
 
-`token-audit` and `session-stats` also gained a **telemetry-first data tier**: when a local `ollama-telemetry` API is reachable (`http://127.0.0.1:8099`), they read real measured token/cost data instead of character-heuristic estimates, falling back silently when it is not.
+`usage-stats` also has a **telemetry-first data tier**: when a local `ollama-telemetry` API is reachable (`http://127.0.0.1:8099`), it reads real measured token/cost data instead of character-heuristic estimates, falling back silently when it is not.
 
 Telemetry integration is deliberately split by portability:
 
-- `delegate`, `delegation-eval`, `token-audit`, and `session-stats` are portable and depend on API/MCP contracts.
+- `delegate`, `delegation-eval`, and `usage-stats` are portable and depend on API/MCP contracts.
 - `telemetry-live-ops` is machine-local, points at a personal live deployment, and is not exported.
 - Deprecated Claude-only aliases `refactor-planner`, `observer-test`, and
   `worktree-manager` were removed; their behavior is covered by

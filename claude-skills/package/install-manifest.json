@@ -7,7 +7,6 @@
     "ship"
   ],
   "optional_skills": [
-    "agent-report",
     "build-gate",
     "campaign-health",
     "deep-audit",
@@ -19,11 +18,10 @@
     "observer",
     "review",
     "schema-validator",
-    "session-stats",
     "skill-authoring",
     "smart-test",
-    "token-audit",
     "truthpack-drift",
+    "usage-stats",
     "worktree-preflight"
   ],
   "source_only_skills": [

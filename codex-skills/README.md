@@ -92,9 +92,8 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Observer | auto | Keep optional project intelligence in repo-owned observation logs, metrics, and health notes without creating a parallel native-memory store |
 | Parallel Agents Light | auto | Route Codex work between local execution, bounded sidecar subagents, split implementation, and full manager campaigns |
 | Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
-| Session Stats | auto | Summarize session/tool activity, preferring measured `ollama-telemetry` usage data when available |
 | Skill Authoring | auto | Create and revise Agent Skills with focused discovery metadata, progressive disclosure, and package wiring |
-| Token Audit | auto | Analyze tokens, costs, budgets, and forecasts, preferring measured telemetry API data when available |
+| Usage Stats | auto | Analyze tokens, costs, budgets, forecasts, session/tool activity, and agent performance, preferring measured telemetry API data when available |
 | Verification Loop | auto | Run repo-appropriate build, lint, typecheck, test, and diff review before handoff |
 
 `codebase-review-prompts` and `telemetry-live-ops` remain explicit source-only
@@ -147,7 +146,6 @@ done
 for d in \
   skills/loop \
   skills/loop-master \
-  skills/agent-report \
   skills/api-design \
   skills/audit-gated-subagents \
   skills/backend-patterns \
@@ -169,11 +167,10 @@ for d in \
   skills/parallel-agents-light \
   skills/review \
   skills/schema-validator \
-  skills/session-stats \
   skills/skill-authoring \
   skills/smart-test \
-  skills/token-audit \
   skills/truthpack-drift \
+  skills/usage-stats \
   skills/worktree-preflight \
   skills/verification-loop; do
   cp -r "$d" <project>/.codex/skills/
@@ -208,7 +205,6 @@ done
 for d in \
   skills/loop \
   skills/loop-master \
-  skills/agent-report \
   skills/api-design \
   skills/audit-gated-subagents \
   skills/backend-patterns \
@@ -230,11 +226,10 @@ for d in \
   skills/parallel-agents-light \
   skills/review \
   skills/schema-validator \
-  skills/session-stats \
   skills/skill-authoring \
   skills/smart-test \
-  skills/token-audit \
   skills/truthpack-drift \
+  skills/usage-stats \
   skills/worktree-preflight \
   skills/verification-loop; do
   cp -r "$d" ~/.codex/skills/

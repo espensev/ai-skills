@@ -1,7 +1,6 @@
 {
   "description": "Ownership manifest for the single-source skill layer. Skills listed in generated_skills are authored once in skills-src/<skill>/SKILL.src.md (plus optional verbatim support files under skills-src/<skill>/files/ for both providers and skills-src/<skill>/files-claude/ or skills-src/<skill>/files-codex/ for one) and regenerated into both provider packages by scripts/Build-ProviderSkillPackages.ps1. Every skill not listed in generated_skills is provider-owned; the generator must not touch it.",
   "generated_skills": [
-    "agent-report",
     "build-gate",
     "campaign-health",
     "deep-audit",
@@ -17,12 +16,11 @@
     "qa",
     "review",
     "schema-validator",
-    "session-stats",
     "ship",
     "skill-authoring",
     "smart-test",
-    "token-audit",
     "truthpack-drift",
+    "usage-stats",
     "worktree-preflight"
   ],
   "provider_owned_shared_skills": [

@@ -78,6 +78,7 @@ class TestSkillDocsContract(unittest.TestCase):
             SKILLS / "qa" / "SKILL.md",
             SKILLS / "ship" / "SKILL.md",
             SKILLS / "skill-authoring" / "SKILL.md",
+            SKILLS / "usage-stats" / "SKILL.md",
             SKILLS / "verification-loop" / "SKILL.md",
         ]
         for path in expected:
@@ -163,10 +164,13 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("observer", manifest["optional_skills"])
         self.assertIn("parallel-agents-light", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
-        self.assertIn("session-stats", manifest["optional_skills"])
         self.assertIn("skill-authoring", manifest["optional_skills"])
-        self.assertIn("token-audit", manifest["optional_skills"])
+        self.assertIn("usage-stats", manifest["optional_skills"])
         self.assertIn("verification-loop", manifest["optional_skills"])
+        for removed in ("agent-report", "session-stats", "token-audit"):
+            self.assertNotIn(removed, manifest["optional_skills"])
+            self.assertNotIn(removed, manifest["source_only_skills"])
+            self.assertFalse((SKILLS / removed).exists(), f"Deleted skill still present: {removed}")
         self.assertNotIn("telemetry-live-ops", manifest["optional_skills"])
         self.assertIn("telemetry-live-ops", manifest["source_only_skills"])
         self.assertIn("scripts/task_manager.py", manifest["runtime_files"])

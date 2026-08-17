@@ -10,9 +10,9 @@ Use three layers:
 1. **Live delegation:** `delegate` calls the `ollama-telemetry` MCP tools when
    registered. It falls back to static guidance when the MCP server or fleet is
    unavailable.
-2. **Measured analytics:** `session-stats` and `token-audit` prefer the local
-   telemetry API at `http://127.0.0.1:8099` for measured usage and cost data,
-   then fall back to hooks/transcript estimates.
+2. **Measured analytics:** `usage-stats` prefers the local telemetry API at
+   `http://127.0.0.1:8099` for measured usage and cost data, then falls back
+   to hooks/transcript estimates.
 3. **Evaluation and tuning:** `delegation-eval` uses telemetry eval runs, judge
    packets, and `dispatch_recommendations` to decide whether model/task routing
    should change.

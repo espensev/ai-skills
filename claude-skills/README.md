@@ -48,8 +48,7 @@ vendor into their own `.claude/skills` runtime tree.
 | Review | `/review` | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | Delegate | `/delegate` | Route one bounded, already-fetched transform to local Ollama when telemetry readiness allows it |
 | Delegation Eval | `/delegation-eval` | Compare local helper models using telemetry eval runs, judge packets, and dispatch recommendations |
-| Session Stats | `/session-stats` | Summarize session/tool activity, preferring measured telemetry data when available |
-| Token Audit | `/token-audit` | Analyze token/cost/budget usage, preferring measured telemetry data when available |
+| Usage Stats | `/usage-stats` | Analyze token/cost/budget usage, session/tool activity, and agent performance, preferring measured telemetry data when available |
 | Memory Management | `/memory-management` | Govern auto-memory: typed write schema, locality routing, index budget, and audits |
 | Deep Audit | `/deep-audit` | Run evidence-first, resumable runtime-efficiency audits while keeping product code read-only by default |
 | Skill Authoring | `/skill-authoring` | Create and revise Agent Skills with focused discovery metadata, progressive disclosure, and package wiring |
@@ -104,7 +103,6 @@ done
 
 # Optional ops, analytics, and delegation skills
 for d in \
-  skills/agent-report \
   skills/build-gate \
   skills/campaign-health \
   skills/deep-audit \
@@ -116,11 +114,10 @@ for d in \
   skills/observer \
   skills/review \
   skills/schema-validator \
-  skills/session-stats \
   skills/skill-authoring \
   skills/smart-test \
-  skills/token-audit \
   skills/truthpack-drift \
+  skills/usage-stats \
   skills/worktree-preflight; do
   cp -r "$d" <project>/.claude/skills/
 done
@@ -153,7 +150,6 @@ done
 
 # Optional ops, analytics, and delegation skills
 for d in \
-  skills/agent-report \
   skills/build-gate \
   skills/campaign-health \
   skills/deep-audit \
@@ -165,11 +161,10 @@ for d in \
   skills/observer \
   skills/review \
   skills/schema-validator \
-  skills/session-stats \
   skills/skill-authoring \
   skills/smart-test \
-  skills/token-audit \
   skills/truthpack-drift \
+  skills/usage-stats \
   skills/worktree-preflight; do
   cp -r "$d" ~/.claude/skills/
 done

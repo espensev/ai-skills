@@ -7,7 +7,7 @@ observability, analytics, and safety features.
 
 | Script | Hook Event | Purpose | Required By |
 |--------|-----------|---------|-------------|
-| `log_hook_event.py` | Any | Universal JSONL event logger | `/session-stats`, `/agent-report`, `/token-audit` |
+| `log_hook_event.py` | Any | Universal JSONL event logger | `/usage-stats` |
 | `safety_guard.py` | PreToolUse | Block destructive commands and protected file edits | Standalone |
 | `observe_session_briefing.py` | SessionStart | Inject project health context at session start | `/observer`, `/campaign-health` |
 | `observe_test_output.py` | PostToolUse (Bash) | Record test/build results as observations | `/observer` |
@@ -18,7 +18,7 @@ observability, analytics, and safety features.
 
 | File | Created By | Read By |
 |------|-----------|---------|
-| `.claude/hooks/logs/hooks-log.jsonl` | `log_hook_event.py` | `/session-stats`, `/agent-report`, `/token-audit` |
+| `.claude/hooks/logs/hooks-log.jsonl` | `log_hook_event.py` | `/usage-stats` |
 | `data/observations.jsonl` | `observe_test_output.py`, `observe_churn.py` | `/observer`, `/campaign-health`, `observe_session_briefing.py` |
 
 ## Installation
@@ -46,7 +46,7 @@ variable is set by Claude Code automatically.
 
 You don't need all hooks. Pick by category:
 
-**Analytics only** (for `/session-stats`, `/agent-report`, `/token-audit`):
+**Analytics only** (for `/usage-stats`):
 - `log_hook_event.py` on: SessionStart, PreToolUse, PostToolUse,
   PostToolUseFailure, SubagentStart, SubagentStop, Stop, StopFailure
 
@@ -62,9 +62,7 @@ You don't need all hooks. Pick by category:
 ## Skill ↔ Hook Dependency Map
 
 ```
-/session-stats  ──┐
-/agent-report   ──┼── reads ── .claude/hooks/logs/hooks-log.jsonl ◄── log_hook_event.py
-/token-audit    ──┘
+/usage-stats    ──── reads ── .claude/hooks/logs/hooks-log.jsonl ◄── log_hook_event.py
 
 /observer       ──┐
 /campaign-health──┼── reads ── data/observations.jsonl ◄── observe_test_output.py

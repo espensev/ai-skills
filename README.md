@@ -180,7 +180,7 @@ Shared skills are single-sourced in two layers. Skills listed under
 `generated_skills` in `skills-src/manifest.json` are authored once in
 `skills-src/<skill>/SKILL.src.md` and regenerated into both provider packages
 by `scripts/Build-ProviderSkillPackages.ps1`; the generated `SKILL.md` files
-remain committed build outputs. The eight `provider_owned_shared_skills`
+remain committed build outputs. Eight of the nine `provider_owned_shared_skills`
 pairs are authored per provider but kept to one workflow contract each, with
 only provider-mechanical differences; that parity is reported by
 `scripts/Compare-ProviderSkillParity.ps1`.

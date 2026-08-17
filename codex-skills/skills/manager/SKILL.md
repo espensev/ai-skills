@@ -569,8 +569,13 @@ feedback trail:
 - record evidence-backed blockers, regressions, and drift in
   `data/observations.jsonl`
 - refresh `docs/observer/project-intelligence.md` when the summary is stale
-- convert recurring blocker/regression patterns into eval cases with
+- convert recurring blocker/regression patterns into durable observations via
+  `$observer note` so the next campaign starts from better evidence
+- additionally convert those patterns into eval cases with
   `python scripts/observe_to_eval.py --merge eval/cases/light-skill-cases.json`
+  If `scripts/observe_to_eval.py` is not present in the repo (for example a
+  skills-only install without the runtime files), skip this command and record
+  the eval-case candidate in the observation entry or report instead.
 
 ---
 

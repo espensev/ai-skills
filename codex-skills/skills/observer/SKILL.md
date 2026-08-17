@@ -19,6 +19,8 @@ memory belongs to `$memory-management`.
 - Prefer `$discover` when the goal is bounded pre-change research for
   one question set.
 - Prefer `$qa` when the user wants test execution or failure triage.
+- Prefer `$review` when the goal is diff review, not longitudinal
+  observation.
 - Prefer `verification-loop` when the goal is release-readiness validation,
   not longitudinal observation.
 
@@ -741,8 +743,14 @@ when a recurring pass is wanted.
 ## Promotion Rules
 
 - Record one-off incidents as observations when they explain the current state.
-- Promote recurring regressions and blockers into eval pressure with:
+- Promote recurring regressions and blockers by keeping them `open` with
+  raised severity so `$observer check` gates on them, and surface them in
+  `$manager verify` reports.
+- Additionally promote them into eval pressure with:
   `python scripts/observe_to_eval.py --merge eval/cases/light-skill-cases.json`
+  If `scripts/observe_to_eval.py` is not present in the repo (for example a
+  skills-only install without the runtime files), skip this command and record
+  the eval-case candidate in the observation entry or report instead.
 - Re-rank which skills need attention with:
   `python scripts/skill_feedback_loop.py --out docs/skill-improvement-report.md`
 - Only turn user preference into a reusable pattern after repetition or an

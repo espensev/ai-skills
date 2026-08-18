@@ -133,7 +133,7 @@ is different from this package layout.
 mkdir -p <project>/.codex/skills
 mkdir -p <project>/scripts
 
-for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
+for d in skills/discover skills/handoff skills/manager skills/planner skills/qa skills/ship; do
   cp -r "$d" <project>/.codex/skills/
 done
 
@@ -141,6 +141,7 @@ done
 for d in \
   skills/loop-master \
   skills/audit-gated-subagents \
+  skills/browser-control \
   skills/build-gate \
   skills/campaign-health \
   skills/deep-audit \
@@ -187,7 +188,7 @@ If you also want the schema reference docs in the installed tree, copy
 ```bash
 mkdir -p ~/.codex/skills
 
-for d in skills/discover skills/manager skills/planner skills/qa skills/ship; do
+for d in skills/discover skills/handoff skills/manager skills/planner skills/qa skills/ship; do
   cp -r "$d" ~/.codex/skills/
 done
 

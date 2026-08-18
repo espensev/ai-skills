@@ -303,6 +303,13 @@ if ($Rows.Count -eq 0) {
 
 $Rows | Sort-Object Provider, Target, Status, Kind, Path | Format-Table -AutoSize
 
+# Format-Table truncates columns to the host width, so the table above is for
+# humans only. Emit one untruncated line per finding as the machine-readable
+# surface that callers and tests match on.
+foreach ($Row in ($Rows | Sort-Object Provider, Target, Status, Kind, Path)) {
+    Write-Output "FINDING $($Row.Status) [$($Row.Provider)] $($Row.Kind) $($Row.Path) <- $($Row.Target)"
+}
+
 $Blocking = @($Rows | Where-Object { $_.Status -in @("Missing", "Stale", "SourceMissing", "RetiredInstalled") })
 if ($FailOnMissingOrStale -and $Blocking.Count -gt 0) {
     throw "Local agent skill roots have $($Blocking.Count) missing, stale, or retired entries"

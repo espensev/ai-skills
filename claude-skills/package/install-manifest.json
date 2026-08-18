@@ -1,12 +1,14 @@
 {
   "default_skills": [
     "discover",
+    "handoff",
     "manager",
     "planner",
     "qa",
     "ship"
   ],
   "optional_skills": [
+    "browser-control",
     "build-gate",
     "campaign-health",
     "deep-audit",

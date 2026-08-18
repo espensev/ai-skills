@@ -1,13 +1,13 @@
 ---
 name: review
-description: "Use when the user asks for a findings-first review of a branch, pull request, worktree, staged diff, or fixed-point diff against repo standards, specs, and regression risk. Do not use to implement a fix, run a test campaign (use qa), diagnose one bug (use diagnosing-bugs), or audit runtime efficiency (use deep-audit)."
+description: "Use when the user asks for a findings-first review or asks you to review and advise — on a branch, pull request, worktree, staged diff, or fixed-point diff, or on a written artifact such as a plan, design doc, handoff note, spec, or proposal — against repo standards, specs, and regression risk. Do not use to implement a fix, run a test campaign (use qa), diagnose one bug (use diagnosing-bugs), or audit runtime efficiency (use deep-audit)."
 ---
 
-# Review - Diff and Change Audit
+# Review - Change and Document Audit
 
-Review changed work without modifying source files. Produce a findings-first
-audit that separates documented-standard violations, spec mismatches, and
-regression risks.
+Review changed work, or a written artifact, without modifying any source file.
+Produce a findings-first audit that separates documented-standard violations,
+spec mismatches, and regression risks.
 
 **Output:** `docs/reviews/review-{date}-{slug}.md`
 **Default command:** `$review`
@@ -23,8 +23,11 @@ regression risks.
 | `working` | `$review --working` | Review unstaged and staged working-tree changes |
 | `staged` | `$review --staged` | Review only staged changes |
 | `spec` | `$review --spec docs/spec.md <fixed-point>` | Review against an explicit spec source |
+| `doc` | `$review --doc <path>` | Review a written artifact — plan, design doc, handoff note, spec, or proposal |
 
-Default to `branch` if no command is supplied.
+Default to `branch` if no command is supplied. If the user names a document,
+plan, or handoff instead of a ref — "review and advise on this plan", "read the
+handoff and review it" — use `doc` with that path.
 
 ---
 
@@ -48,7 +51,7 @@ Default to `branch` if no command is supplied.
 
 ## Phase 1: Resolve the Review Surface
 
-Choose exactly one diff surface.
+Choose exactly one review surface — four are diffs, one is a document.
 
 ### Fixed-point review
 
@@ -107,6 +110,32 @@ git diff --cached --name-status
 
 If there are no staged changes, stop and report that there is nothing staged to
 review.
+
+### Document review
+
+For `--doc <path>`, or when the user points at a plan, handoff, spec, or
+proposal rather than a ref:
+
+```bash
+test -f "<path>" && wc -l "<path>"
+git log --oneline -5 -- "<path>"
+```
+
+Read the document in full before writing anything. There is no diff, so the
+three axes bind to the document instead:
+
+- **Standards:** repo instructions, `CLAUDE.md`/`AGENTS.md`, and the conventions
+  the document itself claims to follow.
+- **Spec:** what the user asked the document to accomplish, and what the
+  document promises in its own opening.
+- **Regression:** claims that are stale or already false. Verify every concrete
+  assertion — a named file, commit, flag, or status — against the repo before
+  accepting it. A handoff that says work is "blocked" when the commit landed is
+  a finding, not context.
+
+Cite by `path:line` in the document, plus the repo evidence that contradicts or
+confirms each checkable claim. Unverifiable claims are their own finding class:
+say what could not be checked and why, rather than passing them through.
 
 ---
 

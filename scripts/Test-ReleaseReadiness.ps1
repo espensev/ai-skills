@@ -22,6 +22,10 @@ function Invoke-Step {
 
     Write-Output ""
     Write-Output "== $Name =="
+    # Steps below gate on $LASTEXITCODE, which is unset in a fresh shell that has
+    # not yet run a native command - an unset value fails the -ne 0 test and
+    # reports a false failure. Seed it per step so each check reads its own call.
+    $global:LASTEXITCODE = 0
     & $Command
 }
 

@@ -10,12 +10,12 @@ deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-52 install-ready skills ship across two provider-specific packages:
+54 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 22 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
-| **codex-skills** | 30 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
+| **claude-skills** | 23 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
+| **codex-skills** | 31 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
 
 > Counts reflect each ready package's `package/install-manifest.json`.
 > Explicit `source_only_skills` entries and unmanifested imported material stay as

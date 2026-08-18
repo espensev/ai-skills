@@ -1,6 +1,7 @@
 {
   "default_skills": [
     "discover",
+    "handoff",
     "manager",
     "planner",
     "qa",

@@ -225,12 +225,11 @@ These three skills cover testing at different scopes:
 |-------|-------|-------------|
 | `{{cmd}}smart-test` | **Changed files only** {{dash}} minimal targeted subset | Fast feedback during development, pre-commit |
 | `{{cmd}}qa run` | **Full test suite** {{dash}} comprehensive validation | Pre-merge, campaign verification |
-| `{{cmd}}build-gate test` | **Per-build-target tests** {{dash}} target-specific | Build pipeline validation |
 
-**Typical chain:** `{{cmd}}smart-test --diff` (fast) {{arrow}} fix failures {{arrow}} `{{cmd}}qa run` (full) {{arrow}} `{{cmd}}build-gate all` (build + verify + test)
+**Typical chain:** `{{cmd}}smart-test --diff` (fast) {{arrow}} fix failures {{arrow}} `{{cmd}}qa run` (full)
 
 Smart test is a **speed optimization**, not a replacement for qa. Use it for
-fast iteration; always run `{{cmd}}qa` or `{{cmd}}build-gate all` before merge/ship.
+fast iteration; always run `{{cmd}}qa` before merge/ship.
 
 ## Integration
 
@@ -238,8 +237,7 @@ fast iteration; always run `{{cmd}}qa` or `{{cmd}}build-gate all` before merge/s
 |-------|---------------------|
 | `{{cmd}}qa run` | Start with `{{cmd}}smart-test --diff` for speed, then `{{cmd}}qa run` for comprehensive validation |
 | `{{cmd}}manager verify` | Use for quicker agent-scoped validation in worktrees |
-| `{{cmd}}build-gate test` | Smart test covers targeted tests; build-gate covers build-scoped tests |
-| `{{cmd}}observer` | Record test results as `test-pass` / `test-fail` observations |
+| Observation log | Record test results as `test-pass` / `test-fail` observations in `data/observations.jsonl` |
 | `{{cmd}}ship` | Run `{{cmd}}smart-test --diff` before commit for fast validation |
 
 ---

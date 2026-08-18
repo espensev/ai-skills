@@ -2,8 +2,8 @@
   "cases": "D:\\Development\\AI-related\\Ai-Skills\\claude-skills\\eval\\cases\\light-skill-cases.json",
   "responses": "D:\\Development\\AI-related\\Ai-Skills\\claude-skills\\eval\\responses.mock.json",
   "summary": {
-    "total_cases": 22,
-    "passed": 22,
+    "total_cases": 20,
+    "passed": 20,
     "failed": 0,
     "average_score": 5.0,
     "by_skill": {
@@ -35,11 +35,6 @@
       "memory-management": {
         "count": 1,
         "passed": 1,
-        "average_score": 5.0
-      },
-      "observer": {
-        "count": 2,
-        "passed": 2,
         "average_score": 5.0
       },
       "planner": {
@@ -249,38 +244,6 @@
     {
       "id": "memory-management-basic-001",
       "skill": "memory-management",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "observer-basic-001",
-      "skill": "observer",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "observer-scan-002",
-      "skill": "observer",
       "scores": {
         "trigger": 1.0,
         "contract": 1.0,

@@ -22,33 +22,19 @@ recall.
 
 ## Scope
 
-{{#claude}}
-`/observe` owns passive project intelligence (observation logs,
-{{/claude}}
-{{#codex}}
-`$observer` owns passive project intelligence (observation logs,
-{{/codex}}
-synthesized health notes). Memory-management owns memory hygiene — schema,
-placement, budget, and audits for durable conventions and lessons. Prefer
-{{#claude}}
-`/observe` when the ask is "watch and record patterns over time";
-{{/claude}}
-{{#codex}}
-`$observer` when the ask is "watch and record patterns over time";
-{{/codex}}
+The repo-owned observation log (`data/observations.jsonl`, plus any
+synthesized health notes under `docs/observer/`) holds passive project
+intelligence. Memory-management owns memory hygiene — schema, placement,
+budget, and audits for durable conventions and lessons. Append to the
+observation log when the ask is "watch and record patterns over time";
 prefer this skill when the ask is "write, reorganize, or audit durable
 memory."
 
 ## Dependencies
 
 - Required: none.
-{{#claude}}
-- Optional: `/observe` for the observation log this skill promotes
-{{/claude}}
-{{#codex}}
-- Optional: `$observer` for the observation log this skill promotes
-{{/codex}}
-  lessons from.
+- Optional: a repo observation log (`data/observations.jsonl`) this skill
+  promotes lessons from.
 
 ## Commands
 
@@ -223,7 +209,7 @@ matches the task.
 | Searchable registry | Native `MEMORY.md`, generated and read-only |
 | Evidence and provenance | Native `rollout_summaries/` and `raw_memories.md`, generated and read-only |
 | Approved memory update | The runtime-declared update queue, currently `<active-memory-root>/extensions/ad_hoc/notes/<timestamp>-<slug>.md` |
-| Project intelligence | `$observer` repo-owned observation and synthesis artifacts |
+| Project intelligence | Repo-owned observation and synthesis artifacts (`data/observations.jsonl`, `docs/observer/`) |
 {{/codex}}
 
 {{#claude}}
@@ -358,12 +344,7 @@ backfill.
 
 | Skill | How Memory Management Helps |
 |-------|------------------------------|
-{{#claude}}
-| `/observe` | Observer records observations; memory-management routes durable lessons into schema-clean memory |
-{{/claude}}
-{{#codex}}
-| `$observer` | Observer records observations; memory-management routes durable lessons into schema-clean memory |
-{{/codex}}
+| Observation log | `data/observations.jsonl` records observations; memory-management routes durable lessons into schema-clean memory |
 | `{{cmd}}docs-sync` | Docs drift checks complement memory audits — different truth surfaces |
 | `{{cmd}}review` | Review findings worth keeping become `feedback` entries with a Why |
 | `{{cmd}}qa` | Repeated QA findings are second-hit signals — record them |

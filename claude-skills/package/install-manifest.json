@@ -9,22 +9,15 @@
   ],
   "optional_skills": [
     "browser-control",
-    "build-gate",
-    "campaign-health",
     "deep-audit",
     "delegate",
-    "delegation-eval",
     "diagnosing-bugs",
     "docs-sync",
     "memory-management",
-    "observer",
     "review",
-    "schema-validator",
     "skill-authoring",
     "smart-test",
-    "truthpack-drift",
-    "usage-stats",
-    "worktree-preflight"
+    "usage-stats"
   ],
   "source_only_skills": [
     "telemetry-live-ops"

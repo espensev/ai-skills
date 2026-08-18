@@ -2,28 +2,21 @@
   "description": "Ownership manifest for the single-source skill layer. Skills listed in generated_skills are authored once in skills-src/<skill>/SKILL.src.md (plus optional verbatim support files under skills-src/<skill>/files/ for both providers and skills-src/<skill>/files-claude/ or skills-src/<skill>/files-codex/ for one) and regenerated into both provider packages by scripts/Build-ProviderSkillPackages.ps1. Every skill not listed in generated_skills is provider-owned; the generator must not touch it.",
   "generated_skills": [
     "browser-control",
-    "build-gate",
-    "campaign-health",
     "deep-audit",
     "delegate",
-    "delegation-eval",
     "diagnosing-bugs",
     "discover",
     "docs-sync",
     "handoff",
     "manager",
     "memory-management",
-    "observer",
     "planner",
     "qa",
     "review",
-    "schema-validator",
     "ship",
     "skill-authoring",
     "smart-test",
-    "truthpack-drift",
-    "usage-stats",
-    "worktree-preflight"
+    "usage-stats"
   ],
   "provider_owned_shared_skills": [
     "telemetry-live-ops"

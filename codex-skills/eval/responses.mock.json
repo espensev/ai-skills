@@ -87,19 +87,6 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "observer-basic-001",
-    "selected_skill": "observer",
-    "output": "Use repo-owned project-intelligence artifacts for the evidence-backed observation, labelled with controller_machine_id and target_machine_ids. This does not write Codex native memory.",
-    "created_files": [],
-    "verification_commands": [
-      "observations.jsonl",
-      "metrics.jsonl",
-      "git status"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
     "id": "discover-ambiguous-002",
     "selected_skill": "discover",
     "output": "Mock eval response for discover. question. evidence.",
@@ -174,31 +161,6 @@
     "verification_commands": [
       "git status",
       "git diff"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "observer-scan-002",
-    "selected_skill": "observer",
-    "output": "Mock eval response for observer. observation. scan. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "observations.jsonl",
-      "git status",
-      "check"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "observer-empty-003",
-    "selected_skill": "observer",
-    "output": "Mock eval response for observer. observation. briefing. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "observations.jsonl",
-      "git status"
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."

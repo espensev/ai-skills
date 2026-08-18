@@ -10,11 +10,8 @@
   "optional_skills": [
     "audit-gated-subagents",
     "browser-control",
-    "build-gate",
-    "campaign-health",
     "deep-audit",
     "delegate",
-    "delegation-eval",
     "diagnosing-bugs",
     "docs-sync",
     "documentation-lookup",
@@ -22,20 +19,15 @@
     "loop-master",
     "mcp-server-patterns",
     "memory-management",
-    "observer",
     "parallel-agents-light",
     "repo-conventions",
     "review",
-    "schema-validator",
     "skill-authoring",
     "smart-test",
-    "truthpack-drift",
     "usage-stats",
-    "verification-loop",
-    "worktree-preflight"
+    "verification-loop"
   ],
   "source_only_skills": [
-    "codebase-review-prompts",
     "telemetry-live-ops"
   ],
   "contract_files": [

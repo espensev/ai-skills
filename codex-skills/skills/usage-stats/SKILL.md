@@ -1,6 +1,6 @@
 ---
 name: usage-stats
-description: "Use when reviewing token/cost usage, budgets, rate-limit forecasts, session tool or timeline activity, or agent/campaign efficiency. Prefers measured telemetry with an explicitly estimated fallback. Do not use to evaluate delegation-routing rules (use delegation-eval) or operate a live telemetry deployment."
+description: "Use when reviewing token/cost usage, budgets, rate-limit forecasts, session tool or timeline activity, or agent/campaign efficiency. Prefers measured telemetry with an explicitly estimated fallback. Do not use to operate a live telemetry deployment."
 ---
 
 # Usage Stats — Usage, Cost & Agent Analytics
@@ -121,7 +121,7 @@ numbers as exact.
    git log --oneline --since="8 hours ago" --format="%H %ai %s"
    ```
 
-7. **Observer data** (if observer skill is active): `data/observations.jsonl`,
+7. **Observation log** (if the repo keeps one): `data/observations.jsonl`,
    including agent-linked observations (`grep '"agent"'`).
 
 8. **Budget and history files** (managed by this skill):
@@ -132,7 +132,7 @@ numbers as exact.
 
 Report which sources were found. Commands adapt to available data — more
 sources produce richer analysis. If **no data sources found**, report clearly
-and suggest: install hooks for tool-level tracking, enable observer for
+and suggest: install hooks for tool-level tracking, keep an observation log for
 project-level metrics, or re-run after some session activity has accumulated.
 
 ---
@@ -383,7 +383,7 @@ by session_id to prevent duplicates).
 3. **Count tool calls** by type — from telemetry per-session data when
    available, else from hooks log PreToolUse events (parse the JSONL with
    python3/jq, count by tool_name); failing that, parse the transcript for
-   tool_use blocks, then fall back to git log + observer data for a coarser
+   tool_use blocks, then fall back to git log + observation-log data for a coarser
    picture.
 
 4. **Count agent spawns**: SubagentStart/SubagentStop events when hooks
@@ -544,8 +544,7 @@ character heuristic).
 ## Command: `agents` — Agent Overview & Deep Dive
 
 Covers session subagents (hooks events) and campaign agents (from
-`$manager` orchestration). Complements `$campaign-health` (state
-and stuck detection) with performance-focused metrics.
+`$manager` orchestration) with performance-focused metrics.
 
 ### `$usage-stats agents` — overview
 
@@ -734,10 +733,9 @@ tier, the canonical `*_input` / `*_output` key wins.
 
 | Skill | How Usage Stats Helps |
 |-------|----------------------|
-| `$campaign-health` | Token costs and agent performance feed campaign efficiency metrics |
 | `$planner` | Budget awareness and trend data inform agent model selection |
 | `$manager` | Cost tracking per campaign validates tiered-model savings; include efficiency in `$manager verify` |
-| `$observer` | Budget alerts and efficiency findings can be recorded as observations |
+| Observation log | Budget alerts and efficiency findings can be recorded in `data/observations.jsonl` |
 | `$ship` | Include session summary in commit messages or PR descriptions |
 
 ---

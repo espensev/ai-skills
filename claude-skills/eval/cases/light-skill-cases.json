@@ -207,49 +207,6 @@
     }
   },
   {
-    "id": "observer-basic-001",
-    "skill": "observer",
-    "prompt": "Summarize project drift and record a few durable observations without changing product code.",
-    "checks": {
-      "must_mention": [
-        "observation",
-        "evidence",
-        "project-intelligence"
-      ],
-      "must_not_mention": [
-        ".codex",
-        ".gemini"
-      ],
-      "verification_any_of": [
-        "observations.jsonl",
-        "metrics.jsonl",
-        "git status"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "observer-scan-002",
-    "skill": "observer",
-    "prompt": "Run a health scan and tell me if there are any blockers before I launch agents.",
-    "checks": {
-      "must_mention": [
-        "observation",
-        "scan"
-      ],
-      "must_not_mention": [
-        ".codex",
-        ".gemini"
-      ],
-      "verification_any_of": [
-        "observations.jsonl",
-        "git status",
-        "check"
-      ],
-      "must_create": []
-    }
-  },
-  {
     "id": "delegate-basic-001",
     "skill": "delegate",
     "prompt": "I already fetched the failing build log. Summarize these 180 lines into the failing tests and why — offload it to a local model if that's safe.",

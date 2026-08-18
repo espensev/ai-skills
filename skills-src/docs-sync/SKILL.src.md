@@ -267,8 +267,6 @@ different surfaces and can run independently or together:
 
 | Skill | Checks | Surface |
 |-------|--------|---------|
-| `{{cmd}}schema-validator` | Code {{bidir}} Code | Schema authority vs consumer layers |
-| `{{cmd}}truthpack-drift` | Truth {{bidir}} Code | Declared truth stores vs actual codebase |
 | `{{cmd}}docs-sync` | Docs {{bidir}} Code + Docs {{bidir}} Docs | Documentation vs code and cross-doc consistency |
 
 **Run all three together** for comprehensive drift detection.
@@ -278,10 +276,8 @@ different surfaces and can run independently or together:
 | Skill | How Docs Sync Helps |
 |-------|---------------------|
 | `{{cmd}}manager verify` | Include docs-sync check in campaign exit criteria |
-| `{{cmd}}schema-validator` | Parallel validator {{dash}} schema checks code-to-code; docs-sync checks code-to-docs |
-| `{{cmd}}truthpack-drift` | Parallel validator {{dash}} truthpack checks truth-to-code; docs-sync checks docs |
 | `{{cmd}}ship` | Quick check before commit catches stale doc references |
-| `{{cmd}}observer` | Record `drift` observations for documentation divergence |
+| Observation log | Record `drift` observations in `data/observations.jsonl` for documentation divergence |
 | `{{cmd}}qa` | Docs-sync complements code quality with documentation quality |
 
 ---

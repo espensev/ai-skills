@@ -43,11 +43,9 @@ vendor into their own `.claude/skills` runtime tree.
 | Discover | `/discover` | Research codebase before planning (supports optimization discovery) |
 | QA | `/qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
 | Ship | `/ship` | Stage, commit, and push with smart file classification |
-| Observer | `/observe` | Passive project intelligence — note patterns, drift, decisions over time |
 | Diagnosing Bugs | `/diagnosing-bugs` | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | Review | `/review` | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | Delegate | `/delegate` | Route one bounded, already-fetched transform to local Ollama when telemetry readiness allows it |
-| Delegation Eval | `/delegation-eval` | Compare local helper models using telemetry eval runs, judge packets, and dispatch recommendations |
 | Usage Stats | `/usage-stats` | Analyze token/cost/budget usage, session/tool activity, and agent performance, preferring measured telemetry data when available |
 | Memory Management | `/memory-management` | Govern auto-memory: typed write schema, locality routing, index budget, and audits |
 | Deep Audit | `/deep-audit` | Run evidence-first, resumable runtime-efficiency audits while keeping product code read-only by default |
@@ -104,22 +102,15 @@ done
 # Optional ops, analytics, and delegation skills
 for d in \
   skills/browser-control \
-  skills/build-gate \
-  skills/campaign-health \
   skills/deep-audit \
   skills/delegate \
-  skills/delegation-eval \
   skills/diagnosing-bugs \
   skills/docs-sync \
   skills/memory-management \
-  skills/observer \
   skills/review \
-  skills/schema-validator \
   skills/skill-authoring \
   skills/smart-test \
-  skills/truthpack-drift \
-  skills/usage-stats \
-  skills/worktree-preflight; do
+  skills/usage-stats; do
   cp -r "$d" <project>/.claude/skills/
 done
 
@@ -151,22 +142,15 @@ done
 
 # Optional ops, analytics, and delegation skills
 for d in \
-  skills/build-gate \
-  skills/campaign-health \
   skills/deep-audit \
   skills/delegate \
-  skills/delegation-eval \
   skills/diagnosing-bugs \
   skills/docs-sync \
   skills/memory-management \
-  skills/observer \
   skills/review \
-  skills/schema-validator \
   skills/skill-authoring \
   skills/smart-test \
-  skills/truthpack-drift \
-  skills/usage-stats \
-  skills/worktree-preflight; do
+  skills/usage-stats; do
   cp -r "$d" ~/.claude/skills/
 done
 
@@ -254,7 +238,6 @@ After vendoring, the target repo should have this runtime layout:
 |---|---|
 | `.claude/skills/manager/SKILL.md` | Manager skill runtime doc |
 | `.claude/skills/planner/SKILL.md` | Planner skill runtime doc (includes refactor mode) |
-| `.claude/skills/observer/SKILL.md` | Observer skill for passive project intelligence |
 | `.claude/skills/planning-contract.md` | Shared planning contract |
 | `.claude/skills/project.toml` | Generated project-local config |
 | `scripts/task_manager.py` | Backend command surface |
@@ -263,7 +246,6 @@ After vendoring, the target repo should have this runtime layout:
 | `scripts/task_runtime/*.py` | Internal runtime support modules used by `task_manager.py` |
 | `data/tasks.json` | Runtime task state |
 | `data/plans/plan-*.json` | Authoritative machine-readable campaign plans |
-| `data/observations.jsonl` | Observer observation log (append-only JSONL) |
 | `docs/campaign-*.md` | Human-readable campaign records |
 | `agents/agent-{letter}-{name}.md` | Per-agent task specifications |
 | `live-tracker.md` | Human-readable progress tracker |

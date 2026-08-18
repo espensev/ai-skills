@@ -150,32 +150,6 @@
     }
   },
   {
-    "id": "observer-basic-001",
-    "skill": "observer",
-    "prompt": "Summarize project drift for a verified remote target and record optional repo-owned observations without changing product code or Codex native memory.",
-    "checks": {
-      "must_mention": [
-        "observation",
-        "evidence",
-        "project-intelligence",
-        "repo-owned",
-        "controller_machine_id",
-        "target_machine_ids"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md",
-        "task_manager.py command"
-      ],
-      "verification_any_of": [
-        "observations.jsonl",
-        "metrics.jsonl",
-        "git status"
-      ],
-      "must_create": []
-    }
-  },
-  {
     "id": "discover-ambiguous-002",
     "skill": "discover",
     "prompt": "I need to understand this code before we do anything. Look at the analysis pipeline.",
@@ -307,49 +281,6 @@
       "verification_any_of": [
         "git status",
         "git diff"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "observer-scan-002",
-    "skill": "observer",
-    "prompt": "Run a health scan and tell me if there are any blockers before I launch agents.",
-    "checks": {
-      "must_mention": [
-        "observation",
-        "scan"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md",
-        "task_manager.py command"
-      ],
-      "verification_any_of": [
-        "observations.jsonl",
-        "git status",
-        "check"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "observer-empty-003",
-    "skill": "observer",
-    "prompt": "This is a fresh repo with no prior observations. Give me a baseline briefing.",
-    "checks": {
-      "must_mention": [
-        "observation",
-        "briefing"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md",
-        "task_manager.py command"
-      ],
-      "verification_any_of": [
-        "observations.jsonl",
-        "git status"
       ],
       "must_create": []
     }

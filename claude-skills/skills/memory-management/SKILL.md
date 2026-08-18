@@ -17,18 +17,19 @@ recall.
 
 ## Scope
 
-`/observe` owns passive project intelligence (observation logs,
-synthesized health notes). Memory-management owns memory hygiene — schema,
-placement, budget, and audits for durable conventions and lessons. Prefer
-`/observe` when the ask is "watch and record patterns over time";
+The repo-owned observation log (`data/observations.jsonl`, plus any
+synthesized health notes under `docs/observer/`) holds passive project
+intelligence. Memory-management owns memory hygiene — schema, placement,
+budget, and audits for durable conventions and lessons. Append to the
+observation log when the ask is "watch and record patterns over time";
 prefer this skill when the ask is "write, reorganize, or audit durable
 memory."
 
 ## Dependencies
 
 - Required: none.
-- Optional: `/observe` for the observation log this skill promotes
-  lessons from.
+- Optional: a repo observation log (`data/observations.jsonl`) this skill
+  promotes lessons from.
 
 ## Commands
 
@@ -263,7 +264,7 @@ backfill.
 
 | Skill | How Memory Management Helps |
 |-------|------------------------------|
-| `/observe` | Observer records observations; memory-management routes durable lessons into schema-clean memory |
+| Observation log | `data/observations.jsonl` records observations; memory-management routes durable lessons into schema-clean memory |
 | `/docs-sync` | Docs drift checks complement memory audits — different truth surfaces |
 | `/review` | Review findings worth keeping become `feedback` entries with a Why |
 | `/qa` | Repeated QA findings are second-hit signals — record them |

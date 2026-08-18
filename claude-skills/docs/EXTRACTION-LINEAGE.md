@@ -6,6 +6,10 @@ what was parameterized, and when.
 > Current-state note (2026-08-09): `observer-test`, `worktree-manager`, and
 > `refactor-planner` were later retired as standalone skills. They remain below
 > as lineage records, not current install surfaces.
+> Current-state note (2026-08-18): the meta tier — `observer`,
+> `delegation-eval`, `campaign-health`, `truthpack-drift`, `schema-validator`,
+> `build-gate`, `worktree-preflight` — was retired after a usage audit found
+> zero invocations across all transcripts. Lineage records below are history.
 
 ## Extracted Skills
 

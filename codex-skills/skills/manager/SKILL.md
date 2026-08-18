@@ -111,11 +111,11 @@ Use feedback in this order:
 
 1. explicit user correction or requirement change
 2. failing build, test, lint, or verify output
-3. `$observer` blocker or regression signals
+3. blocker or regression signals in `data/observations.jsonl` (if present)
 4. plan drift between JSON, docs, tracker, and code
 
 Treat single weak signals as local context. Promote repeated or reusable ones
-into observer records or eval cases so future runs start from better evidence.
+into observation-log records or eval cases so future runs start from better evidence.
 
 ### Autonomous Addition Policy
 
@@ -323,8 +323,8 @@ If present, promote observations to the project-level log:
 2. Append each observation to `data/observations.jsonl`
 3. Report promoted observation count per worktree
 
-This feeds `$observer synthesize` with execution-time signals (test results,
-build errors, churn, blockers) that improve future planning.
+This preserves execution-time signals (test results, build errors, churn,
+blockers) that improve future planning.
 
 ---
 
@@ -404,8 +404,8 @@ Produce a summary with:
 - **Stale state**: items cleaned up (or "none")
 - **Blockers**: anything that would prevent the next `go` from succeeding
 - **Observer flags**: if `data/observations.jsonl` contains recent `blocker` (warning), `regression` (failure), or `workaround` (warning/debt) observations
-- **Feedback handoff**: which findings should stay local, enter observer
-  records, or become eval cases — recorded for future planning, not just
+- **Feedback handoff**: which findings should stay local, enter the
+  observation log, or become eval cases — recorded for future planning, not just
   mentioned in the current report
 
 ### Refactor-aware verification
@@ -441,14 +441,14 @@ then report what needs further research.
 
 ### Optional durable feedback
 
-If the repo already uses observer artifacts, or the user explicitly asks for a
+If the repo already keeps an observation log, or the user explicitly asks for a
 feedback trail:
 
 - record evidence-backed blockers, regressions, and drift in
   `data/observations.jsonl`
 - refresh `docs/observer/project-intelligence.md` when the summary is stale
-- convert recurring blocker/regression patterns into durable observations via
-  `$observer note` so the next campaign starts from better evidence
+- append recurring blocker/regression patterns to the observation log so the
+  next campaign starts from better evidence
 - additionally convert those patterns into eval cases with
   `python scripts/observe_to_eval.py --merge eval/cases/light-skill-cases.json`
   If `scripts/observe_to_eval.py` is not present in the repo (for example a

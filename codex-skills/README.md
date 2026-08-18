@@ -77,13 +77,11 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Audit-Gated Subagents | auto | Run review-first multi-agent audits with PASS 0 maps, chief/operator gates, lane ownership, independent reviewers, and safety stops |
 | Deep Audit | auto | Run evidence-first, resumable runtime-efficiency audits across hot paths, allocation/retention, I/O, concurrency, queues, retries, scaling, and lifecycle behavior |
 | Delegate | auto | Route one bounded, already-fetched transform to local Ollama via the `ollama-telemetry` MCP tools when readiness and task class allow it |
-| Delegation Eval | auto | Run and judge local-model helper evals from `ollama-telemetry`, then compare measured results against dispatch rules |
 | Diagnosing Bugs | auto | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | Documentation Lookup | auto | Fetch current framework and library docs before answering library-specific questions |
 | Exa Search | auto | Use Exa as an optional accelerator for semantic web, code, company, or people search when Exa MCP is available |
 | MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
 | Memory Management | auto | Govern explicit updates to native Codex memory, keep generated registries read-only, enforce index budgets, and label controller/target machine provenance |
-| Observer | auto | Keep optional project intelligence in repo-owned observation logs, metrics, and health notes without creating a parallel native-memory store |
 | Parallel Agents Light | auto | Route Codex work between local execution, bounded sidecar subagents, split implementation, and full manager campaigns |
 | Repository Conventions | auto | Follow the target repo first, with fallback playbooks for API/backend/frontend structure, Playwright E2E, current research, and bounded local cycles |
 | Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
@@ -91,10 +89,9 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Usage Stats | auto | Analyze tokens, costs, budgets, forecasts, session/tool activity, and agent performance, preferring measured telemetry API data when available |
 | Verification Loop | auto | Run repo-appropriate build, lint, typecheck, test, and diff review before handoff |
 
-`codebase-review-prompts` and `telemetry-live-ops` remain explicit source-only
-skills. The former is owned by the shared agent catalog on this workstation;
-the latter depends on machine-local telemetry deployment details. Neither is
-copied by the provider package installer.
+`telemetry-live-ops` remains an explicit source-only skill; it depends on
+machine-local telemetry deployment details and is not copied by the provider
+package installer.
 
 ## Workflow
 
@@ -142,27 +139,20 @@ for d in \
   skills/loop-master \
   skills/audit-gated-subagents \
   skills/browser-control \
-  skills/build-gate \
-  skills/campaign-health \
   skills/deep-audit \
   skills/delegate \
-  skills/delegation-eval \
   skills/diagnosing-bugs \
   skills/docs-sync \
   skills/documentation-lookup \
   skills/exa-search \
   skills/mcp-server-patterns \
   skills/memory-management \
-  skills/observer \
   skills/parallel-agents-light \
   skills/repo-conventions \
   skills/review \
-  skills/schema-validator \
   skills/skill-authoring \
   skills/smart-test \
-  skills/truthpack-drift \
   skills/usage-stats \
-  skills/worktree-preflight \
   skills/verification-loop; do
   cp -r "$d" <project>/.codex/skills/
 done
@@ -196,27 +186,20 @@ done
 for d in \
   skills/loop-master \
   skills/audit-gated-subagents \
-  skills/build-gate \
-  skills/campaign-health \
   skills/deep-audit \
   skills/delegate \
-  skills/delegation-eval \
   skills/diagnosing-bugs \
   skills/docs-sync \
   skills/documentation-lookup \
   skills/exa-search \
   skills/mcp-server-patterns \
   skills/memory-management \
-  skills/observer \
   skills/parallel-agents-light \
   skills/repo-conventions \
   skills/review \
-  skills/schema-validator \
   skills/skill-authoring \
   skills/smart-test \
-  skills/truthpack-drift \
   skills/usage-stats \
-  skills/worktree-preflight \
   skills/verification-loop; do
   cp -r "$d" ~/.codex/skills/
 done

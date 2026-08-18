@@ -10,12 +10,12 @@ deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-54 install-ready skills ship across two provider-specific packages:
+40 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 23 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
-| **codex-skills** | 31 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
+| **claude-skills** | 16 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
+| **codex-skills** | 24 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
 
 > Counts reflect each ready package's `package/install-manifest.json`.
 > Explicit `source_only_skills` entries and unmanifested imported material stay as
@@ -72,7 +72,6 @@ and root comparator consume it directly.
 | **diagnosing-bugs** | Build a tight red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or performance regressions |
 | **review** | Review branch, staged, or working-tree diffs against standards, specs, and regression risk, writing durable findings under `docs/reviews/` |
 | **ship** | Stage, commit, push validated work with campaign-aware commit grouping |
-| **observer** | Passive project intelligence — observe patterns over time without interfering |
 
 `repo-conventions` (codex-skills only) starts from the target repository's own
 rules, then supplies fallback playbooks for APIs, backend/frontend structure,
@@ -82,16 +81,11 @@ Playwright E2E, current research, and bounded inspect-edit-verify cycles.
 
 | Skill | Purpose |
 |---|---|
-| **build-gate** | Validate multi-target build chains, artifact freshness, source-list drift, and target tests before merge |
-| **campaign-health** | Find stuck plans, orphaned agents, and stale worktrees, each with an actionable recovery command |
 | **smart-test** | Map changed files to the minimal useful test subset instead of the full suite (default-branch aware) |
-| **schema-validator** | Validate a schema is consumed correctly across data → API → test layers; report drift |
-| **truthpack-drift** | Detect drift between declared reusable "truth" facts and the current source |
 | **docs-sync** | Detect and fix drift between docs and code (versions, paths, conflict markers) |
 | **usage-stats** | Token/cost/budget/forecast intelligence, session tool/agent/timeline analytics, and agent performance/cost reports — telemetry-first with heuristic fallback |
 | **deep-audit** | Run evidence-backed, resumable runtime-efficiency audits with explicit safety and evidence boundaries |
 | **skill-authoring** | Create or revise Agent Skills with focused discovery metadata, progressive disclosure, support files, and package wiring |
-| **worktree-preflight** | Pre-launch conflict gate over branch/worktree/file-ownership (unified OK / WARNING / CONFLICT contract) |
 
 ### Lightweight Codex parallelism
 
@@ -114,7 +108,7 @@ Telemetry integration is deliberately split by portability:
 - `telemetry-live-ops` is machine-local, points at a personal live deployment, and is not exported.
 - Deprecated Claude-only aliases `refactor-planner`, `observer-test`, and
   `worktree-manager` were removed; their behavior is covered by
-  `planner --mode refactor`, `observer`, and `manager` with its task runtime.
+  `planner --mode refactor` and `manager` with its task runtime.
 
 See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md) for the integration boundary.
 
@@ -165,7 +159,7 @@ Each ready package follows a **contract-first, read-all write-scoped** design:
 - Skills reference shared contracts (`planning-contract.md`) that define required plan elements and agent specs
 - Agents read the full repo for context but only write to explicitly scoped files
 - All material claims require source evidence (file path, line number, or command output)
-- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ. The one exception is `telemetry-live-ops`, a machine-local ops skill that intentionally keeps per-provider presentations. A one-sided obligation is allowed only when the mechanism exists on one side only; the standing example and its expiry condition are recorded in [docs/observer-hook-asymmetry.md](docs/observer-hook-asymmetry.md).
+- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ. The one exception is `telemetry-live-ops`, a machine-local ops skill that intentionally keeps per-provider presentations. A one-sided obligation is allowed only when the mechanism exists on one side only.
 
 The export script reads `release-manifest.json` to determine which packages are
 ready and applies the `portable-runtime` strategy to Claude and Codex.

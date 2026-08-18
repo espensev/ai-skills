@@ -12,18 +12,19 @@ recall.
 
 ## Scope
 
-`$observer` owns passive project intelligence (observation logs,
-synthesized health notes). Memory-management owns memory hygiene — schema,
-placement, budget, and audits for durable conventions and lessons. Prefer
-`$observer` when the ask is "watch and record patterns over time";
+The repo-owned observation log (`data/observations.jsonl`, plus any
+synthesized health notes under `docs/observer/`) holds passive project
+intelligence. Memory-management owns memory hygiene — schema, placement,
+budget, and audits for durable conventions and lessons. Append to the
+observation log when the ask is "watch and record patterns over time";
 prefer this skill when the ask is "write, reorganize, or audit durable
 memory."
 
 ## Dependencies
 
 - Required: none.
-- Optional: `$observer` for the observation log this skill promotes
-  lessons from.
+- Optional: a repo observation log (`data/observations.jsonl`) this skill
+  promotes lessons from.
 
 ## Commands
 
@@ -178,7 +179,7 @@ instructions own physical storage and take precedence.
 | Searchable registry | Native `MEMORY.md`, generated and read-only |
 | Evidence and provenance | Native `rollout_summaries/` and `raw_memories.md`, generated and read-only |
 | Approved memory update | The runtime-declared update queue, currently `<active-memory-root>/extensions/ad_hoc/notes/<timestamp>-<slug>.md` |
-| Project intelligence | `$observer` repo-owned observation and synthesis artifacts |
+| Project intelligence | Repo-owned observation and synthesis artifacts (`data/observations.jsonl`, `docs/observer/`) |
 
 If active runtime instructions do not declare a memory-write surface, do not
 invent `.memory/`, `docs/memory/`, or another store.
@@ -236,7 +237,7 @@ backfill.
 
 | Skill | How Memory Management Helps |
 |-------|------------------------------|
-| `$observer` | Observer records observations; memory-management routes durable lessons into schema-clean memory |
+| Observation log | `data/observations.jsonl` records observations; memory-management routes durable lessons into schema-clean memory |
 | `$docs-sync` | Docs drift checks complement memory audits — different truth surfaces |
 | `$review` | Review findings worth keeping become `feedback` entries with a Why |
 | `$qa` | Repeated QA findings are second-hit signals — record them |

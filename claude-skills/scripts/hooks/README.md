@@ -9,17 +9,17 @@ observability, analytics, and safety features.
 |--------|-----------|---------|-------------|
 | `log_hook_event.py` | Any | Universal JSONL event logger | `/usage-stats` |
 | `safety_guard.py` | PreToolUse | Block destructive commands and protected file edits | Standalone |
-| `observe_session_briefing.py` | SessionStart | Inject project health context at session start | `/observer`, `/campaign-health` |
-| `observe_test_output.py` | PostToolUse (Bash) | Record test/build results as observations | `/observer` |
-| `observe_churn.py` | PostToolUse (Edit\|Write) | Track file edit frequency, flag churn | `/observer` |
-| `observe_agent_stop.py` | SubagentStop | Summarize worktree observations for parent | `/manager`, `/observer` |
+| `observe_session_briefing.py` | SessionStart | Inject project health context at session start | observation-log readers (`/manager`, `/usage-stats`) |
+| `observe_test_output.py` | PostToolUse (Bash) | Record test/build results as observations | observation log |
+| `observe_churn.py` | PostToolUse (Edit\|Write) | Track file edit frequency, flag churn | observation log |
+| `observe_agent_stop.py` | SubagentStop | Summarize worktree observations for parent | `/manager` |
 
 ## Data Files
 
 | File | Created By | Read By |
 |------|-----------|---------|
 | `.claude/hooks/logs/hooks-log.jsonl` | `log_hook_event.py` | `/usage-stats` |
-| `data/observations.jsonl` | `observe_test_output.py`, `observe_churn.py` | `/observer`, `/campaign-health`, `observe_session_briefing.py` |
+| `data/observations.jsonl` | `observe_test_output.py`, `observe_churn.py` | `/manager`, `/usage-stats`, `observe_session_briefing.py` |
 
 ## Installation
 
@@ -50,7 +50,7 @@ You don't need all hooks. Pick by category:
 - `log_hook_event.py` on: SessionStart, PreToolUse, PostToolUse,
   PostToolUseFailure, SubagentStart, SubagentStop, Stop, StopFailure
 
-**Observer only** (for `/observer`, `/campaign-health`):
+**Observation log only** (read by `/manager` and `/usage-stats`):
 - `observe_session_briefing.py` on: SessionStart
 - `observe_test_output.py` on: PostToolUse (Bash)
 - `observe_churn.py` on: PostToolUse (Edit|Write)
@@ -64,8 +64,8 @@ You don't need all hooks. Pick by category:
 ```
 /usage-stats    ──── reads ── .claude/hooks/logs/hooks-log.jsonl ◄── log_hook_event.py
 
-/observer       ──┐
-/campaign-health──┼── reads ── data/observations.jsonl ◄── observe_test_output.py
+/manager        ──┐
+/usage-stats    ──┼── reads ── data/observations.jsonl ◄── observe_test_output.py
                   │                                     ◄── observe_churn.py
                   └── reads via session briefing        ◄── observe_session_briefing.py
 
@@ -79,8 +79,8 @@ You don't need all hooks. Pick by category:
 - **Standalone**: No hook imports `task_manager.py` or any skill script.
   All hooks are self-contained Python with stdlib only.
 - **Graceful degradation**: If data files don't exist, hooks exit silently.
-  Missing observer initialization = hooks do nothing.
-- **Non-blocking**: Logger and observer hooks use `async: true` or short
+  Missing observation-log initialization = hooks do nothing.
+- **Non-blocking**: Logger and observation hooks use `async: true` or short
   timeouts. Safety guard runs synchronously (must block before execution).
 - **Deduplication**: Observer hooks check for existing identical observations
   before recording.

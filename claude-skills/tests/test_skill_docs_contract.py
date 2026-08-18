@@ -68,7 +68,6 @@ class TestSkillDocsContract(unittest.TestCase):
             SKILLS / "ship" / "SKILL.md",
             SKILLS / "skill-authoring" / "SKILL.md",
             SKILLS / "usage-stats" / "SKILL.md",
-            SKILLS / "observer" / "references" / "output-contracts.md",
         ]
         for path in expected:
             self.assertTrue(path.exists(), f"Missing exported file: {path}")
@@ -138,7 +137,6 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("qa", manifest["default_skills"])
         self.assertIn("ship", manifest["default_skills"])
         self.assertIn("delegate", manifest["optional_skills"])
-        self.assertIn("delegation-eval", manifest["optional_skills"])
         self.assertIn("deep-audit", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
@@ -164,34 +162,19 @@ class TestSkillDocsContract(unittest.TestCase):
 
     def test_always_off_skills_disable_model_invocation(self):
         demoted = (
-            "build-gate",
-            "campaign-health",
             "delegate",
-            "delegation-eval",
             "diagnosing-bugs",
             "docs-sync",
-            "observer",
-            "schema-validator",
             "skill-authoring",
             "smart-test",
-            "truthpack-drift",
             "usage-stats",
-            "worktree-preflight",
         )
         for skill in demoted:
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("disable-model-invocation: true", text, skill)
 
-    def test_observer_and_manager_use_progressive_disclosure(self):
-        observer = (SKILLS / "observer" / "SKILL.md").read_text(encoding="utf-8")
-        contracts = (SKILLS / "observer" / "references" / "output-contracts.md").read_text(encoding="utf-8")
+    def test_manager_uses_progressive_disclosure(self):
         manager = MANAGER_SKILL.read_text(encoding="utf-8")
-        self.assertIn("references/output-contracts.md", observer)
-        self.assertNotIn("### Note Output", observer)
-        self.assertIn("### Note Output", contracts)
-        self.assertNotIn("### `/observer", observer)
-        self.assertNotIn("\n/observer ", observer)
-        self.assertNotIn("`/observer ", observer)
         self.assertNotIn("### Phase 1: Load context", manager)
         self.assertIn("planning policy is loaded on demand", manager)
 
@@ -204,8 +187,6 @@ class TestSkillDocsContract(unittest.TestCase):
             "manager",
             "review",
             "discover",
-            "campaign-health",
-            "worktree-preflight",
             "usage-stats",
         ):
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")

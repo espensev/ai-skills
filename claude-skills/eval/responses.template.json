@@ -108,24 +108,6 @@
     "notes": ""
   },
   {
-    "id": "observer-basic-001",
-    "selected_skill": "observer",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
-    "id": "observer-scan-002",
-    "selected_skill": "observer",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "reject",
-    "notes": ""
-  },
-  {
     "id": "planner-basic-001",
     "selected_skill": "planner",
     "output": "",

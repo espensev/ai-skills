@@ -208,12 +208,11 @@ These three skills cover testing at different scopes:
 |-------|-------|-------------|
 | `/smart-test` | **Changed files only** — minimal targeted subset | Fast feedback during development, pre-commit |
 | `/qa run` | **Full test suite** — comprehensive validation | Pre-merge, campaign verification |
-| `/build-gate test` | **Per-build-target tests** — target-specific | Build pipeline validation |
 
-**Typical chain:** `/smart-test --diff` (fast) → fix failures → `/qa run` (full) → `/build-gate all` (build + verify + test)
+**Typical chain:** `/smart-test --diff` (fast) → fix failures → `/qa run` (full)
 
 Smart test is a **speed optimization**, not a replacement for qa. Use it for
-fast iteration; always run `/qa` or `/build-gate all` before merge/ship.
+fast iteration; always run `/qa` before merge/ship.
 
 ## Integration
 
@@ -221,8 +220,7 @@ fast iteration; always run `/qa` or `/build-gate all` before merge/ship.
 |-------|---------------------|
 | `/qa run` | Start with `/smart-test --diff` for speed, then `/qa run` for comprehensive validation |
 | `/manager verify` | Use for quicker agent-scoped validation in worktrees |
-| `/build-gate test` | Smart test covers targeted tests; build-gate covers build-scoped tests |
-| `/observer` | Record test results as `test-pass` / `test-fail` observations |
+| Observation log | Record test results as `test-pass` / `test-fail` observations in `data/observations.jsonl` |
 | `/ship` | Run `/smart-test --diff` before commit for fast validation |
 
 ---

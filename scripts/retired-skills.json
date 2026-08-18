@@ -15,8 +15,24 @@
       "replacement": "repo-conventions"
     },
     {
+      "name": "build-gate",
+      "replacement": "qa"
+    },
+    {
+      "name": "campaign-health",
+      "replacement": "manager"
+    },
+    {
+      "name": "codebase-review-prompts",
+      "replacement": "review"
+    },
+    {
       "name": "deep-research",
       "replacement": "repo-conventions"
+    },
+    {
+      "name": "delegation-eval",
+      "replacement": "usage-stats"
     },
     {
       "name": "e2e-testing",
@@ -27,16 +43,36 @@
       "replacement": "repo-conventions"
     },
     {
+      "name": "grilling",
+      "replacement": "review"
+    },
+    {
+      "name": "improvement-analyst",
+      "replacement": "review"
+    },
+    {
       "name": "loop",
       "replacement": "repo-conventions"
+    },
+    {
+      "name": "observer",
+      "replacement": "memory-management"
     },
     {
       "name": "observer-test",
       "replacement": "observer"
     },
     {
+      "name": "prototype",
+      "replacement": "discover"
+    },
+    {
       "name": "refactor-planner",
       "replacement": "planner --mode refactor"
+    },
+    {
+      "name": "schema-validator",
+      "replacement": "qa"
     },
     {
       "name": "session-stats",
@@ -47,7 +83,15 @@
       "replacement": "usage-stats"
     },
     {
+      "name": "truthpack-drift",
+      "replacement": "docs-sync"
+    },
+    {
       "name": "worktree-manager",
+      "replacement": "manager"
+    },
+    {
+      "name": "worktree-preflight",
       "replacement": "manager"
     }
   ]

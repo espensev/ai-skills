@@ -24,7 +24,6 @@ DEEP_AUDIT_SKILL = SKILLS / "deep-audit" / "SKILL.md"
 DEEP_AUDIT_MODE_CONTRACT = SKILLS / "deep-audit" / "references" / "mode-contracts.md"
 DEEP_AUDIT_STATE_CONTRACT = SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md"
 MEMORY_MANAGEMENT_SKILL = SKILLS / "memory-management" / "SKILL.md"
-OBSERVER_SKILL = SKILLS / "observer" / "SKILL.md"
 REPO_CONVENTIONS_SKILL = SKILLS / "repo-conventions" / "SKILL.md"
 
 
@@ -69,8 +68,6 @@ class TestSkillDocsContract(unittest.TestCase):
             SKILLS / "manager" / "SKILL.md",
             SKILLS / "mcp-server-patterns" / "SKILL.md",
             SKILLS / "memory-management" / "SKILL.md",
-            SKILLS / "observer" / "SKILL.md",
-            SKILLS / "observer" / "references" / "output-contracts.md",
             SKILLS / "planner" / "SKILL.md",
             SKILLS / "qa" / "SKILL.md",
             SKILLS / "repo-conventions" / "SKILL.md",
@@ -112,7 +109,6 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("skills/verification-loop", text)
         self.assertIn("skills/exa-search", text)
         self.assertIn("skills/memory-management", text)
-        self.assertIn("skills/observer", text)
         self.assertIn("skills/skill-authoring", text)
 
     def test_readme_has_valid_code_fences_and_no_pasted_python(self):
@@ -154,13 +150,11 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("audit-gated-subagents", manifest["optional_skills"])
         self.assertIn("deep-audit", manifest["optional_skills"])
         self.assertIn("delegate", manifest["optional_skills"])
-        self.assertIn("delegation-eval", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])
         self.assertIn("documentation-lookup", manifest["optional_skills"])
         self.assertIn("exa-search", manifest["optional_skills"])
         self.assertIn("mcp-server-patterns", manifest["optional_skills"])
         self.assertIn("memory-management", manifest["optional_skills"])
-        self.assertIn("observer", manifest["optional_skills"])
         self.assertIn("parallel-agents-light", manifest["optional_skills"])
         self.assertIn("repo-conventions", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
@@ -223,31 +217,19 @@ class TestSkillDocsContract(unittest.TestCase):
 
     def test_claude_only_invocation_demotion_does_not_leak_into_codex(self):
         demoted = (
-            "build-gate",
-            "campaign-health",
             "delegate",
-            "delegation-eval",
             "diagnosing-bugs",
             "docs-sync",
-            "observer",
-            "schema-validator",
             "skill-authoring",
             "smart-test",
-            "truthpack-drift",
             "usage-stats",
-            "worktree-preflight",
         )
         for skill in demoted:
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
             self.assertNotIn("disable-model-invocation:", text, skill)
 
-    def test_observer_and_manager_use_progressive_disclosure(self):
-        observer = OBSERVER_SKILL.read_text(encoding="utf-8")
-        contracts = (SKILLS / "observer" / "references" / "output-contracts.md").read_text(encoding="utf-8")
+    def test_manager_uses_progressive_disclosure(self):
         manager = MANAGER_SKILL.read_text(encoding="utf-8")
-        self.assertIn("references/output-contracts.md", observer)
-        self.assertNotIn("### Note Output", observer)
-        self.assertIn("### Note Output", contracts)
         self.assertNotIn("### Phase 1: Load context", manager)
         self.assertIn("planning policy is loaded on demand", manager)
 
@@ -260,8 +242,6 @@ class TestSkillDocsContract(unittest.TestCase):
             "manager",
             "review",
             "discover",
-            "campaign-health",
-            "worktree-preflight",
             "usage-stats",
         ):
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
@@ -309,11 +289,6 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertNotIn("Codex has no per-project auto-memory directory", memory_text)
         self.assertNotIn("scripts/memory_audit.py", memory_text)
 
-        observer_text = OBSERVER_SKILL.read_text(encoding="utf-8")
-        self.assertIn("not the user's cross-workspace memory store", observer_text)
-        self.assertIn("Do not use observer artifacts as a parallel Codex native-memory store", observer_text)
-        self.assertIn("controller_machine_id", observer_text)
-        self.assertIn("Stop before writing a machine-sensitive observation", observer_text)
 
     def test_current_docs_do_not_reference_removed_contracts(self):
         self.assertIn("historical", EXAMPLES_README.read_text(encoding="utf-8").lower())

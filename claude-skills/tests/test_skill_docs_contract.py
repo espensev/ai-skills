@@ -204,6 +204,9 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("--browser-url http://127.0.0.1:9000", skill_text)
         self.assertIn("use `9001` for the headless instance", skill_text)
         self.assertIn("Do not start it bare", skill_text)
+        self.assertIn("MCP attachment preflight (required)", skill_text)
+        self.assertIn("effective MCP command in the active Claude configuration", skill_text)
+        self.assertIn("Do not call `list_pages`", skill_text)
         self.assertNotIn("one popup, acceptable", skill_text)
         for command in ("status", "tabs", "new", "goto", "eval", "text", "screenshot", "close"):
             self.assertIn(command, cdp_text)

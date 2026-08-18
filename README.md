@@ -87,6 +87,17 @@ Playwright E2E, current research, and bounded inspect-edit-verify cycles.
 | **deep-audit** | Run evidence-backed, resumable runtime-efficiency audits with explicit safety and evidence boundaries |
 | **skill-authoring** | Create or revise Agent Skills with focused discovery metadata, progressive disclosure, support files, and package wiring |
 
+### DevHome browser control
+
+`browser-control` routes all agent browser automation on this workstation to
+the isolated Opera Developer CDP endpoints managed by `devbrowser`. The rich
+Chrome DevTools MCP path is accepted only when its effective command includes
+the DevHome `--browser-url`; otherwise agents must use the bundled direct-CDP
+helper. Tool visibility alone is not attachment proof. The installed Codex
+skill includes the complete preflight, configuration boundary, fallback, and
+attended acceptance procedure in
+[`CODEX-INTEGRATION.md`](codex-skills/skills/browser-control/CODEX-INTEGRATION.md).
+
 ### Lightweight Codex parallelism
 
 | Skill | Purpose |

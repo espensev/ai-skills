@@ -27,6 +27,7 @@ MEMORY_MANAGEMENT_SKILL = SKILLS / "memory-management" / "SKILL.md"
 REPO_CONVENTIONS_SKILL = SKILLS / "repo-conventions" / "SKILL.md"
 BROWSER_CONTROL_SKILL = SKILLS / "browser-control" / "SKILL.md"
 BROWSER_CONTROL_CDP = SKILLS / "browser-control" / "cdp.mjs"
+BROWSER_CONTROL_CODEX_INTEGRATION = SKILLS / "browser-control" / "CODEX-INTEGRATION.md"
 
 
 class TestSkillDocsContract(unittest.TestCase):
@@ -255,11 +256,19 @@ class TestSkillDocsContract(unittest.TestCase):
     def test_browser_control_requires_devhome_cdp_attachment(self):
         skill_text = BROWSER_CONTROL_SKILL.read_text(encoding="utf-8")
         cdp_text = BROWSER_CONTROL_CDP.read_text(encoding="utf-8")
+        integration_text = BROWSER_CONTROL_CODEX_INTEGRATION.read_text(encoding="utf-8")
 
         self.assertIn("--browser-url http://127.0.0.1:9000", skill_text)
         self.assertIn("use `9001` for the headless instance", skill_text)
         self.assertIn("Do not start it bare", skill_text)
+        self.assertIn("MCP attachment preflight (required)", skill_text)
+        self.assertIn("codex mcp get chrome-devtools --json", skill_text)
+        self.assertIn("Do not call `list_pages`", skill_text)
         self.assertNotIn("one popup, acceptable", skill_text)
+        self.assertIn("enabled plugin and visible MCP tools do not prove attachment", integration_text)
+        self.assertIn("Never patch", integration_text)
+        self.assertIn("codex mcp add chrome-devtools", integration_text)
+        self.assertIn("Compare `list_pages` with `cdp.mjs tabs`", integration_text)
         for command in ("status", "tabs", "new", "goto", "eval", "text", "screenshot", "close"):
             self.assertIn(command, cdp_text)
 

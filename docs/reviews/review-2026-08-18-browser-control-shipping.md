@@ -43,13 +43,17 @@ No findings.
 
 - `node --check` on source and both generated `cdp.mjs` files - pass.
 - `python -m unittest ...test_browser_control_requires_devhome_cdp_attachment` - 2/2 pass.
-- `Build-ProviderSkillPackages.ps1 -Check` - pass, 43 files across 16 skills.
+- `Build-ProviderSkillPackages.ps1 -Check` - pass, 44 files across 16 skills.
 - `Compare-ProviderSkillParity.ps1 -FailOnUndeclaredFork` - pass.
 - Installed Codex-root CDP smoke on headless port 9001 (`new`, `eval`, `text`,
   `screenshot`, `close`) - pass; screenshot was 2,736 bytes and the temporary
   artifact was removed.
 - `Test-ReleaseReadiness.ps1 -IncludeLiveRootCompare` - pass; lifecycle tests
   39/39, installer tests 3/3, root comparison pass.
+- Post-ship preflight contract tests - pass for both Codex and Claude.
+- `Install-AgentSkills.ps1 -Provider Both -Force` refreshed the verified live
+  roots, including the new Codex integration reference;
+  `Compare-AgentSkillRoots.ps1 -Provider Both -FailOnMissingOrStale` - pass.
 
 ## Coverage Notes
 
@@ -59,8 +63,25 @@ No findings.
   server attachment itself was not exercised because the current lane used the
   direct-CDP path.
 
-## Open Questions
+## Post-ship Codex integration status
 
-- An attended smoke should confirm that the configured
-  `chrome-devtools-mcp` command supplies `--browser-url` before using MCP for
-  a shared-cookie or visible-session task. Direct CDP is already verified.
+- On verified controller `snd-desk`, `codex mcp list` currently resolves the
+  enabled `chrome-devtools` registration to `npx
+  chrome-devtools-mcp@1.7.0` with no `--browser-url` argument.
+- The plugin cache manifest contains the same bare argument list. That cache is
+  managed material and is not an edit authority.
+- Therefore the rich MCP path is not accepted on this host yet. Its tools must
+  not be invoked as a probe because the first browser operation can create the
+  separate Chrome/profile that this routing contract forbids.
+- The installed direct-CDP path remains the safe, verified browser-control
+  route. This does not invalidate the source/package ship verdict.
+
+## Required follow-up
+
+- The canonical skill now requires an effective-argument preflight before any
+  rich MCP browser call. Codex-specific setup and acceptance are documented in
+  `codex-skills/skills/browser-control/CODEX-INTEGRATION.md`.
+- With explicit authority for a machine-local Codex configuration change,
+  replace the bare registration with one attached to
+  `http://127.0.0.1:9000`, start a fresh Codex session, compare `list_pages`
+  against `cdp.mjs tabs`, and confirm no unmanaged Chrome/profile appears.

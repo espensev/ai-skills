@@ -55,6 +55,19 @@ Do not start it bare: a bare server launches a separate Chrome instance and
 violates this skill's browser-routing and profile-isolation contract. If the
 MCP configuration cannot pass `--browser-url`, use Option B instead.
 
+### MCP attachment preflight (required)
+
+Before calling any chrome-devtools-mcp browser tool, verify the **effective MCP
+launch arguments**. Tool availability, an enabled plugin, or a successful MCP
+server startup is not proof that the server is attached to DevHome Opera.
+
+Inspect the effective MCP command in the active Claude configuration. Its
+arguments must contain `--browser-url` targeting the intended DevHome endpoint.
+
+Do not call `list_pages` or another browser MCP tool to test a bare or
+unverified registration: the first browser operation can launch the wrong
+Chrome/profile. If the argument is absent or cannot be proved, use `cdp.mjs`.
+
 **Option B — direct CDP via `cdp.mjs`.** Zero-dependency Node script
 next to this SKILL.md (Node 22+, no npm install). Works on any port:
 

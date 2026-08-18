@@ -141,6 +141,7 @@ done
 for d in \
   skills/loop-master \
   skills/audit-gated-subagents \
+  skills/browser-control \
   skills/build-gate \
   skills/campaign-health \
   skills/deep-audit \

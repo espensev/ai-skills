@@ -8,6 +8,7 @@
   ],
   "optional_skills": [
     "audit-gated-subagents",
+    "browser-control",
     "build-gate",
     "campaign-health",
     "deep-audit",

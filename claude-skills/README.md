@@ -103,6 +103,7 @@ done
 
 # Optional ops, analytics, and delegation skills
 for d in \
+  skills/browser-control \
   skills/build-gate \
   skills/campaign-health \
   skills/deep-audit \

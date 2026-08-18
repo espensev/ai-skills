@@ -25,6 +25,8 @@ DEEP_AUDIT_MODE_CONTRACT = SKILLS / "deep-audit" / "references" / "mode-contract
 DEEP_AUDIT_STATE_CONTRACT = SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md"
 MEMORY_MANAGEMENT_SKILL = SKILLS / "memory-management" / "SKILL.md"
 REPO_CONVENTIONS_SKILL = SKILLS / "repo-conventions" / "SKILL.md"
+BROWSER_CONTROL_SKILL = SKILLS / "browser-control" / "SKILL.md"
+BROWSER_CONTROL_CDP = SKILLS / "browser-control" / "cdp.mjs"
 
 
 class TestSkillDocsContract(unittest.TestCase):
@@ -249,6 +251,17 @@ class TestSkillDocsContract(unittest.TestCase):
             description = description.removeprefix("description:").strip().strip('"')
             self.assertTrue(description.startswith("Use "), skill)
             self.assertIn("Do not use", description, skill)
+
+    def test_browser_control_requires_devhome_cdp_attachment(self):
+        skill_text = BROWSER_CONTROL_SKILL.read_text(encoding="utf-8")
+        cdp_text = BROWSER_CONTROL_CDP.read_text(encoding="utf-8")
+
+        self.assertIn("--browser-url http://127.0.0.1:9000", skill_text)
+        self.assertIn("use `9001` for the headless instance", skill_text)
+        self.assertIn("Do not start it bare", skill_text)
+        self.assertNotIn("one popup, acceptable", skill_text)
+        for command in ("status", "tabs", "new", "goto", "eval", "text", "screenshot", "close"):
+            self.assertIn(command, cdp_text)
 
     def test_current_docs_match_runtime_verify_surface(self):
         self.assertIn("validates build, tests, and readiness", README.read_text(encoding="utf-8"))

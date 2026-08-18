@@ -49,12 +49,11 @@ Chrome yourself.
 
 **Option A — chrome-devtools-mcp (rich toolset).** Preferred for
 interactive work: click, fill, snapshots, console, network, performance
-tracing. Caveat: started bare it launches its **own** Chrome window (one
-popup, acceptable). To make it drive the Opera instance instead, the server
-must be started with `--browser-url http://127.0.0.1:9000` — if your MCP
-config does not pass that flag, the MCP tools operate on a separate Chrome,
-not on the shared Opera session. When the task must run inside the Opera
-instance (shared cookies/state, or something already open there), use Option B.
+tracing. The MCP server must attach to a DevHome CDP endpoint, for example
+`--browser-url http://127.0.0.1:9000` (use `9001` for the headless instance).
+Do not start it bare: a bare server launches a separate Chrome instance and
+violates this skill's browser-routing and profile-isolation contract. If the
+MCP configuration cannot pass `--browser-url`, use Option B instead.
 
 **Option B — direct CDP via `cdp.mjs`.** Zero-dependency Node script
 next to this SKILL.md (Node 22+, no npm install). Works on any port:

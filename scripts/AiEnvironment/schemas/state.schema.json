@@ -1,0 +1,348 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-skills:ai-environment-state:v1",
+  "title": "AI environment observed state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "Schema",
+    "ProfileId",
+    "ObservedAtUtc",
+    "Machine",
+    "Source",
+    "Providers",
+    "SharedSkills",
+    "Resources",
+    "Acceptance",
+    "Checks",
+    "Reasons",
+    "ActiveStatuses",
+    "Status",
+    "PromotionReady",
+    "RepairReady"
+  ],
+  "properties": {
+    "Schema": { "const": "ai-skills/ai-environment-state/v1" },
+    "ProfileId": { "type": "string", "minLength": 1 },
+    "ObservedAtUtc": { "type": "string", "format": "date-time" },
+    "Machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ExpectedId", "ExpectedInstanceId", "Verification"],
+      "properties": {
+        "ExpectedId": { "type": "string", "minLength": 1 },
+        "ExpectedInstanceId": { "type": "string", "format": "uuid" },
+        "Verification": { "const": "NOT_REQUIRED_FOR_READ_ONLY_OBSERVATION" }
+      }
+    },
+    "Source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "Repository", "GitMetadataPresent", "Head", "Branch", "WorktreeClean",
+        "DirtyPathCount", "LockState", "LockCommit", "HeadMatchesLock", "Reproducible"
+      ],
+      "properties": {
+        "Repository": { "const": "{REPO_ROOT}" },
+        "GitMetadataPresent": { "type": "boolean" },
+        "Head": { "$ref": "#/$defs/nullableString" },
+        "Branch": { "$ref": "#/$defs/nullableString" },
+        "WorktreeClean": { "type": "boolean" },
+        "DirtyPathCount": { "$ref": "#/$defs/nonNegativeInteger" },
+        "LockState": { "enum": ["candidate", "accepted", "retired"] },
+        "LockCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "HeadMatchesLock": { "type": "boolean" },
+        "Reproducible": { "type": "boolean" }
+      }
+    },
+    "Providers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Codex", "Claude"],
+      "properties": {
+        "Codex": { "$ref": "#/$defs/codexProvider" },
+        "Claude": { "$ref": "#/$defs/claudeProvider" }
+      }
+    },
+    "SharedSkills": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "Root", "Lock", "LockVersion", "InstalledCount", "RecordedCount",
+        "MissingRecordedPathCount", "UnrecordedCount", "Complete"
+      ],
+      "properties": {
+        "Root": { "const": "{AGENTS_HOME}/skills" },
+        "Lock": { "const": "{AGENTS_HOME}/.skill-lock.json" },
+        "LockVersion": { "type": ["integer", "string", "null"] },
+        "InstalledCount": { "$ref": "#/$defs/nonNegativeInteger" },
+        "RecordedCount": { "$ref": "#/$defs/nonNegativeInteger" },
+        "MissingRecordedPathCount": { "$ref": "#/$defs/nonNegativeInteger" },
+        "UnrecordedCount": { "$ref": "#/$defs/nonNegativeInteger" },
+        "Complete": { "type": "boolean" }
+      }
+    },
+    "Resources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/resource" }
+    },
+    "Acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Passed", "Checks"],
+      "properties": {
+        "Passed": { "type": "boolean" },
+        "Checks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/acceptanceCheck" }
+        }
+      }
+    },
+    "Checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "Reasons": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reason" }
+    },
+    "ActiveStatuses": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/status" }
+    },
+    "Status": { "$ref": "#/$defs/status" },
+    "PromotionReady": { "type": "boolean" },
+    "RepairReady": { "type": "boolean" }
+  },
+  "$defs": {
+    "nullableString": { "type": ["string", "null"] },
+    "nullableBoolean": { "type": ["boolean", "null"] },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0 },
+    "ownership": { "enum": ["managed", "observed", "forbidden", "manual-gate"] },
+    "status": {
+      "enum": [
+        "CURRENT", "DRIFTED", "PENDING_TRUST", "UNTESTED_PROVIDER_VERSION",
+        "SOURCE_UNTRUSTED", "DEGRADED_FOREIGN_MARKETPLACE", "ACCEPTANCE_FAILED"
+      ]
+    },
+    "severity": { "enum": ["INFO", "WARNING", "ERROR", "BLOCKER"] },
+    "lane": { "enum": ["source", "artifact", "projection", "activation", "trust", "compatibility", "acceptance"] },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Expected", "SourceMatched", "TargetMatched", "Missing", "Mismatched"],
+      "properties": {
+        "Expected": { "$ref": "#/$defs/nonNegativeInteger" },
+        "SourceMatched": { "$ref": "#/$defs/nonNegativeInteger" },
+        "TargetMatched": { "$ref": "#/$defs/nonNegativeInteger" },
+        "Missing": { "$ref": "#/$defs/nonNegativeInteger" },
+        "Mismatched": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    },
+    "codexProvider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Version", "Home", "Config", "ConfigDigest", "ControlPlane", "Marketplaces", "Plugins", "Hooks", "Skills"],
+      "properties": {
+        "Version": { "$ref": "#/$defs/nullableString" },
+        "Home": { "const": "{CODEX_HOME}" },
+        "Config": { "const": "{CODEX_HOME}/config.toml" },
+        "ConfigDigest": { "$ref": "#/$defs/nullableString" },
+        "ControlPlane": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Available", "TimedOut", "ExitCode", "ObservationMode"],
+          "properties": {
+            "Available": { "type": "boolean" },
+            "TimedOut": { "type": "boolean" },
+            "ExitCode": { "type": "integer" },
+            "ObservationMode": { "enum": ["cli-and-static", "static-owned-state-fallback"] }
+          }
+        },
+        "Marketplaces": { "type": "array", "items": { "$ref": "#/$defs/codexMarketplace" } },
+        "Plugins": { "type": "array", "items": { "$ref": "#/$defs/codexPlugin" } },
+        "Hooks": { "type": "array", "items": { "$ref": "#/$defs/codexHook" } },
+        "Skills": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["PolicyEntries", "DisabledEntries", "MissingPathEntries"],
+          "properties": {
+            "PolicyEntries": { "$ref": "#/$defs/nonNegativeInteger" },
+            "DisabledEntries": { "$ref": "#/$defs/nonNegativeInteger" },
+            "MissingPathEntries": { "$ref": "#/$defs/nonNegativeInteger" }
+          }
+        }
+      }
+    },
+    "codexMarketplace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Id", "Name", "Ownership", "Configured", "SourceType", "SourceTypeMatches", "SourceExists", "SourceManifestValid", "SourceMatches"],
+      "properties": {
+        "Id": { "type": "string", "minLength": 1 },
+        "Name": { "type": "string", "minLength": 1 },
+        "Ownership": { "$ref": "#/$defs/ownership" },
+        "Configured": { "type": "boolean" },
+        "SourceType": { "type": "string" },
+        "SourceTypeMatches": { "type": "boolean" },
+        "SourceExists": { "type": "boolean" },
+        "SourceManifestValid": { "type": "boolean" },
+        "SourceMatches": { "type": "boolean" }
+      }
+    },
+    "codexPlugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Id", "Name", "Ownership", "Configured", "Enabled", "Version", "TrustRecordPresent", "TrustHashValidated", "Payload"],
+      "properties": {
+        "Id": { "type": "string", "minLength": 1 },
+        "Name": { "type": "string", "minLength": 1 },
+        "Ownership": { "$ref": "#/$defs/ownership" },
+        "Configured": { "type": "boolean" },
+        "Enabled": { "$ref": "#/$defs/nullableBoolean" },
+        "Version": { "type": "string" },
+        "TrustRecordPresent": { "type": "boolean" },
+        "TrustHashValidated": { "type": "boolean" },
+        "Payload": { "anyOf": [{ "$ref": "#/$defs/payload" }, { "type": "null" }] }
+      }
+    },
+    "codexHook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Id", "Ownership", "Payload"],
+      "properties": {
+        "Id": { "type": "string", "minLength": 1 },
+        "Ownership": { "$ref": "#/$defs/ownership" },
+        "Payload": { "$ref": "#/$defs/payload" }
+      }
+    },
+    "claudeProvider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Version", "Home", "Config", "ConfigDigest", "Plugins", "Hooks", "Skills", "PluginRegistry"],
+      "properties": {
+        "Version": { "$ref": "#/$defs/nullableString" },
+        "Home": { "const": "{CLAUDE_HOME}" },
+        "Config": { "const": "{CLAUDE_HOME}/settings.json" },
+        "ConfigDigest": { "$ref": "#/$defs/nullableString" },
+        "Plugins": { "type": "array", "items": { "$ref": "#/$defs/claudePlugin" } },
+        "Hooks": { "type": "array", "items": { "$ref": "#/$defs/claudeHook" } },
+        "Skills": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["OverrideEntries", "On", "Off", "Unknown"],
+          "properties": {
+            "OverrideEntries": { "$ref": "#/$defs/nonNegativeInteger" },
+            "On": { "$ref": "#/$defs/nonNegativeInteger" },
+            "Off": { "$ref": "#/$defs/nonNegativeInteger" },
+            "Unknown": { "$ref": "#/$defs/nonNegativeInteger" }
+          }
+        },
+        "PluginRegistry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Available", "Version", "PluginIds", "Records", "MissingInstallPaths", "DeclaredPlugins", "MissingDeclaredPluginRecords"],
+          "properties": {
+            "Available": { "type": "boolean" },
+            "Version": { "type": ["integer", "string", "null"] },
+            "PluginIds": { "$ref": "#/$defs/nonNegativeInteger" },
+            "Records": { "$ref": "#/$defs/nonNegativeInteger" },
+            "MissingInstallPaths": { "$ref": "#/$defs/nonNegativeInteger" },
+            "DeclaredPlugins": { "$ref": "#/$defs/nonNegativeInteger" },
+            "MissingDeclaredPluginRecords": { "$ref": "#/$defs/nonNegativeInteger" }
+          }
+        }
+      }
+    },
+    "claudePlugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Id", "Name", "Ownership", "Configured", "Enabled", "RegistryRecordPresent"],
+      "properties": {
+        "Id": { "type": "string", "minLength": 1 },
+        "Name": { "type": "string", "minLength": 1 },
+        "Ownership": { "$ref": "#/$defs/ownership" },
+        "Configured": { "type": "boolean" },
+        "Enabled": { "$ref": "#/$defs/nullableBoolean" },
+        "RegistryRecordPresent": { "type": "boolean" }
+      }
+    },
+    "claudeHook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Id", "Ownership", "RegistrationPresent", "Payload"],
+      "properties": {
+        "Id": { "type": "string", "minLength": 1 },
+        "Ownership": { "$ref": "#/$defs/ownership" },
+        "RegistrationPresent": { "type": "boolean" },
+        "Payload": { "$ref": "#/$defs/payload" }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Id", "Provider", "Kind", "Ownership", "Status", "ReasonCodes"],
+      "properties": {
+        "Id": { "type": "string", "minLength": 1 },
+        "Provider": { "enum": ["codex", "claude", "shared"] },
+        "Kind": { "enum": ["marketplace", "plugin", "hook", "skill-policy", "skill-root"] },
+        "Ownership": { "$ref": "#/$defs/ownership" },
+        "Status": { "$ref": "#/$defs/status" },
+        "ReasonCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" }
+        }
+      }
+    },
+    "acceptanceCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Id", "Provider", "Ownership", "Status", "CheckedAtUtc"],
+      "properties": {
+        "Id": { "type": "string", "minLength": 1 },
+        "Provider": { "enum": ["codex", "claude", "shared"] },
+        "Ownership": { "$ref": "#/$defs/ownership" },
+        "Status": { "enum": ["PASS", "FAIL", "NOT_RUN"] },
+        "CheckedAtUtc": {
+          "anyOf": [
+            { "type": "string", "format": "date-time" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Id", "Result", "Severity", "ReasonCode", "Owned", "Evidence"],
+      "properties": {
+        "Id": { "type": "string", "minLength": 1 },
+        "Result": { "enum": ["PASS", "FAIL", "UNKNOWN", "NOT_RUN", "DEGRADED"] },
+        "Severity": { "$ref": "#/$defs/severity" },
+        "ReasonCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" },
+        "Owned": { "type": "boolean" },
+        "Evidence": { "type": "string" }
+      }
+    },
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Code", "Status", "Severity", "Provider", "ResourceId", "Lane", "Detail", "Evidence"],
+      "properties": {
+        "Code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" },
+        "Status": { "$ref": "#/$defs/status" },
+        "Severity": { "$ref": "#/$defs/severity" },
+        "Provider": { "enum": ["codex", "claude", "shared"] },
+        "ResourceId": { "type": "string", "minLength": 1 },
+        "Lane": { "$ref": "#/$defs/lane" },
+        "Detail": { "type": "string", "minLength": 1 },
+        "Evidence": { "type": "string" }
+      }
+    }
+  }
+}

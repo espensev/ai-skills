@@ -163,6 +163,15 @@ checkpoints, and logs still derive from ambient `CODEX_HOME`. Until that path is
 pinned too, the broader no-AppData lifecycle requirement is not complete. See
 the [full lifecycle feature review](docs/reviews/review-2026-08-16-devhome-lifecycle-feature.md).
 
+### AI environment wanted state
+
+The read-only cross-provider observer at
+[`scripts/AiEnvironment`](scripts/AiEnvironment/README.md) compares reviewed
+intent, a candidate or accepted lock, and the effective Codex/Claude state. It
+reports source, projection, activation, trust, compatibility, and acceptance as
+separate reason-coded lanes. Phase 1 exposes `Get`, `Plan`, and `Test` only; it
+does not change provider configuration or apply a plan.
+
 ## Architecture
 
 Each ready package follows a **contract-first, read-all write-scoped** design:
@@ -181,7 +190,7 @@ ready and applies the `portable-runtime` strategy to Claude and Codex.
 codex-skills/       Codex package — skills, contracts, Python runtime
 claude-skills/      Claude package — skills, contracts, Python runtime
 skills-src/         Single-source canon for shared skills (generated into both packages)
-scripts/            Export automation
+scripts/            Export automation and cross-provider wanted-state observer
 docs/               Release notes and readiness tracking
 ```
 

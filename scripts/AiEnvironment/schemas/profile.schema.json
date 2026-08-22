@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-skills:ai-environment-profile:v1",
+  "title": "AI environment wanted-state profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "machine",
+    "source",
+    "providers",
+    "sharedSkills",
+    "resources",
+    "acceptance"
+  ],
+  "properties": {
+    "schema": {
+      "const": "ai-skills/ai-environment-profile/v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "instanceId"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "instanceId": { "type": "string", "format": "uuid" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repositoryRoot"],
+      "properties": {
+        "repositoryRoot": { "type": "string", "minLength": 1 }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codex", "claude"],
+      "properties": {
+        "codex": {
+          "allOf": [
+            { "$ref": "#/$defs/provider" },
+            { "properties": { "command": { "const": "codex" } } }
+          ]
+        },
+        "claude": {
+          "allOf": [
+            { "$ref": "#/$defs/provider" },
+            { "properties": { "command": { "const": "claude" } } }
+          ]
+        }
+      }
+    },
+    "sharedSkills": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "lockPath"],
+      "properties": {
+        "root": { "type": "string", "minLength": 1 },
+        "lockPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "resources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resource" }
+    },
+    "acceptance": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/acceptance" }
+    }
+  },
+  "$defs": {
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "homePath", "configPath"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "homePath": { "type": "string", "minLength": 1 },
+        "configPath": { "type": "string", "minLength": 1 },
+        "pluginRegistryPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "provider", "kind", "ownership", "desired"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*:[a-z0-9]+(?:[a-z0-9@.-]*[a-z0-9])?$"
+        },
+        "provider": {
+          "enum": ["codex", "claude", "shared"]
+        },
+        "kind": {
+          "enum": ["marketplace", "plugin", "hook", "skill-policy", "skill-root"]
+        },
+        "ownership": {
+          "enum": ["managed", "observed", "forbidden", "manual-gate"]
+        },
+        "desired": { "type": "object" }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "provider": { "const": "codex" },
+            "kind": { "const": "marketplace" },
+            "ownership": { "const": "managed" },
+            "desired": { "$ref": "#/$defs/codexManagedMarketplaceDesired" }
+          }
+        },
+        {
+          "properties": {
+            "provider": { "const": "codex" },
+            "kind": { "const": "marketplace" },
+            "ownership": { "const": "observed" },
+            "desired": { "$ref": "#/$defs/namedDesired" }
+          }
+        },
+        {
+          "properties": {
+            "provider": { "const": "codex" },
+            "kind": { "const": "plugin" },
+            "ownership": { "const": "managed" },
+            "desired": { "$ref": "#/$defs/codexManagedPluginDesired" }
+          }
+        },
+        {
+          "properties": {
+            "provider": { "const": "codex" },
+            "kind": { "const": "hook" },
+            "ownership": { "const": "managed" },
+            "desired": { "$ref": "#/$defs/lockedProjectionDesired" }
+          }
+        },
+        {
+          "properties": {
+            "provider": { "const": "codex" },
+            "kind": { "const": "skill-policy" },
+            "ownership": { "const": "observed" },
+            "desired": { "$ref": "#/$defs/emptyDesired" }
+          }
+        },
+        {
+          "properties": {
+            "provider": { "const": "claude" },
+            "kind": { "const": "plugin" },
+            "ownership": { "const": "observed" },
+            "desired": { "$ref": "#/$defs/pluginActivationDesired" }
+          }
+        },
+        {
+          "properties": {
+            "provider": { "const": "claude" },
+            "kind": { "const": "hook" },
+            "ownership": { "const": "managed" },
+            "desired": { "$ref": "#/$defs/claudeManagedHookDesired" }
+          }
+        },
+        {
+          "properties": {
+            "provider": { "const": "claude" },
+            "kind": { "const": "skill-policy" },
+            "ownership": { "const": "observed" },
+            "desired": { "$ref": "#/$defs/emptyDesired" }
+          }
+        },
+        {
+          "properties": {
+            "provider": { "const": "shared" },
+            "kind": { "const": "skill-root" },
+            "ownership": { "const": "observed" },
+            "desired": { "$ref": "#/$defs/emptyDesired" }
+          }
+        }
+      ]
+    },
+    "codexManagedMarketplaceDesired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sourcePath"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "sourcePath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "namedDesired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "codexManagedPluginDesired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "enabled", "sourceRoot", "targetRoot", "trustRecordKey", "projectionReasonCode"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "enabled": { "type": "boolean" },
+        "sourceRoot": { "type": "string", "minLength": 1 },
+        "targetRoot": { "type": "string", "minLength": 1 },
+        "trustRecordKey": { "type": "string", "minLength": 1 },
+        "projectionReasonCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" }
+      }
+    },
+    "lockedProjectionDesired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceRoot", "targetRoot", "projectionReasonCode"],
+      "properties": {
+        "sourceRoot": { "type": "string", "minLength": 1 },
+        "targetRoot": { "type": "string", "minLength": 1 },
+        "projectionReasonCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" }
+      }
+    },
+    "pluginActivationDesired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "enabled"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "claudeManagedHookDesired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceRoot", "targetRoot", "registrationContains", "projectionReasonCode"],
+      "properties": {
+        "sourceRoot": { "type": "string", "minLength": 1 },
+        "targetRoot": { "type": "string", "minLength": 1 },
+        "registrationContains": { "type": "string", "minLength": 1 },
+        "projectionReasonCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" }
+      }
+    },
+    "emptyDesired": {
+      "type": "object",
+      "additionalProperties": false,
+      "maxProperties": 0
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "provider", "ownership", "description"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "provider": { "enum": ["codex", "claude", "shared"] },
+        "ownership": { "enum": ["managed", "observed", "forbidden", "manual-gate"] },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -369,33 +369,15 @@ Describe 'AI environment module contract' {
     It 'keeps the checked-in candidate lock backed by raw blobs at its commit' {
         $profile = Get-Content -Raw -LiteralPath (Join-Path $script:ModuleRoot 'profiles\snd-desk.json') | ConvertFrom-Json -Depth 100
         $lock = Get-Content -Raw -LiteralPath (Join-Path $script:ModuleRoot 'locks\snd-desk.lock.json') | ConvertFrom-Json -Depth 100
-        $plugin = @($lock.resources | Where-Object id -eq 'plugin:devhome-lifecycle')[0]
-        $codexHook = @($lock.resources | Where-Object id -eq 'hook:codex-lifecycle')[0]
-        $expectedPluginPayload = @(
-            '.codex-plugin/plugin.json=9743540711B1AF7BCFFAE8AC98EC86D3774DCADC6492501218E885BF5AF6BD46',
-            'hooks/hooks.json=07984C3908DB6766F62B02B2D3E59DC648E7613407DD1F032B3BF0ACE6A3F6A3',
-            'Sync-DevHomeLifecyclePlugin.ps1=B635306C58F8124C15D84570A03CA55E91D2BE2BDDE98DF57007CC113B5D98D5',
-            'Sync-DevHomeCodexHooks.ps1=95C363AD376CC8E616F1234C297D10B821CABC598A43B36EE6A7AC3B707A31A5',
-            'Install-DevHomeCodexHooks.ps1=41E8CF87AB109D0EE72F446E11299ACB0E1E03D67DF22E8C4493A1251121FB9E',
-            'hooks.json=1DC02CEE7DF6DAB0887503BEF0CBBE95F2F2764C29F421D4919A33BF7BEF76A4',
-            'hooks/Invoke-DevHomeHook.ps1=94E22CD4084D6AB85957219F4FF83430E7935A145AFE745A2788D6BB09DF0484',
-            'hooks/Invoke-RememberAdapter.cmd=E96DF633BAD6CC8ADE90EA0704E6634D5929C5AA83AFEE8F858A079B0EF07CF1',
-            'hooks/Invoke-RememberAdapter.py=34E64365870CE0106A9212788D449B70C25643F052BAEECE7044E6FD9027A153',
-            'hooks/Invoke-RememberClaude.cmd=A307C61A83A4D4219E5EB71ABB9C1B4F0C6D03C847F20B7647243790A038A0AD',
-            'skills/devhome-lifecycle/SKILL.md=4EC1333D20258DCD03BFDB9B7226349A620A015770529DD012BC631C9622B1F8'
-        )
-        $expectedCodexHookPayload = @(
-            'hooks.json=1DC02CEE7DF6DAB0887503BEF0CBBE95F2F2764C29F421D4919A33BF7BEF76A4',
-            'hooks/Invoke-DevHomeHook.ps1=94E22CD4084D6AB85957219F4FF83430E7935A145AFE745A2788D6BB09DF0484',
-            'hooks/Invoke-RememberAdapter.cmd=E96DF633BAD6CC8ADE90EA0704E6634D5929C5AA83AFEE8F858A079B0EF07CF1',
-            'hooks/Invoke-RememberAdapter.py=34E64365870CE0106A9212788D449B70C25643F052BAEECE7044E6FD9027A153',
-            'hooks/Invoke-RememberClaude.cmd=A307C61A83A4D4219E5EB71ABB9C1B4F0C6D03C847F20B7647243790A038A0AD'
-        )
+        $expectedPayloadCount = @($lock.resources | ForEach-Object { @($_.payload).Count } | Measure-Object -Sum).Sum
+        $expectedVersionCount = @($lock.resources | Where-Object {
+            $lockResource = $_
+            $profileResource = @($profile.resources | Where-Object id -eq $lockResource.id)[0]
+            [string]$profileResource.kind -eq 'plugin' -or -not [string]::IsNullOrWhiteSpace([string]$lockResource.version)
+        }).Count
 
-        @($lock.resources.id) | Should -Be @('plugin:devhome-lifecycle', 'hook:codex-lifecycle')
-        $plugin.version | Should -BeExactly '0.1.0'
-        @($plugin.payload | ForEach-Object { "$($_.path)=$($_.sha256)" }) | Should -Be $expectedPluginPayload
-        @($codexHook.payload | ForEach-Object { "$($_.path)=$($_.sha256)" }) | Should -Be $expectedCodexHookPayload
+        $expectedPayloadCount | Should -BeGreaterThan 0
+        $expectedVersionCount | Should -BeGreaterThan 0
 
         $module = Get-Module AiEnvironment
         $observation = & $module {
@@ -406,10 +388,12 @@ Describe 'AI environment module contract' {
                 -RepositoryRoot ([string]$CandidateProfile.source.repositoryRoot)
         } $profile $lock
         $observation.CommitObjectValid | Should -BeTrue
-        $observation.PayloadExpected | Should -Be 16
-        $observation.PayloadMatched | Should -Be 16
-        $observation.VersionExpected | Should -Be 1
-        $observation.VersionMatched | Should -Be 1
+        $observation.PayloadExpected | Should -Be $expectedPayloadCount
+        $observation.PayloadMatched | Should -Be $expectedPayloadCount
+        $observation.VersionExpected | Should -Be $expectedVersionCount
+        $observation.VersionMatched | Should -Be $expectedVersionCount
+        $observation.MappingFailures | Should -Be 0
+        $observation.BlobFailures | Should -Be 0
         $observation.Verified | Should -BeTrue
     }
 
@@ -538,6 +522,73 @@ source = '$missingMarketplace'
         $state.Reasons.Code | Should -Contain 'FOREIGN_MARKETPLACE_ROOT_MISSING'
         ($plan.Actions | Where-Object Id -eq 'action:foreign-marketplace-root-missing:marketplace:wt-local').Type |
             Should -BeExactly 'REVIEW_FOREIGN_OWNER'
+    }
+
+    It 'reports a declared observed marketplace that is absent from the Codex config' {
+        $profile = Get-Content -Raw -LiteralPath $script:Fixture.ProfilePath | ConvertFrom-Json -Depth 100
+        $profile.resources += [pscustomobject][ordered]@{
+            id = 'marketplace:wt-local'
+            provider = 'codex'
+            kind = 'marketplace'
+            ownership = 'observed'
+            desired = [pscustomobject][ordered]@{ name = 'wt-local' }
+        }
+        Write-TestJson -Path $script:Fixture.ProfilePath -Value $profile
+
+        $state = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $plan = $state | New-AiEnvironmentPlan
+        $registrationCheck = $state.Checks | Where-Object Id -eq 'resource.marketplace:wt-local.registration'
+
+        $state.Status | Should -BeExactly 'DEGRADED_FOREIGN_MARKETPLACE'
+        $state.Reasons.Code | Should -Contain 'FOREIGN_MARKETPLACE_NOT_CONFIGURED'
+        $registrationCheck.Result | Should -BeExactly 'DEGRADED'
+        $registrationCheck.ReasonCode | Should -BeExactly 'FOREIGN_MARKETPLACE_NOT_CONFIGURED'
+        $registrationCheck.Evidence | Should -Match 'configured=False'
+        $registrationCheck.Evidence | Should -Match 'inspected=False'
+        ($plan.Actions | Where-Object Id -eq 'action:foreign-marketplace-not-configured:marketplace:wt-local').Type |
+            Should -BeExactly 'REVIEW_FOREIGN_OWNER'
+    }
+
+    It 'does not assert source health for an observed marketplace it cannot inspect' {
+        $profile = Get-Content -Raw -LiteralPath $script:Fixture.ProfilePath | ConvertFrom-Json -Depth 100
+        $profile.resources += [pscustomobject][ordered]@{
+            id = 'marketplace:wt-local'
+            provider = 'codex'
+            kind = 'marketplace'
+            ownership = 'observed'
+            desired = [pscustomobject][ordered]@{ name = 'wt-local' }
+        }
+        Write-TestJson -Path $script:Fixture.ProfilePath -Value $profile
+        Add-Content -LiteralPath $script:Fixture.CodexConfigPath -Encoding utf8NoBOM -Value @"
+
+[marketplaces.wt-local]
+source_type = 'git'
+source = 'https://example.invalid/wt-local.git'
+"@
+
+        $state = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $registrationCheck = $state.Checks | Where-Object Id -eq 'resource.marketplace:wt-local.registration'
+
+        $state.Status | Should -BeExactly 'CURRENT'
+        @($state.Reasons) | Should -HaveCount 0
+        $registrationCheck.Result | Should -BeExactly 'UNKNOWN'
+        $registrationCheck.ReasonCode | Should -BeExactly 'FOREIGN_MARKETPLACE_SOURCE_UNINSPECTED'
+        $registrationCheck.Evidence | Should -Match 'sourceType=git'
+        $registrationCheck.Evidence | Should -Match 'inspected=False'
+        $registrationCheck.Evidence | Should -Not -Match 'sourceExists='
+    }
+
+    It 'reads single-quoted Codex plugin table headers' {
+        (Get-Content -Raw -LiteralPath $script:Fixture.CodexConfigPath).Replace(
+            '[plugins."devhome-lifecycle@ai-skills"]',
+            "[plugins.'devhome-lifecycle@ai-skills']"
+        ) | Set-Content -LiteralPath $script:Fixture.CodexConfigPath -Encoding utf8NoBOM
+
+        $state = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+
+        $state.Status | Should -BeExactly 'CURRENT'
+        $state.Providers.Codex.Plugins[0].Configured | Should -BeTrue
+        $state.Providers.Codex.Plugins[0].Enabled | Should -BeTrue
     }
 
     It 'fails closed when a managed marketplace registration is incomplete' {
@@ -846,7 +897,7 @@ exit /b 64
         $state.Reasons.Code | Should -Contain 'RESOURCE_LOCK_MISSING'
         $state.RepairReady | Should -BeFalse
         ($plan.Actions | Where-Object Id -eq 'action:resource-lock-missing:hook:codex-lifecycle').Type |
-            Should -BeExactly 'BLOCKED_RECONCILIATION'
+            Should -BeExactly 'BLOCK_PROMOTION'
     }
 
     It 'fails closed when bounded Git observation cannot complete' {

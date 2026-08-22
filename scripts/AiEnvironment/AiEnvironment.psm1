@@ -143,11 +143,11 @@ function New-AiEnvironmentPlan {
             $resource = @($State.Resources | Where-Object { [string]$_.Id -ceq [string]$reason.ResourceId }) | Select-Object -First 1
             $ownership = if ($null -eq $resource) { 'observed' } else { [string]$resource.Ownership }
             $actionType = switch ([string]$reason.Code) {
-                { $_ -in @('LOCK_NOT_ACCEPTED', 'SOURCE_GIT_METADATA_MISSING', 'SOURCE_GIT_OBSERVATION_FAILED', 'SOURCE_WORKTREE_DIRTY', 'SOURCE_COMMIT_MISMATCH', 'LOCK_COMMIT_PAYLOAD_MISMATCH', 'LOCK_PAYLOAD_MISMATCH') } { 'BLOCK_PROMOTION'; break }
+                { $_ -in @('LOCK_NOT_ACCEPTED', 'SOURCE_GIT_METADATA_MISSING', 'SOURCE_GIT_OBSERVATION_FAILED', 'SOURCE_WORKTREE_DIRTY', 'SOURCE_COMMIT_MISMATCH', 'LOCK_COMMIT_PAYLOAD_MISMATCH', 'LOCK_PAYLOAD_MISMATCH', 'RESOURCE_LOCK_MISSING') } { 'BLOCK_PROMOTION'; break }
                 { $_ -in @('REMEMBER_ACCEPTANCE_FAILED', 'ACCEPTANCE_NOT_RUN') } { 'RUN_ACCEPTANCE_GATE'; break }
                 { $_ -in @('OWNED_HOOK_TRUST_RECORD_MISSING', 'OWNED_HOOK_TRUST_HASH_NOT_LOCKED', 'OWNED_HOOK_TRUST_HASH_MISMATCH') } { 'MANUAL_TRUST_REVIEW'; break }
                 'PROVIDER_VERSION_NOT_IN_LOCK' { 'RUN_COMPATIBILITY_GATE'; break }
-                { $_ -in @('FOREIGN_MARKETPLACE_ROOT_MISSING', 'FOREIGN_MARKETPLACE_MANIFEST_INVALID', 'CODEX_CONTROL_PLANE_UNAVAILABLE') } { 'REVIEW_FOREIGN_OWNER'; break }
+                { $_ -in @('FOREIGN_MARKETPLACE_NOT_CONFIGURED', 'FOREIGN_MARKETPLACE_ROOT_MISSING', 'FOREIGN_MARKETPLACE_MANIFEST_INVALID', 'CODEX_CONTROL_PLANE_UNAVAILABLE') } { 'REVIEW_FOREIGN_OWNER'; break }
                 default {
                     if ($ownership -ceq 'managed' -and [bool]$State.RepairReady) {
                         'RECONCILE_FROM_ACCEPTED_LOCK'

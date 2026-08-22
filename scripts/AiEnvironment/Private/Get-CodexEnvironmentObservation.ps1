@@ -95,33 +95,44 @@ function Get-CodexEnvironmentObservation {
         if ($managed -and -not $managedRegistrationHealthy) {
             Add-AiReason -Reasons $Reasons -Code 'OWNED_MARKETPLACE_MISSING' -Status 'DRIFTED' -Severity 'ERROR' -Lane 'activation' -Provider 'codex' -ResourceId ([string]$resource.id) -Detail 'The managed Codex marketplace is absent, incomplete, unavailable, or points at the wrong source.' -Evidence "configured=$configured;sourceTypeMatches=$sourceTypeMatches;sourceExists=$sourceExists;manifestValid=$sourceManifestValid;sourceMatches=$sourceMatches"
         }
-        $foreignMarketplaceIssue = $false
-        if (-not $managed -and $configured -and $sourceTypeMatches -and $sourceExists -eq $false) {
-            $foreignMarketplaceDegraded = $true
-            $foreignMarketplaceIssue = $true
-            Add-AiReason -Reasons $Reasons -Code 'FOREIGN_MARKETPLACE_ROOT_MISSING' -Status 'DEGRADED_FOREIGN_MARKETPLACE' -Severity 'WARNING' -Lane 'compatibility' -Provider 'codex' -ResourceId ([string]$resource.id) -Detail 'An observed foreign Codex marketplace points at a missing local root.' -Evidence "marketplace=$name"
-        }
-        elseif (-not $managed -and $configured -and $sourceTypeMatches -and $sourceManifestValid -eq $false) {
-            $foreignMarketplaceDegraded = $true
-            $foreignMarketplaceIssue = $true
-            Add-AiReason -Reasons $Reasons -Code 'FOREIGN_MARKETPLACE_MANIFEST_INVALID' -Status 'DEGRADED_FOREIGN_MARKETPLACE' -Severity 'WARNING' -Lane 'compatibility' -Provider 'codex' -ResourceId ([string]$resource.id) -Detail 'An observed foreign Codex marketplace root has no supported manifest.' -Evidence "marketplace=$name"
-        }
-        $marketplaceReasonCode = if ($managed) {
-            'OWNED_MARKETPLACE_MISSING'
-        }
-        elseif ($sourceExists -eq $false) {
-            'FOREIGN_MARKETPLACE_ROOT_MISSING'
-        }
-        else {
-            'FOREIGN_MARKETPLACE_MANIFEST_INVALID'
+        $inspectedEvidence = "configured=$configured;sourceTypeMatches=$sourceTypeMatches;sourceExists=$sourceExists;manifestValid=$sourceManifestValid;sourceMatches=$sourceMatches"
+        $uninspectedEvidence = "configured=$configured;sourceType=$sourceType;inspected=False"
+        $foreignResult = 'PASS'
+        $foreignReasonCode = 'FOREIGN_MARKETPLACE_OBSERVED'
+        $foreignEvidence = $inspectedEvidence
+        if (-not $managed) {
+            if (-not $configured) {
+                $foreignMarketplaceDegraded = $true
+                $foreignResult = 'DEGRADED'
+                $foreignReasonCode = 'FOREIGN_MARKETPLACE_NOT_CONFIGURED'
+                $foreignEvidence = $uninspectedEvidence
+                Add-AiReason -Reasons $Reasons -Code $foreignReasonCode -Status 'DEGRADED_FOREIGN_MARKETPLACE' -Severity 'WARNING' -Lane 'activation' -Provider 'codex' -ResourceId ([string]$resource.id) -Detail 'A declared observed Codex marketplace is absent from the Codex configuration.' -Evidence "marketplace=$name"
+            }
+            elseif (-not $sourceTypeMatches) {
+                $foreignResult = 'UNKNOWN'
+                $foreignReasonCode = 'FOREIGN_MARKETPLACE_SOURCE_UNINSPECTED'
+                $foreignEvidence = $uninspectedEvidence
+            }
+            elseif ($sourceExists -eq $false) {
+                $foreignMarketplaceDegraded = $true
+                $foreignResult = 'DEGRADED'
+                $foreignReasonCode = 'FOREIGN_MARKETPLACE_ROOT_MISSING'
+                Add-AiReason -Reasons $Reasons -Code $foreignReasonCode -Status 'DEGRADED_FOREIGN_MARKETPLACE' -Severity 'WARNING' -Lane 'compatibility' -Provider 'codex' -ResourceId ([string]$resource.id) -Detail 'An observed foreign Codex marketplace points at a missing local root.' -Evidence "marketplace=$name"
+            }
+            elseif ($sourceManifestValid -eq $false) {
+                $foreignMarketplaceDegraded = $true
+                $foreignResult = 'DEGRADED'
+                $foreignReasonCode = 'FOREIGN_MARKETPLACE_MANIFEST_INVALID'
+                Add-AiReason -Reasons $Reasons -Code $foreignReasonCode -Status 'DEGRADED_FOREIGN_MARKETPLACE' -Severity 'WARNING' -Lane 'compatibility' -Provider 'codex' -ResourceId ([string]$resource.id) -Detail 'An observed foreign Codex marketplace root has no supported manifest.' -Evidence "marketplace=$name"
+            }
         }
         Add-AiCheck -Checks $Checks `
             -Id "resource.$($resource.id).registration" `
-            -Result $(if ($managedRegistrationHealthy -or (-not $managed -and -not $foreignMarketplaceIssue)) { 'PASS' } elseif (-not $managed) { 'DEGRADED' } else { 'FAIL' }) `
+            -Result $(if ($managed) { if ($managedRegistrationHealthy) { 'PASS' } else { 'FAIL' } } else { $foreignResult }) `
             -Severity $(if ($managed) { 'ERROR' } else { 'WARNING' }) `
-            -ReasonCode $marketplaceReasonCode `
+            -ReasonCode $(if ($managed) { 'OWNED_MARKETPLACE_MISSING' } else { $foreignReasonCode }) `
             -Owned $managed `
-            -Evidence "configured=$configured;sourceTypeMatches=$sourceTypeMatches;sourceExists=$sourceExists;manifestValid=$sourceManifestValid;sourceMatches=$sourceMatches"
+            -Evidence $(if ($managed) { $inspectedEvidence } else { $foreignEvidence })
 
         $marketplaceRows.Add([pscustomobject][ordered]@{
             Id = [string]$resource.id

@@ -656,9 +656,9 @@ function Read-AiCodexConfig {
             }
             continue
         }
-        if ($line -match '^\[plugins\."([^"]+)"\]$') {
+        if ($line -match '^\[plugins\.("[^"]+"|''[^'']+'')\]$') {
             $sectionKind = 'plugin'
-            $sectionName = $Matches[1]
+            $sectionName = Unquote-AiTomlKey $Matches[1]
             if (-not $plugins.Contains($sectionName)) {
                 $plugins[$sectionName] = [pscustomobject][ordered]@{ Name = $sectionName; Enabled = $null }
             }

@@ -27,6 +27,8 @@ the health of managed payloads.
 Every locked payload is also verified against the raw blob at the declared Git
 commit, including the committed plugin version. Unsupported provider/resource
 shapes fail schema and adapter-coverage validation before observation begins.
+Managed Codex plugin profiles declare a stable cache root; the observer selects
+its version child from the lock and rejects missing or unsafe lock versions.
 
 The checked-in `snd-desk.lock.json` is intentionally `candidate` while the
 recovered source worktree contains unaccepted local changes. Promotion requires

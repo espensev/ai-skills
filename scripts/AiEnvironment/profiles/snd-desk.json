@@ -55,7 +55,7 @@
         "name": "devhome-lifecycle@ai-skills",
         "enabled": true,
         "sourceRoot": "D:\\Development\\AI-related\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
-        "targetRoot": "D:\\DevHome\\state\\codex\\plugins\\cache\\ai-skills\\devhome-lifecycle\\0.2.0",
+        "cacheRoot": "D:\\DevHome\\state\\codex\\plugins\\cache\\ai-skills\\devhome-lifecycle",
         "trustRecordKey": "devhome-lifecycle@ai-skills:hooks/hooks.json:session_start:0:0",
         "projectionReasonCode": "OWNED_PLUGIN_PAYLOAD_MISMATCH"
       }

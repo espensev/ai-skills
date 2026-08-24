@@ -72,7 +72,8 @@ BeforeAll {
         $pluginSource = Join-Path $repo 'lifecycle-plugin'
         $codexHookSource = Join-Path $repo 'codex-hook'
         $claudeHookSource = Join-Path $repo 'claude-hook'
-        $pluginTarget = Join-Path $codexHome 'plugins\cache\ai-skills\devhome-lifecycle\1.0.0'
+        $pluginCacheRoot = Join-Path $codexHome 'plugins\cache\ai-skills\devhome-lifecycle'
+        $pluginTarget = Join-Path $pluginCacheRoot '1.0.0'
 
         $null = New-Item -ItemType Directory -Path $repo,$codexHome,$claudeHome,$agentsHome,$controlRoot,$pluginSource,$codexHookSource,$claudeHookSource -Force
         Set-Content -LiteralPath (Join-Path $pluginSource 'plugin.txt') -Value 'locked plugin payload' -Encoding utf8NoBOM
@@ -227,7 +228,7 @@ enabled = false
                         name = 'devhome-lifecycle@ai-skills'
                         enabled = $true
                         sourceRoot = $pluginSource
-                        targetRoot = $pluginTarget
+                        cacheRoot = $pluginCacheRoot
                         trustRecordKey = 'fixture-trust-record'
                         projectionReasonCode = 'OWNED_PLUGIN_PAYLOAD_MISMATCH'
                     }
@@ -452,6 +453,62 @@ Describe 'AI environment module contract' {
         ($state | ConvertTo-Json -Depth 100) |
             Test-Json -SchemaFile (Join-Path $script:ModuleRoot 'schemas\state.schema.json') |
             Should -BeTrue
+    }
+
+    It 'derives the managed Codex plugin cache target from lock version without profile edits' {
+        $profile = Get-Content -Raw -LiteralPath $script:Fixture.ProfilePath | ConvertFrom-Json -Depth 100
+        $lock = Get-Content -Raw -LiteralPath $script:Fixture.LockPath | ConvertFrom-Json -Depth 100
+        $profileResource = @($profile.resources | Where-Object id -eq 'plugin:devhome-lifecycle')[0]
+        $lockResource = @($lock.resources | Where-Object id -eq 'plugin:devhome-lifecycle')[0]
+        $sourceRoot = [string]$profileResource.desired.sourceRoot
+        $cacheRoot = [string]$profileResource.desired.cacheRoot
+        $manifestPath = Join-Path $sourceRoot '.codex-plugin\plugin.json'
+        $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json -Depth 20
+        $manifest.version = '0.3.0'
+        Write-TestJson -Path $manifestPath -Value $manifest
+
+        $lockResource.version = '0.3.0'
+        $versionTarget = Join-Path $cacheRoot $lockResource.version
+        foreach ($entry in @($lockResource.payload)) {
+            Copy-TestFile -SourceRoot $sourceRoot -TargetRoot $versionTarget -RelativePath ([string]$entry.path)
+            $entry.sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $sourceRoot ([string]$entry.path -replace '/', '\'))).Hash
+        }
+        git -C $script:Fixture.Repo add --all
+        git -C $script:Fixture.Repo commit --quiet -m 'fixture plugin 0.3.0'
+        if ($LASTEXITCODE -ne 0) { throw 'Failed to commit versioned plugin fixture.' }
+        $lock.source.commit = (git -C $script:Fixture.Repo rev-parse HEAD).Trim()
+        Write-TestJson -Path $script:Fixture.LockPath -Value $lock
+
+        $state = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+
+        $state.Status | Should -BeExactly 'CURRENT'
+        $state.Providers.Codex.Plugins[0].Payload.TargetMatched | Should -Be 2
+        $state.Reasons.Code | Should -Not -Contain 'OWNED_PLUGIN_PAYLOAD_MISMATCH'
+        Test-Path -LiteralPath (Join-Path $cacheRoot '1.0.0\plugin.txt') | Should -BeTrue
+    }
+
+    It 'fails closed when the managed Codex plugin lock version is missing or unsafe' -ForEach @(
+        @{ Case = 'missing'; Version = $null },
+        @{ Case = 'unsafe'; Version = '..\escape' }
+    ) {
+        $lock = Get-Content -Raw -LiteralPath $script:Fixture.LockPath | ConvertFrom-Json -Depth 100
+        $lockResource = @($lock.resources | Where-Object id -eq 'plugin:devhome-lifecycle')[0]
+        if ($null -eq $Version) {
+            $lockResource.PSObject.Properties.Remove('version')
+        }
+        else {
+            $lockResource.version = $Version
+        }
+        Write-TestJson -Path $script:Fixture.LockPath -Value $lock
+
+        $state = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $payloadCheck = $state.Checks | Where-Object Id -eq 'resource.plugin:devhome-lifecycle.payload'
+
+        $state.Reasons.Code | Should -Contain 'RESOURCE_LOCK_MISSING'
+        $payloadCheck.Result | Should -BeExactly 'FAIL'
+        $payloadCheck.ReasonCode | Should -BeExactly 'RESOURCE_LOCK_MISSING'
+        $state.PromotionReady | Should -BeFalse
+        $state.RepairReady | Should -BeFalse
     }
 
     It 'isolates a broken foreign marketplace while preserving owned observations' {
@@ -836,7 +893,9 @@ exit /b 64
         $profile = Get-Content -Raw -LiteralPath $script:Fixture.ProfilePath | ConvertFrom-Json -Depth 100
         $lock = Get-Content -Raw -LiteralPath $script:Fixture.LockPath | ConvertFrom-Json -Depth 100
         $sourcePath = Join-Path ([string]$profile.resources[1].desired.sourceRoot) 'plugin.txt'
-        $targetPath = Join-Path ([string]$profile.resources[1].desired.targetRoot) 'plugin.txt'
+        $lockResource = @($lock.resources | Where-Object id -eq 'plugin:devhome-lifecycle')[0]
+        $targetRoot = Join-Path ([string]$profile.resources[1].desired.cacheRoot) ([string]$lockResource.version)
+        $targetPath = Join-Path $targetRoot 'plugin.txt'
         Set-Content -LiteralPath $sourcePath -Value 'dirty payload B' -Encoding utf8NoBOM
         Copy-Item -LiteralPath $sourcePath -Destination $targetPath -Force
         $lock.resources[0].payload[0].sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $sourcePath).Hash
@@ -855,7 +914,9 @@ exit /b 64
         $profile = Get-Content -Raw -LiteralPath $script:Fixture.ProfilePath | ConvertFrom-Json -Depth 100
         $lock = Get-Content -Raw -LiteralPath $script:Fixture.LockPath | ConvertFrom-Json -Depth 100
         $sourcePath = Join-Path ([string]$profile.resources[1].desired.sourceRoot) 'untracked.txt'
-        $targetPath = Join-Path ([string]$profile.resources[1].desired.targetRoot) 'untracked.txt'
+        $lockResource = @($lock.resources | Where-Object id -eq 'plugin:devhome-lifecycle')[0]
+        $targetRoot = Join-Path ([string]$profile.resources[1].desired.cacheRoot) ([string]$lockResource.version)
+        $targetPath = Join-Path $targetRoot 'untracked.txt'
         Set-Content -LiteralPath $sourcePath -Value 'untracked locked payload' -Encoding utf8NoBOM
         Copy-Item -LiteralPath $sourcePath -Destination $targetPath -Force
         $lock.resources[0].payload += [pscustomobject][ordered]@{

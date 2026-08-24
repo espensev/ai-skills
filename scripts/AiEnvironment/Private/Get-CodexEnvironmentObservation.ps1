@@ -176,7 +176,52 @@ function Get-CodexEnvironmentObservation {
         $lockResource = Get-AiLockResource -Lock $Lock -Id ([string]$resource.id)
         $payload = $null
         if (-not [string]::IsNullOrWhiteSpace([string](Get-AiProperty $resource.desired 'sourceRoot'))) {
-            $payload = Compare-AiLockedPayload -ProfileResource $resource -LockResource $lockResource -Reasons $Reasons -Checks $Checks
+            if ($null -eq $lockResource) {
+                $payload = Compare-AiLockedPayload -ProfileResource $resource -LockResource $lockResource -Reasons $Reasons -Checks $Checks
+            }
+            else {
+                $lockVersion = [string](Get-AiProperty $lockResource 'version')
+                $cacheRoot = [string](Get-AiProperty $resource.desired 'cacheRoot')
+                $targetRoot = $null
+                if (-not [string]::IsNullOrWhiteSpace($cacheRoot) -and
+                    $lockVersion -match '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?(?:\+[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$') {
+                    try {
+                        $targetRoot = Resolve-AiChildPath -Root $cacheRoot -RelativePath $lockVersion
+                    }
+                    catch {
+                        $targetRoot = $null
+                    }
+                }
+
+                if ($null -eq $targetRoot) {
+                    $resourceId = [string]$resource.id
+                    Add-AiReason -Reasons $Reasons `
+                        -Code 'RESOURCE_LOCK_MISSING' `
+                        -Status 'SOURCE_UNTRUSTED' `
+                        -Severity 'ERROR' `
+                        -Lane 'artifact' `
+                        -Provider 'codex' `
+                        -ResourceId $resourceId `
+                        -Detail 'The managed Codex plugin lock lacks a safe version needed to select its cache target.' `
+                        -Evidence "version=$(if ([string]::IsNullOrWhiteSpace($lockVersion)) { '<missing>' } else { $lockVersion })"
+                    Add-AiCheck -Checks $Checks `
+                        -Id "resource.$resourceId.payload" `
+                        -Result 'FAIL' `
+                        -Severity 'ERROR' `
+                        -ReasonCode 'RESOURCE_LOCK_MISSING' `
+                        -Owned $true
+                    $payload = [pscustomobject][ordered]@{
+                        Expected = @($lockResource.payload).Count
+                        SourceMatched = 0
+                        TargetMatched = 0
+                        Missing = 0
+                        Mismatched = 0
+                    }
+                }
+                else {
+                    $payload = Compare-AiLockedPayload -ProfileResource $resource -LockResource $lockResource -Reasons $Reasons -Checks $Checks -TargetRoot $targetRoot
+                }
+            }
         }
 
         $trustRecordKey = [string](Get-AiProperty $resource.desired 'trustRecordKey')

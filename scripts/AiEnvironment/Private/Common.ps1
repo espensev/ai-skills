@@ -865,7 +865,8 @@ function Compare-AiLockedPayload {
         [Parameter(Mandatory)][object] $ProfileResource,
         [AllowNull()][object] $LockResource,
         [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[object]] $Reasons,
-        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[object]] $Checks
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[object]] $Checks,
+        [string] $TargetRoot
     )
 
     $resourceId = [string]$ProfileResource.id
@@ -885,7 +886,9 @@ function Compare-AiLockedPayload {
     }
 
     $sourceRoot = [string](Get-AiProperty $ProfileResource.desired 'sourceRoot')
-    $targetRoot = [string](Get-AiProperty $ProfileResource.desired 'targetRoot')
+    if ([string]::IsNullOrWhiteSpace($TargetRoot)) {
+        $TargetRoot = [string](Get-AiProperty $ProfileResource.desired 'targetRoot')
+    }
     $payload = @($LockResource.payload)
     $sourceMatched = 0
     $targetMatched = 0

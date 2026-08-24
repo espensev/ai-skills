@@ -203,12 +203,12 @@
     "codexManagedPluginDesired": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "enabled", "sourceRoot", "targetRoot", "trustRecordKey", "projectionReasonCode"],
+      "required": ["name", "enabled", "sourceRoot", "cacheRoot", "trustRecordKey", "projectionReasonCode"],
       "properties": {
         "name": { "type": "string", "minLength": 1 },
         "enabled": { "type": "boolean" },
         "sourceRoot": { "type": "string", "minLength": 1 },
-        "targetRoot": { "type": "string", "minLength": 1 },
+        "cacheRoot": { "type": "string", "minLength": 1 },
         "trustRecordKey": { "type": "string", "minLength": 1 },
         "projectionReasonCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" }
       }

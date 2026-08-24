@@ -22,10 +22,11 @@
 - Treat `claude-skills/` and `codex-skills/` as the canonical provider package
   sources. Do not create another full repo-local copy of a skill merely for
   discovery.
-- Treat `codex-skills/local-hooks/devhome-lifecycle/` as machine-local Codex
-  source that must remain outside the portable release and provider install
-  manifests. Its plugin cache, DevHome runtime projection, enablement, and hook
-  trust are separate operational state; do not edit or export them as package
-  content.
+- Treat `codex-skills/local-hooks/devhome-lifecycle/` as the machine-local
+  source for Codex lifecycle hooks and the shared Claude/Codex Handoff Relay.
+  Keep it outside the portable release and provider install manifests. Its
+  plugin cache, DevHome runtime projections, enablement, and hook trust are
+  separate operational state; use the source installers rather than editing or
+  exporting installed copies.
 - This repository remains read-only for Claude unless the user explicitly
   authorizes a package change.

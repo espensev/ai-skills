@@ -64,6 +64,13 @@
             "commandWindows": "D:\\DevHome\\state\\codex\\hooks\\Invoke-RememberAdapter.cmd --event Stop",
             "timeout": 5,
             "statusMessage": "Finalizing Remember transcript capture"
+          },
+          {
+            "type": "command",
+            "command": "pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"D:\\DevHome\\state\\codex\\hooks\\Invoke-HandoffRelay.ps1\" -Provider Codex",
+            "commandWindows": "pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"D:\\DevHome\\state\\codex\\hooks\\Invoke-HandoffRelay.ps1\" -Provider Codex",
+            "timeout": 5,
+            "statusMessage": "Handoff Relay: preparing next-session context"
           }
         ]
       }

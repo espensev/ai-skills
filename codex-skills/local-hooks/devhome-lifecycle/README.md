@@ -1,8 +1,9 @@
-# DevHome Codex lifecycle hooks
+# DevHome lifecycle hooks
 
-This directory is the source authority for the machine-local Codex hooks used
-on verified controller `snd-desk`. The installed projection is
-`D:\DevHome\state\codex`; do not develop the runtime copy independently.
+This directory is the source authority for the machine-local Codex lifecycle
+hooks and the shared Claude/Codex **Handoff Relay** used on verified controller
+`snd-desk`. The installed projections are under `D:\DevHome\state\codex` and
+`D:\DevHome\state\claude`; do not develop the runtime copies independently.
 
 Known placement blocker: `Invoke-RememberAdapter.py` currently derives its
 generated mirrors, locks, checkpoints, and logs from ambient `CODEX_HOME`.
@@ -26,7 +27,45 @@ reconciler; it does not register a second copy of the behavior hooks below.
 | `SessionStart` | Loads Remember context through the bounded Windows adapter. |
 | `UserPromptSubmit` | Blocks high-confidence secrets before prompt submission. Remember does not run concurrently on this event. |
 | `PostToolUse` | Captures the accepted transcript for Remember in the background. |
-| `Stop` | Performs the final transcript synchronization for the turn. |
+| `Stop` | Runs final Remember capture and the compact, evidence-labelled Handoff Relay independently; Codex may launch matching handlers concurrently. |
+
+## Handoff Relay
+
+Handoff Relay is one shared, synchronous implementation with provider-specific
+`Stop` output: Claude receives non-error `additionalContext`; Codex receives its
+strict `decision: block` continuation shape. It defers while Claude reports
+background tasks or session crons.
+
+The first Stop verifies `snd-desk`, resolves the canonical target, snapshots its
+hash, and creates a session/turn-scoped draft under the enrolled project's
+`tmp\handoff-relay` directory. The agent writes only that draft. The second Stop
+validates the state and draft, takes a per-project lock, rejects a changed
+canonical hash as a preserved conflict, and atomically publishes `remember.md`.
+
+Target resolution accepts the latest exact `Write next handoff to:` declaration
+only from a developer/system transcript record. Without one, it walks `cwd` and
+its parents to the nearest enrolled Remember project. The canonical file may be
+created on first successful publication, but its parent must already be an
+enrolled `D:\DevHome\state\remember\projects\<project>` directory. User-authored
+targets, relative paths, unenrolled projects, and paths outside that store do
+not write a handoff.
+
+Published handoffs use seven ordered sections: Summary, Outcome, Verified state,
+Changed surfaces, Verification, Open risks, and Next gate. The cleaner keeps
+bullets only, deduplicates and caps them, limits the body to 450 words, removes
+extra prose/code/unknown sections, and drops explicitly unverified or
+speculative fact bullets. Verified-state bullets require `[verified]` plus
+`Evidence:`; risks require `[risk]` plus `Basis:`. This is deterministic
+provenance enforcement, not semantic fact-checking. Missing required content is
+preserved as a failed draft instead of replacing the canonical handoff.
+Each bullet is also bounded to 512 text elements and 1,024 UTF-8 bytes; the
+published document is capped at 32 KiB.
+
+The latest redacted result is written atomically to
+`D:\DevHome\state\remember\handoff-relay\latest-status.json`. Raw failed or
+conflicting drafts remain under the enrolled project's bounded temporary relay
+directory for diagnosis. Shutdown remains fail-open after recording a bounded
+failure.
 
 Current acceptance blocker: the installed Remember `0.20.0` PostToolUse hook
 exceeds the adapter's three-second upstream bound, so the adapter fails open and
@@ -52,7 +91,7 @@ Re-run it after source changes; do not rely on a Codex restart to refresh a loca
 plugin cache. Use `-Force` when an explicit remove-and-reinstall is wanted.
 The local choice is pinned to `D:\DevHome\state\codex`; it does not follow an
 alternate `CODEX_HOME` into AppData or another user-state root. That guarantee
-currently covers marketplace configuration, plugin cache, and the five runtime
+currently covers marketplace configuration, plugin cache, and the six Codex runtime
 files; it does not yet cover adapter-generated state noted above.
 
 The command does not acquire source changes: update this checkout separately,
@@ -61,7 +100,7 @@ plugin's enabled state and hook-trust records; synchronization proves catalog
 and payload convergence, not activation.
 
 The trusted plugin `SessionStart` hook runs its cached bootstrap with the
-canonical Ai-Skills source path. The bootstrap therefore checks the five-file
+canonical Ai-Skills source path. The bootstrap therefore checks the six-file
 runtime projection against current repository source, not against a possibly
 stale cache, and invokes the verified-machine installer only when drift exists.
 
@@ -79,7 +118,7 @@ Read-only plugin-cache convergence check:
 .\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1 -Check
 ```
 
-## Install or refresh
+## Install or refresh Codex
 
 The installer runs the hash-bound DevMesh v2 verifier from the local machine
 kit and matches the enrolled machine and instance IDs before mutation. It backs
@@ -101,6 +140,26 @@ Read-only drift check:
 ```powershell
 .\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeCodexHooks.ps1 -Check
 ```
+
+## Install or refresh Claude
+
+The Claude installer uses the same identity gate, installs the shared relay
+script under `D:\DevHome\state\claude\hooks`, and merges one owned `Stop`
+registration into `settings.json` while preserving unrelated settings and
+hooks. It backs up any replaced settings/script files.
+
+```powershell
+.\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1
+```
+
+Read-only drift check:
+
+```powershell
+.\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1 -Check
+```
+
+Start a fresh Claude session after installation. Codex likewise needs a fresh
+session and explicit `/hooks` trust review when its hook definition changes.
 
 ## Verification
 

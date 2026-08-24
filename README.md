@@ -131,9 +131,10 @@ See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md)
 
 `telemetry-live-ops` is kept in this source repo for this workstation only. It is intentionally excluded from the install manifests and ready-package export.
 
-### Machine-local Codex lifecycle hooks
+### Machine-local lifecycle hooks
 
-The source authority for the DevHome safety and Remember-compatibility hooks is
+The source authority for the DevHome safety, Remember compatibility, and shared
+Claude/Codex **Handoff Relay** hooks is
 [`codex-skills/local-hooks/devhome-lifecycle`](codex-skills/local-hooks/devhome-lifecycle/README.md).
 It remains outside the portable ready-package manifests and is available as the
 `devhome-lifecycle` choice in the repository's local **AI Skills** Codex
@@ -141,8 +142,17 @@ marketplace. Its sync-only plugin hook keeps the verified
 `D:\DevHome\state\codex` projection current once it is enabled and trusted,
 without registering the safety or Remember behavior twice.
 
+Handoff Relay uses each agent's synchronous `Stop` event as a two-pass compact
+publisher. The first pass creates a session-scoped draft; the second cleans and
+validates the fixed evidence-labelled schema, checks the canonical hash under a
+project lock, and atomically publishes the enrolled project's `remember.md`.
+Nested working directories resolve to the nearest enrolled ancestor. Invalid,
+oversized, or conflicting drafts are preserved and cannot overwrite newer
+state.
+
 ```powershell
 .\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+.\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1
 ```
 
 Use `-Provider Both` with the same `-CodexLocalPlugin` choice when the Claude
@@ -151,12 +161,12 @@ updating this checkout; it hash-checks the materialized plugin cache and
 refreshes it only when needed, while `-Force` requests an explicit reinstall.
 Source acquisition is deliberately separate, so the synchronizer never pulls,
 cleans, or otherwise changes Git state.
-This machine-specific choice pins its Codex state to
-`D:\DevHome\state\codex`; an alternate `CODEX_HOME` does not relocate the
-lifecycle plugin or its runtime hook projection. Plugin enablement and hook
-trust remain user-controlled Codex state. After first installation or a hook
-command change, restart Codex, confirm the plugin is enabled, and review the
-reconciliation hook in `/hooks`.
+This machine-specific choice pins Codex state to `D:\DevHome\state\codex` and
+the Claude relay projection to `D:\DevHome\state\claude`; ambient home variables
+do not relocate them. Plugin enablement and hook trust remain user-controlled
+Codex state. After first installation or a hook command change, start fresh
+agent sessions, confirm the Codex plugin is enabled, and review its definitions
+in `/hooks`.
 
 Current review blocker: the Remember adapter's generated mirrors, locks,
 checkpoints, and logs still derive from ambient `CODEX_HOME`. Until that path is

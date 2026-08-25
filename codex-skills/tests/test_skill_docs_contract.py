@@ -28,6 +28,7 @@ REPO_CONVENTIONS_SKILL = SKILLS / "repo-conventions" / "SKILL.md"
 BROWSER_CONTROL_SKILL = SKILLS / "browser-control" / "SKILL.md"
 BROWSER_CONTROL_CDP = SKILLS / "browser-control" / "cdp.mjs"
 BROWSER_CONTROL_CODEX_INTEGRATION = SKILLS / "browser-control" / "CODEX-INTEGRATION.md"
+USAGE_STATS_SKILL = SKILLS / "usage-stats" / "SKILL.md"
 
 
 class TestSkillDocsContract(unittest.TestCase):
@@ -308,8 +309,19 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("Current project trackers and verified live state outrank", memory_text)
         self.assertIn("Codex Authority First", memory_text)
         self.assertIn("If no write surface is declared, do not write", memory_text)
+        self.assertIn("Remember handoff store", memory_text)
         self.assertNotIn("Codex has no per-project auto-memory directory", memory_text)
         self.assertNotIn("scripts/memory_audit.py", memory_text)
+
+    def test_usage_stats_closeout_uses_native_codex_counters(self):
+        usage_text = USAGE_STATS_SKILL.read_text(encoding="utf-8")
+        self.assertIn("## Command: `closeout`", usage_text)
+        self.assertIn("turn's `task_started` event", usage_text)
+        self.assertIn("`event_msg` whose `payload.type` is `token_count`", usage_text)
+        self.assertIn("Input already includes cached input", usage_text)
+        self.assertIn("current final response is not included", usage_text)
+        for field in ("Outcome", "Elapsed", "Tokens", "Execution", "Verification", "Remaining"):
+            self.assertIn(field, usage_text)
 
 
     def test_current_docs_do_not_reference_removed_contracts(self):

@@ -28,5 +28,11 @@
   plugin cache, DevHome runtime projections, enablement, and hook trust are
   separate operational state; use the source installers rather than editing or
   exporting installed copies.
+- Treat `scripts/AiEnvironment/` as the read-only wanted-state observer for
+  the effective Codex and Claude environment. `profiles/` is reviewed intent,
+  `locks/` is the commit-backed promotion artifact, and
+  `D:\DevHome\state\ai-environment\*.observed.json` is generated output; never
+  hand-edit the report, never mark a lock `accepted` from a dirty worktree, and
+  do not add apply or repair paths that bypass an accepted lock.
 - This repository remains read-only for Claude unless the user explicitly
   authorizes a package change.

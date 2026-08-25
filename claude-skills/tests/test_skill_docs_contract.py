@@ -24,6 +24,7 @@ DEEP_AUDIT_MODE_CONTRACT = SKILLS / "deep-audit" / "references" / "mode-contract
 DEEP_AUDIT_STATE_CONTRACT = SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md"
 BROWSER_CONTROL_SKILL = SKILLS / "browser-control" / "SKILL.md"
 BROWSER_CONTROL_CDP = SKILLS / "browser-control" / "cdp.mjs"
+USAGE_STATS_SKILL = SKILLS / "usage-stats" / "SKILL.md"
 
 
 class TestSkillDocsContract(unittest.TestCase):
@@ -235,6 +236,16 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("live ownership and lifecycle accounting", mode_text)
         self.assertIn("MUST NOT recommend clearing", mode_text)
         self.assertIn("`Original:` or `Superseded:`", mode_text)
+
+    def test_usage_stats_closeout_contract_is_portable(self):
+        usage_text = USAGE_STATS_SKILL.read_text(encoding="utf-8")
+        self.assertIn("## Command: `closeout`", usage_text)
+        self.assertIn("current user message timestamp", usage_text)
+        self.assertIn("unambiguously bound the current turn", usage_text)
+        for field in ("Outcome", "Elapsed", "Tokens", "Execution", "Verification", "Remaining"):
+            self.assertIn(field, usage_text)
+        self.assertNotIn("task_started", usage_text)
+        self.assertNotIn("`event_msg` whose `payload.type` is `token_count`", usage_text)
 
     def test_current_docs_do_not_reference_removed_contracts(self):
         self.assertIn("historical", EXAMPLES_README.read_text(encoding="utf-8").lower())

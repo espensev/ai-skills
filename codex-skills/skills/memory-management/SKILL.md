@@ -46,6 +46,12 @@ does not authorize creating topic files, editing indexes, or choosing a memory
 directory. Before any write, follow **Codex Mechanics** and use only the
 runtime-declared update queue. If no write surface is declared, do not write.
 
+A runtime-declared Remember handoff store (for example,
+`state/remember/projects/<slug>/remember.md`) is not native Codex memory and is
+not governed by the ad-hoc memory-update queue. A developer instruction that
+explicitly names the next handoff target authorizes that bounded handoff write;
+do not misclassify it as a request to update generated Codex memory.
+
 ## Discipline Core
 
 > Shared core: sections 1–8 are kept identical across the claude-skills and

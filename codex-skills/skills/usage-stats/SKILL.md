@@ -1,6 +1,6 @@
 ---
 name: usage-stats
-description: "Use when reviewing token/cost usage, budgets, rate-limit forecasts, session tool or timeline activity, or agent/campaign efficiency. Prefers measured telemetry with an explicitly estimated fallback. Do not use to operate a live telemetry deployment."
+description: "Use when reviewing token/cost usage, budgets, rate-limit forecasts, session tool or timeline activity, agent/campaign efficiency, or execution closeouts. Prefers measured telemetry with an explicitly estimated fallback. Do not use to operate a live telemetry deployment."
 ---
 
 # Usage Stats — Usage, Cost & Agent Analytics
@@ -34,6 +34,7 @@ Three routed groups. Default to `summary` if no command given.
 | Command | Usage | Purpose |
 |---------|-------|---------|
 | `summary` | `$usage-stats` or `$usage-stats summary` | Quick session overview |
+| `closeout` | `$usage-stats closeout` | Compact end-of-execution outcome, time, tokens, evidence, and risk |
 | `tools` | `$usage-stats tools` | Tool usage breakdown with counts and patterns |
 | `timeline` | `$usage-stats timeline` | Activity timeline with phases |
 | `compare` | `$usage-stats compare [N]` | Compare last N sessions (default 5) |
@@ -55,8 +56,9 @@ Before any command, locate data sources. They form a strict **precedence
 ladder** — always prefer a higher tier, and always report WHICH tier produced
 the numbers:
 
-- **Tier 1 — Telemetry HTTP API (measured, authoritative):** real,
-  hook-captured token/cost/tool data from the local ollama-telemetry service.
+- **Tier 1 — Native or telemetry counters (measured, authoritative):** real
+  provider token counters when available, otherwise hook-captured
+  token/cost/tool data from the local ollama-telemetry service.
 - **Tier 2 — Hooks JSONL log / conversation transcript (semi-measured):**
   tool call metadata with timestamps; sizing derived from logged inputs/outputs.
 - **Tier 3 — Character heuristic (estimated ~approximate):** last-resort
@@ -66,7 +68,7 @@ Numbers are labelled **measured** when sourced from Tier 1 and
 **estimated ~approximate** when derived from Tier 3 — never present heuristic
 numbers as exact.
 
-1. **Telemetry HTTP API** (Tier 1 — preferred when reachable). Base URL is
+1. **Telemetry HTTP API** (Tier 1 — measured when reachable). Base URL is
    configurable via `[usage-stats].telemetry_url` (default
    `http://127.0.0.1:8099`). It is **optional** — probe it, never
    hard-require it:
@@ -89,6 +91,18 @@ numbers as exact.
    such as `cache_read_tokens` is ONLY the `/api/llm/ingest` request body —
    never read it from responses.)
 
+1b. **Native Codex session counters** (Tier 1 — measured). Locate the current
+   session JSONL under the active Codex home only when session ID, current
+   project, or the current prompt identifies it unambiguously. Parse the last
+   `event_msg` whose `payload.type` is `token_count` and read
+   `payload.info.total_token_usage`: `input_tokens`, `cached_input_tokens`,
+   `cache_write_input_tokens`, `output_tokens`, `reasoning_output_tokens`, and
+   `total_tokens`. Input already includes cached input, and output already
+   includes reasoning output; show cached/reasoning as subsets and never add
+   them to the total again. These counters cover completed model steps only:
+   the current final response is not included until after it is emitted. Report
+   the last counter timestamp so that coverage is explicit.
+
 2. **Hooks JSONL log** (Tier 2 — richest local source for tool events, if
    hooks instrumentation is configured for this installation):
    ```bash
@@ -99,9 +113,10 @@ numbers as exact.
    Parse with jq or python3's json module.
 
 3. **Conversation transcripts** (Tier 2/3 input for per-message sizing):
-   Location varies by Codex installation; check the user home and common
-   defaults. Read available transcripts to estimate input/output sizing, and
-   fall back to hooks-log tool sizes if no transcript is accessible.
+   Location varies by Codex installation; check the active Codex home and
+   common defaults. Native `token_count` events provide measured totals; use
+   other transcript records for tool, phase, and per-turn attribution. Fall
+   back to hooks-log tool sizes if no transcript is accessible.
 
 4. **Rate-limit cache** (if a statusline or similar surface is active):
    Read whatever rate-limit file the installation provides.
@@ -139,9 +154,9 @@ project-level metrics, or re-run after some session activity has accumulated.
 
 ## Estimation & Pricing Method
 
-When the telemetry API (Tier 1) is reachable, prefer its **measured** totals.
-Codex transcripts do not expose exact per-message token counts, so when
-telemetry is **not** reachable fall back to this estimation pipeline:
+When a Tier 1 source is reachable, prefer its **measured** totals.
+When neither native Codex `token_count` events nor telemetry are available,
+fall back to this estimation pipeline.
 
 1. **Character-based heuristic** (Tier 3, last resort): ~4 characters = 1 token
    for English text; ~3.5 for code-heavy content (symbols are often individual
@@ -174,17 +189,19 @@ differ due to caching, batching, and prompt caching discounts.
 
 ## Command: `cost` — Current Token Position
 
-1. **Size session tokens (follow the ladder)**: Tier 1 — GET
-   `/api/llm/sessions/<sessionId>` (and/or `/api/llm/overview?hours=N`) and
-   read `totalInputTokens`, `totalOutputTokens`, `totalCostUsd`,
-   `cacheReadTokens`; report as **measured**. Tier 2/3 — parse the transcript
-   or hooks log and apply the character heuristic; sum input (user messages +
-   tool results) and output (assistant messages + tool call parameters).
+1. **Size session tokens (follow the ladder)**: Tier 1 — use native provider
+   counters when available, or GET `/api/llm/sessions/<sessionId>` (and/or
+   `/api/llm/overview?hours=N`) and read `totalInputTokens`,
+   `totalOutputTokens`, `totalCostUsd`, `cacheReadTokens`; report as
+   **measured**. Tier 2/3 — parse the transcript or hooks log and apply the
+   character heuristic; sum input (user messages + tool results) and output
+   (assistant messages + tool call parameters).
 
-2. **Session cost**: Tier 1 uses `totalCostUsd` directly; Tier 2/3 multiplies
-   token estimates by model pricing. If session totals expose a cache-read or
-   savings figure (e.g. `cacheReadTokens`), add a "real cost avoided" note —
-   do not invent field names beyond the verified contract.
+2. **Session cost**: use `totalCostUsd` directly only when the selected source
+   exposes it; native token counters alone do not prove cost. Tier 2/3
+   multiplies token estimates by model pricing. If session totals expose a
+   cache-read or savings figure (e.g. `cacheReadTokens`), add a "real cost
+   avoided" note — do not invent field names beyond the verified contract.
 
 3. **Rate limit position** (if rate-limit data available): 5-hour and 7-day
    windows — used percentage, time remaining, effective burn rate (tokens/hour).
@@ -195,7 +212,7 @@ differ due to caching, batching, and prompt caching discounts.
 ```
 Usage Stats — Cost
 
-  Data tier: Tier 1 — telemetry API (measured)
+  Data tier: Tier 1 — native counters or telemetry API (measured)
              [or: Tier 3 — character heuristic (estimated ~approximate)]
 
   Session Tokens (measured):
@@ -371,11 +388,54 @@ by session_id to prevent duplicates).
 
 ---
 
+## Command: `closeout` — End-of-Execution Report
+
+Use this for a turn that materially executed work: edits, tests, builds,
+publication, deployment, or a multi-step operational procedure. Do not append
+it to a simple answer or read-only lookup unless the user asks.
+
+1. **Outcome** — classify the requested work as `COMPLETE`, `PARTIAL`, or
+   `BLOCKED`, followed by one sentence naming the delivered result or blocker.
+2. **Elapsed** — measure wall time from the turn's `task_started` event to the
+   latest event/report clock. If only session-level timestamps exist, label the
+   duration as session time rather than turn time.
+3. **Tokens** — follow the source ladder. Report input, cached-input subset,
+   output, reasoning-output subset, and total when the provider exposes them.
+   Add the source tier and coverage timestamp. State that the final response is
+   excluded when reading a pre-final counter. Never label a heuristic exact.
+4. **Execution** — count completed model steps, tool calls, failed tool calls,
+   approval requests/denials, and agents only when the data source exposes
+   them. Call out repeated denials or wasteful retry loops.
+5. **Change and verification** — summarize files/commits/runtime or remote
+   mutations and the exact pass/fail/skipped verification result. Keep source,
+   deployed state, and remote publication separate.
+6. **Remaining** — name the highest remaining risk or next gate. Add one
+   efficiency recommendation only when the evidence makes it actionable.
+
+Keep the report to six compact fields by default:
+
+```
+Run closeout
+  Outcome:      COMPLETE — implemented and verified the requested contract
+  Elapsed:      8m 42s wall time (measured turn events)
+  Tokens:       162K input (118K cached) | 8.9K output (4.8K reasoning) | 171K total
+                Tier 1 measured through 14:51:08; final response excluded
+  Execution:    12 model steps | 18 tools | 1 failed | 0 denials | 0 agents
+  Verification: focused tests 24/24; 3 files changed; no runtime or remote mutation
+  Remaining:    working tree is uncommitted; next gate is review/ship authorization
+```
+
+If a field is unavailable, say `not exposed` or omit it; never manufacture a
+zero. This command is read-only and must not auto-write history or memory.
+
+---
+
 ## Command: `summary` — Quick Session Overview
 
-1. **Telemetry first**: with Tier 1 reachable, pull `/api/llm/overview?hours=8`
-   and, once a sessionId is known, `/api/llm/sessions/<sessionId>` for
-   **measured** token/tool/session totals. Otherwise use the tiers below.
+1. **Measured counters first**: use native provider counters when present;
+   otherwise, with telemetry reachable, pull `/api/llm/overview?hours=8` and,
+   once a sessionId is known, `/api/llm/sessions/<sessionId>` for **measured**
+   token/tool/session totals. Otherwise use the tiers below.
 
 2. **Identify current session**: most recent session_id from telemetry or the
    hooks log, or the latest conversation file.
@@ -536,8 +596,8 @@ tooling or downstream skill consumption:
 ```
 
 `data_tier` reflects the highest tier that produced the numbers: `measured`
-(telemetry API), `hooks` (tier 2 log / transcript), or `estimated` (tier 3
-character heuristic).
+(native provider counters or telemetry API), `hooks` (tier 2 log /
+transcript), or `estimated` (tier 3 character heuristic).
 
 ---
 
@@ -742,9 +802,10 @@ tier, the canonical `*_input` / `*_output` key wins.
 
 ## Conventions
 
-- Token counts are **measured** when sourced from the telemetry API (Tier 1)
-  and **estimated ~approximate** when derived from the character heuristic
-  (Tier 3) — always label which tier produced every number
+- Token counts are **measured** when sourced from native provider counters or
+  the telemetry API (Tier 1), and **estimated ~approximate** when derived from
+  the character heuristic (Tier 3) — always label which tier produced every
+  number
 - The telemetry API is optional: probe with a 2s budget, fall through
   silently to Tier 2/3 if unreachable, and never hard-fail or block on it
 - Read-only toward logs, conversations, campaign state, plans, and agent

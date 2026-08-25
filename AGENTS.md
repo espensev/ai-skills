@@ -32,3 +32,9 @@
   editing installed copies or Codex hook-trust state. Keep production
   adapter-generated state on the same physical DevHome root; ambient
   `CODEX_HOME` is not authority to relocate it.
+- Treat `scripts/AiEnvironment/` as the read-only wanted-state observer for
+  the effective Codex and Claude environment. `profiles/` is reviewed intent,
+  `locks/` is the commit-backed promotion artifact, and
+  `D:\DevHome\state\ai-environment\*.observed.json` is generated output; never
+  hand-edit the report, never mark a lock `accepted` from a dirty worktree, and
+  do not add apply or repair paths that bypass an accepted lock.

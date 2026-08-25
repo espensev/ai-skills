@@ -83,7 +83,7 @@ Playwright E2E, current research, and bounded inspect-edit-verify cycles.
 |---|---|
 | **smart-test** | Map changed files to the minimal useful test subset instead of the full suite (default-branch aware) |
 | **docs-sync** | Detect and fix drift between docs and code (versions, paths, conflict markers) |
-| **usage-stats** | Token/cost/budget/forecast intelligence, session tool/agent/timeline analytics, and agent performance/cost reports — telemetry-first with heuristic fallback |
+| **usage-stats** | Token/cost/budget/forecast intelligence, compact execution closeouts, session tool/agent/timeline analytics, and agent performance/cost reports — measured counters first with heuristic fallback |
 | **deep-audit** | Run evidence-backed, resumable runtime-efficiency audits with explicit safety and evidence boundaries |
 | **skill-authoring** | Create or revise Agent Skills with focused discovery metadata, progressive disclosure, support files, and package wiring |
 
@@ -111,7 +111,11 @@ attended acceptance procedure in
 | **delegate** | Decide whether a narrow, well-scoped sub-task should go to a **local Ollama model** vs stay with the controller, and route it if so. Grounded in the local `ollama-telemetry` MCP delegation tools (`ollama_readiness` / `ollama_delegate` / `ollama_batch_delegate`), with a static-guidance fallback when the MCP server is unavailable. The controller always verifies the result. |
 | **delegation-eval** | Evaluate whether local model routing is worth keeping. Uses `ollama-telemetry` eval runs, judge packets, usage metrics, and `dispatch_recommendations` to compare helper models and propose reviewed `dispatch-rules.json` changes. |
 
-`usage-stats` also has a **telemetry-first data tier**: when a local `ollama-telemetry` API is reachable (`http://127.0.0.1:8099`), it reads real measured token/cost data instead of character-heuristic estimates, falling back silently when it is not.
+`usage-stats` uses **measured counters first**: native Codex `token_count`
+events when present, otherwise the local `ollama-telemetry` API at
+`http://127.0.0.1:8099`. Its `closeout` command combines outcome, elapsed time,
+tokens, execution/errors, verification, and the next risk in a compact report;
+heuristic estimates remain a clearly labelled last resort.
 
 Telemetry integration is deliberately split by portability:
 

@@ -1,19 +1,22 @@
 ---
 name: devhome-lifecycle
-description: Check, synchronize, or diagnose the machine-local DevHome Codex safety and Remember lifecycle hooks on enrolled snd-desk. Use when asked about hook drift, lifecycle plugin status, or updating the DevHome hook projection.
+description: Check, synchronize, or diagnose the machine-local DevHome Codex safety and Remember lifecycle hooks plus the shared Claude/Codex Handoff Relay on enrolled snd-desk. Use when asked about hook drift, lifecycle plugin status, automatic handoffs, or updating either DevHome hook projection.
 ---
 
 # DevHome lifecycle
 
-Maintain the Codex lifecycle hooks for verified controller `snd-desk` without
-editing the installed projection or Codex trust state by hand.
+Maintain the Codex lifecycle hooks and shared Claude/Codex Handoff Relay for
+verified controller `snd-desk` without editing installed projections or Codex
+trust state by hand.
 
 ## Authority
 
 - Source authority:
   `D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle`
-- Installed projection: `D:\DevHome\state\codex\hooks.json` and the four owned
+- Codex projection: `D:\DevHome\state\codex\hooks.json` and the five owned
   scripts under `D:\DevHome\state\codex\hooks`
+- Claude projection: `D:\DevHome\state\claude\settings.json` plus
+  `D:\DevHome\state\claude\hooks\Invoke-HandoffRelay.ps1`
 - Plugin cache:
   `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle`; never
   develop there or relocate it through `CODEX_HOME`
@@ -26,8 +29,19 @@ editing the installed projection or Codex trust state by hand.
 
 The package remains outside the portable provider manifests. The
 `devhome-lifecycle@ai-skills` plugin contributes this skill and one startup
-reconciler; the five behavior hooks remain registered only through the installed
-DevHome projection so they do not execute twice.
+reconciler; the five Codex event groups remain registered only through the
+installed DevHome projection so they do not execute twice. Handoff Relay is the
+shared Stop implementation installed into both agents.
+
+Handoff Relay uses a verified two-pass draft protocol. It resolves the nearest
+enrolled ancestor for nested working directories, writes agent output to
+session-scoped temporary state, structurally cleans the seven-section handoff,
+then hash-checks and atomically publishes under a project lock. Read the latest
+redacted result at
+`D:\DevHome\state\remember\handoff-relay\latest-status.json`; do not edit or
+promote draft/conflict files by hand. The cleaner removes unsupported forms and
+explicit speculation, bounds each bullet to 512 text elements and 1,024 UTF-8
+bytes, and caps publication at 32 KiB. It does not semantically prove a claim.
 
 ## Refresh the plugin choice
 
@@ -70,6 +84,16 @@ mutation to the identity-gated installer and verifies convergence afterward:
 Do not copy files manually, edit generated native memory, or manufacture hook
 trust. After refreshing a changed hook definition, restart Codex and review the
 new definition in `/hooks`.
+
+Check or synchronize the Claude projection with the dedicated installer:
+
+```powershell
+& 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1' -Check
+& 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1'
+```
+
+Start a fresh Claude session after synchronization. The installer preserves
+unrelated settings and hooks and backs up any files it replaces.
 
 Source acquisition is separate: never pull, reset, or clean the Ai-Skills
 checkout as part of lifecycle reconciliation.

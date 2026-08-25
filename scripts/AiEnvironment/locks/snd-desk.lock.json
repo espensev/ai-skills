@@ -1,0 +1,57 @@
+{
+  "schema": "ai-skills/ai-environment-lock/v1",
+  "profileId": "snd-desk",
+  "state": "candidate",
+  "capturedAtUtc": "2026-08-22T03:20:00Z",
+  "source": {
+    "repository": "https://github.com/espensev/ai-skills.git",
+    "commit": "5881f07d948e162e94b4a92d2a07a2cb7182220e",
+    "requireCleanWorktree": true
+  },
+  "providers": {
+    "codex": {
+      "testedVersions": ["0.149.0"]
+    },
+    "claude": {
+      "testedVersions": ["2.1.239"]
+    }
+  },
+  "resources": [
+    {
+      "id": "plugin:devhome-lifecycle",
+      "version": "0.1.0",
+      "trustHash": "sha256:f86feafe2924b9e0d9f22aaa54056a12a389e5ef69d41e07d5533eef178344ba",
+      "payload": [
+        { "path": ".codex-plugin/plugin.json", "sha256": "9743540711B1AF7BCFFAE8AC98EC86D3774DCADC6492501218E885BF5AF6BD46" },
+        { "path": "hooks/hooks.json", "sha256": "07984C3908DB6766F62B02B2D3E59DC648E7613407DD1F032B3BF0ACE6A3F6A3" },
+        { "path": "Sync-DevHomeLifecyclePlugin.ps1", "sha256": "B635306C58F8124C15D84570A03CA55E91D2BE2BDDE98DF57007CC113B5D98D5" },
+        { "path": "Sync-DevHomeCodexHooks.ps1", "sha256": "95C363AD376CC8E616F1234C297D10B821CABC598A43B36EE6A7AC3B707A31A5" },
+        { "path": "Install-DevHomeCodexHooks.ps1", "sha256": "41E8CF87AB109D0EE72F446E11299ACB0E1E03D67DF22E8C4493A1251121FB9E" },
+        { "path": "hooks.json", "sha256": "1DC02CEE7DF6DAB0887503BEF0CBBE95F2F2764C29F421D4919A33BF7BEF76A4" },
+        { "path": "hooks/Invoke-DevHomeHook.ps1", "sha256": "94E22CD4084D6AB85957219F4FF83430E7935A145AFE745A2788D6BB09DF0484" },
+        { "path": "hooks/Invoke-RememberAdapter.cmd", "sha256": "E96DF633BAD6CC8ADE90EA0704E6634D5929C5AA83AFEE8F858A079B0EF07CF1" },
+        { "path": "hooks/Invoke-RememberAdapter.py", "sha256": "34E64365870CE0106A9212788D449B70C25643F052BAEECE7044E6FD9027A153" },
+        { "path": "hooks/Invoke-RememberClaude.cmd", "sha256": "A307C61A83A4D4219E5EB71ABB9C1B4F0C6D03C847F20B7647243790A038A0AD" },
+        { "path": "skills/devhome-lifecycle/SKILL.md", "sha256": "4EC1333D20258DCD03BFDB9B7226349A620A015770529DD012BC631C9622B1F8" }
+      ]
+    },
+    {
+      "id": "hook:codex-lifecycle",
+      "payload": [
+        { "path": "hooks.json", "sha256": "1DC02CEE7DF6DAB0887503BEF0CBBE95F2F2764C29F421D4919A33BF7BEF76A4" },
+        { "path": "hooks/Invoke-DevHomeHook.ps1", "sha256": "94E22CD4084D6AB85957219F4FF83430E7935A145AFE745A2788D6BB09DF0484" },
+        { "path": "hooks/Invoke-RememberAdapter.cmd", "sha256": "E96DF633BAD6CC8ADE90EA0704E6634D5929C5AA83AFEE8F858A079B0EF07CF1" },
+        { "path": "hooks/Invoke-RememberAdapter.py", "sha256": "34E64365870CE0106A9212788D449B70C25643F052BAEECE7044E6FD9027A153" },
+        { "path": "hooks/Invoke-RememberClaude.cmd", "sha256": "A307C61A83A4D4219E5EB71ABB9C1B4F0C6D03C847F20B7647243790A038A0AD" }
+      ]
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "remember-posttooluse",
+      "status": "FAIL",
+      "checkedAtUtc": "2026-08-22T02:00:00Z",
+      "evidence": "Installed remember@0.20.0 PostToolUse test timed out; suite result 73/74."
+    }
+  ]
+}

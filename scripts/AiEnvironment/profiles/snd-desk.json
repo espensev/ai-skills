@@ -1,0 +1,126 @@
+{
+  "schema": "ai-skills/ai-environment-profile/v1",
+  "id": "snd-desk",
+  "machine": {
+    "id": "snd-desk",
+    "instanceId": "ca96d510-7d87-4cec-8e1a-bd8fc3866903"
+  },
+  "source": {
+    "repositoryRoot": "D:\\Development\\AI-related\\Ai-Skills"
+  },
+  "providers": {
+    "codex": {
+      "command": "codex",
+      "homePath": "D:\\DevHome\\state\\codex",
+      "configPath": "D:\\DevHome\\state\\codex\\config.toml",
+      "pluginRegistryPath": "D:\\DevHome\\state\\codex\\plugins"
+    },
+    "claude": {
+      "command": "claude",
+      "homePath": "D:\\DevHome\\state\\claude",
+      "configPath": "D:\\DevHome\\state\\claude\\settings.json",
+      "pluginRegistryPath": "D:\\DevHome\\state\\claude\\plugins\\installed_plugins.json"
+    }
+  },
+  "sharedSkills": {
+    "root": "D:\\DevHome\\state\\agents\\skills",
+    "lockPath": "D:\\DevHome\\state\\agents\\.skill-lock.json"
+  },
+  "resources": [
+    {
+      "id": "marketplace:ai-skills",
+      "provider": "codex",
+      "kind": "marketplace",
+      "ownership": "managed",
+      "desired": {
+        "name": "ai-skills",
+        "sourcePath": "D:\\Development\\AI-related\\Ai-Skills"
+      }
+    },
+    {
+      "id": "marketplace:wt-local",
+      "provider": "codex",
+      "kind": "marketplace",
+      "ownership": "observed",
+      "desired": {
+        "name": "wt-local"
+      }
+    },
+    {
+      "id": "plugin:devhome-lifecycle",
+      "provider": "codex",
+      "kind": "plugin",
+      "ownership": "managed",
+      "desired": {
+        "name": "devhome-lifecycle@ai-skills",
+        "enabled": true,
+        "sourceRoot": "D:\\Development\\AI-related\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
+        "cacheRoot": "D:\\DevHome\\state\\codex\\plugins\\cache\\ai-skills\\devhome-lifecycle",
+        "trustRecordKey": "devhome-lifecycle@ai-skills:hooks/hooks.json:session_start:0:0",
+        "projectionReasonCode": "OWNED_PLUGIN_PAYLOAD_MISMATCH"
+      }
+    },
+    {
+      "id": "hook:codex-lifecycle",
+      "provider": "codex",
+      "kind": "hook",
+      "ownership": "managed",
+      "desired": {
+        "sourceRoot": "D:\\Development\\AI-related\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
+        "targetRoot": "D:\\DevHome\\state\\codex",
+        "projectionReasonCode": "CODEX_HOOK_PROJECTION_MISMATCH"
+      }
+    },
+    {
+      "id": "hook:claude-handoff-relay",
+      "provider": "claude",
+      "kind": "hook",
+      "ownership": "managed",
+      "desired": {
+        "sourceRoot": "D:\\Development\\AI-related\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
+        "targetRoot": "D:\\DevHome\\state\\claude",
+        "registrationContains": "hooks/Invoke-HandoffRelay.ps1",
+        "projectionReasonCode": "CLAUDE_HANDOFF_PROJECTION_MISMATCH"
+      }
+    },
+    {
+      "id": "plugin:remember",
+      "provider": "claude",
+      "kind": "plugin",
+      "ownership": "observed",
+      "desired": {
+        "name": "remember@claude-plugins-official",
+        "enabled": true
+      }
+    },
+    {
+      "id": "skill-policy:codex",
+      "provider": "codex",
+      "kind": "skill-policy",
+      "ownership": "observed",
+      "desired": {}
+    },
+    {
+      "id": "skill-policy:claude",
+      "provider": "claude",
+      "kind": "skill-policy",
+      "ownership": "observed",
+      "desired": {}
+    },
+    {
+      "id": "skill-root:shared",
+      "provider": "shared",
+      "kind": "skill-root",
+      "ownership": "observed",
+      "desired": {}
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "remember-posttooluse",
+      "provider": "claude",
+      "ownership": "manual-gate",
+      "description": "Installed Remember PostToolUse capture completes within the accepted timeout."
+    }
+  ]
+}

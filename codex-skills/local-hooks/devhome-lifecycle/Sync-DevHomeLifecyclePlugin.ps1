@@ -44,8 +44,10 @@ $CorePayloadFiles = @(
     'Sync-DevHomeLifecyclePlugin.ps1',
     'Sync-DevHomeCodexHooks.ps1',
     'Install-DevHomeCodexHooks.ps1',
+    'Install-DevHomeClaudeHandoffRelay.ps1',
     'hooks.json',
     'hooks/Invoke-DevHomeHook.ps1',
+    'hooks/Invoke-HandoffRelay.ps1',
     'hooks/Invoke-RememberAdapter.cmd',
     'hooks/Invoke-RememberAdapter.py',
     'hooks/Invoke-RememberClaude.cmd'

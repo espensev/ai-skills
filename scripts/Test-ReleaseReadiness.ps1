@@ -88,6 +88,14 @@ if (-not $SkipUnitTests) {
             throw "Installer retirement contracts failed: $($InstallerResult.FailedCount)"
         }
     }
+
+    Invoke-Step "AI environment wanted-state contracts" {
+        $AiEnvironmentTestPath = Join-Path $RepoRoot "scripts\tests\AiEnvironment.Tests.ps1"
+        $AiEnvironmentResult = Invoke-Pester -Path $AiEnvironmentTestPath -Output Normal -PassThru
+        if ($AiEnvironmentResult.FailedCount -ne 0) {
+            throw "AI environment wanted-state contracts failed: $($AiEnvironmentResult.FailedCount)"
+        }
+    }
 }
 
 if (-not $SkipParityReport) {

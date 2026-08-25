@@ -77,7 +77,7 @@ cache-update mechanism. The trusted cached reconciler delegates to the canonical
 Ai-Skills source, then updates the verified runtime projection if needed; until
 that SessionStart hook is trusted, automatic reconciliation is skipped.
 Unlike portable skill-copy targets, this machine-specific plugin's registration,
-cache, and five runtime files are pinned to `D:\DevHome\state\codex`;
+cache, and six runtime files are pinned to `D:\DevHome\state\codex`;
 `CODEX_HOME` cannot redirect those surfaces into AppData. The adapter-state
 exception is called out separately below.
 
@@ -87,7 +87,9 @@ The three lifecycle surfaces are intentionally distinct:
 |---|---|---|
 | Source | `D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle` | Canonical; update Git separately. |
 | Plugin cache | `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle\` | Materialized copy refreshed by the command above. |
-| Runtime hooks | `D:\DevHome\state\codex\hooks.json` and four owned files under `hooks\` | Installed projection reconciled from source. |
+| Codex runtime hooks | `D:\DevHome\state\codex\hooks.json` and five owned files under `hooks\` | Installed projection reconciled from source. |
+| Claude Handoff Relay | `D:\DevHome\state\claude\settings.json` and `hooks\Invoke-HandoffRelay.ps1` | Dedicated installer preserves unrelated settings/hooks and owns only its exact Stop command and script. |
+| Handoff Relay state | `D:\DevHome\state\remember\projects\<project>\tmp\handoff-relay\` and `D:\DevHome\state\remember\handoff-relay\latest-status.json` | Session drafts, hash/lock state, preserved failures/conflicts, and one redacted health record; canonical output remains `<project>\remember.md`. |
 | Adapter state | `<CODEX_HOME>\remember-adapter\` (current implementation) | Known blocker: still follows ambient `CODEX_HOME`; must be pinned before full no-AppData acceptance. |
 
 Read-only checks:
@@ -95,6 +97,7 @@ Read-only checks:
 ```powershell
 .\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1 -Check
 .\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeCodexHooks.ps1 -Check
+.\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1 -Check
 ```
 
 Installation does not prove activation. Plugin enablement and hook trust are

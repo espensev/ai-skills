@@ -1,7 +1,7 @@
 {
   "name": "devhome-lifecycle",
-  "version": "0.1.0",
-  "description": "Keep the verified DevHome Codex safety and Remember hooks synchronized.",
+  "version": "0.3.0",
+  "description": "Keep the verified DevHome lifecycle hooks and Handoff Relay synchronized.",
   "author": {
     "name": "espensev"
   },
@@ -11,14 +11,15 @@
     "codex",
     "devhome",
     "hooks",
-    "remember"
+    "remember",
+    "handoff"
   ],
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "DevHome Lifecycle",
-    "shortDescription": "Synchronize DevHome safety and Remember hooks",
-    "longDescription": "Maintains the verified snd-desk Codex lifecycle-hook projection from the Ai-Skills source package.",
+    "shortDescription": "Synchronize DevHome lifecycle hooks",
+    "longDescription": "Maintains the verified snd-desk Codex lifecycle-hook projection and shared Handoff Relay source from the Ai-Skills package.",
     "developerName": "espensev",
     "category": "Productivity"
   }

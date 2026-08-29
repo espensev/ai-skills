@@ -10,11 +10,11 @@ deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-40 install-ready skills ship across two provider-specific packages:
+41 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 16 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
+| **claude-skills** | 17 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
 | **codex-skills** | 24 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
 
 > Counts reflect each ready package's `package/install-manifest.json`.
@@ -103,6 +103,12 @@ attended acceptance procedure in
 | Skill | Purpose |
 |---|---|
 | **parallel-agents-light** | Route Codex work between the local controller loop, bounded sidecar subagents, split implementation, and full `$manager` campaigns. Use it for Claude-style parallel subagent requests when the full campaign runtime would be too heavy. |
+
+### Claude review orchestration
+
+| Skill | Purpose |
+|---|---|
+| **review-controller** | Lead a multi-lens review of a product, feature, or user journey: the Claude controller frames and judges, bundled Opus `review-specialist` agents inspect a frozen evidence set one role each, and Critical/High claims are verified before the report. Claude-only; the agent definition ships under `skills/review-controller/agent-definitions/`. |
 
 ### Local-model delegation (new)
 

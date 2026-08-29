@@ -15,7 +15,7 @@ call are never delegated.
 
 **Worker:** `~/.claude/agents/review-specialist.md` — model pinned to `opus`,
 effort `high`, read-only tools, fixed return shape, role lenses. The file
-ships with this skill as `agents/review-specialist.md`; install it by copying
+ships with this skill as `agent-definitions/review-specialist.md`; install it by copying
 it to `~/.claude/agents/` (the skill installer does not manage agent files).
 **Working files:** `<scratchpad>/review-controller/<slug>/` — `registry.md`,
 `notes.md`, captured evidence. Disposable.
@@ -30,7 +30,7 @@ domain checklists.
 |---|---|
 | Controller | This main thread. Frames, maps, prioritises, writes packets, gates returns, reconciles, verifies, judges. |
 | Specialist | `Agent` with `subagent_type: "review-specialist"`. Model, effort and tools come from the agent file — pass `model` only to downgrade a pure inventory task (enumerate screens/routes/states) to `sonnet`. Never `fork`: it runs on the controller model, inherits the controller's reasoning, and is not an independent lens. Never `Workflow` unless the user opted in ("use a workflow", ultracode). |
-| Fallback | Newly written agent files appear in the agent list only after a delay (minutes / a later turn). If `review-specialist` is missing: make sure `~/.claude/agents/review-specialist.md` exists (copy it from this skill's `agents/` directory if not), retry on the next turn, and meanwhile use `subagent_type: "general-purpose"` with `model: "opus"` and the agent body (below its frontmatter) prepended to the packet. Same prompt, same model; only the tool allow-list is lost, so the READ-ONLY line in the body carries it. |
+| Fallback | Newly written agent files appear in the agent list only after a delay (minutes / a later turn). If `review-specialist` is missing: make sure `~/.claude/agents/review-specialist.md` exists (copy it from this skill's `agent-definitions/` directory if not), retry on the next turn, and meanwhile use `subagent_type: "general-purpose"` with `model: "opus"` and the agent body (below its frontmatter) prepended to the packet. Same prompt, same model; only the tool allow-list is lost, so the READ-ONLY line in the body carries it. |
 | Wave | Every `Agent` call of a wave goes in ONE message so they run in parallel. Returns arrive as task notifications; never predict, summarise or act on a pending agent's result. |
 | Redirect | `SendMessage` to the same agent with one named gap — its context survives; a re-run starts from nothing. One redirect per agent per wave; after that, reject and note it. |
 | Evidence | Frozen before Wave 1, numbered E-1…E-n, each with a location: file path, URL, or a capture written to the working dir (screenshot, DOM/text snapshot, command output). Live-browser capture (`browser-control`) is controller work in Frame/Map. Agents receive paths, never "go look at the app". |

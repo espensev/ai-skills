@@ -108,7 +108,7 @@ attended acceptance procedure in
 
 | Skill | Purpose |
 |---|---|
-| **review-controller** | Lead a multi-lens review of a product, feature, or user journey: the Claude controller frames and judges, bundled Opus `review-specialist` agents inspect a frozen evidence set one role each, and Critical/High claims are verified before the report. Claude-only; the agent definition ships under `skills/review-controller/agents/`. |
+| **review-controller** | Lead a multi-lens review of a product, feature, or user journey: the Claude controller frames and judges, bundled Opus `review-specialist` agents inspect a frozen evidence set one role each, and Critical/High claims are verified before the report. Claude-only; the agent definition ships under `skills/review-controller/agent-definitions/`. |
 
 ### Local-model delegation (new)
 

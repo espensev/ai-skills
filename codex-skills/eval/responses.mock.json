@@ -362,6 +362,28 @@
     "notes": "Deterministic boundary mock response."
   },
   {
+    "id": "review-controller-basic-001",
+    "selected_skill": "review-controller",
+    "output": "Map the whole product journey across the five screens, freeze an evidence fingerprint, launch bounded read-only subagent lenses, and have the controller verify every accepted finding.",
+    "created_files": [],
+    "verification_commands": [
+      "verify evidence fingerprint"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for review-controller."
+  },
+  {
+    "id": "review-controller-routing-boundary-001",
+    "selected_skill": "review",
+    "output": "Inspect the staged git diff and report findings for merge blockers using the ordinary review workflow.",
+    "created_files": [],
+    "verification_commands": [
+      "git diff --cached"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic routing boundary response for ordinary review."
+  },
+  {
     "id": "diagnosing-bugs-deep-audit-boundary-001",
     "selected_skill": "diagnosing-bugs",
     "output": "Reproduce the regression, isolate the root cause, implement the smallest fix, and protect it with a focused test.",

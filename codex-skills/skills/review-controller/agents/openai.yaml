@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Controller"
+  short_description: "Lead evidence-backed multi-lens product reviews"
+  default_prompt: "Use $review-controller to lead a read-only multi-agent review of this product journey."

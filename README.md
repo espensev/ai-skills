@@ -10,12 +10,12 @@ deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-40 install-ready skills ship across two provider-specific packages:
+41 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
 | **claude-skills** | 16 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
-| **codex-skills** | 24 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
+| **codex-skills** | 25 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
 
 > Counts reflect each ready package's `package/install-manifest.json`.
 > Explicit `source_only_skills` entries and unmanifested imported material stay as
@@ -103,6 +103,7 @@ attended acceptance procedure in
 | Skill | Purpose |
 |---|---|
 | **parallel-agents-light** | Route Codex work between the local controller loop, bounded sidecar subagents, split implementation, and full `$manager` campaigns. Use it for Claude-style parallel subagent requests when the full campaign runtime would be too heavy. |
+| **review-controller** | Lead a multi-lens review of a product, feature, system, user journey, flow, or screens through frozen evidence and read-only Codex subagents. Branch/PR/diff review stays with `$review`. |
 
 ### Local-model delegation (new)
 
@@ -193,7 +194,7 @@ Each ready package follows a **contract-first, read-all write-scoped** design:
 - Skills reference shared contracts (`planning-contract.md`) that define required plan elements and agent specs
 - Agents read the full repo for context but only write to explicitly scoped files
 - All material claims require source evidence (file path, line number, or command output)
-- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ. The one exception is `telemetry-live-ops`, a machine-local ops skill that intentionally keeps per-provider presentations. A one-sided obligation is allowed only when the mechanism exists on one side only.
+- Shared skills keep an **equivalent workflow contract across Claude and Codex** while provider metadata, invocation surfaces, and narrow runtime details may differ. Declared provider-owned exceptions are `telemetry-live-ops`, whose machine-local presentation differs, and `review-controller`, whose shared product-review method uses Claude Agent/SendMessage versus Codex native collaboration bindings. A one-sided obligation is allowed only when the mechanism exists on one side only.
 
 The export script reads `release-manifest.json` to determine which packages are
 ready and applies the `portable-runtime` strategy to Claude and Codex.
@@ -219,10 +220,12 @@ discipline — `Build-ProviderSkillPackages.ps1 -Check` byte-verifies both copie
 in the release gate. Support files ship verbatim from
 `skills-src/<skill>/files/` (both providers) or
 `skills-src/<skill>/files-claude/` and `skills-src/<skill>/files-codex/` (one
-provider). `telemetry-live-ops` is the only remaining
-`provider_owned_shared_skills` entry: it is a declared whole-document fork,
-recorded with its reason in `declared_provider_forks`. Every shared pair that is
-neither generated nor declared fails the release gate:
+provider). The provider-owned shared skills are listed in
+`provider_owned_shared_skills` and each has a reason in
+`declared_provider_forks`: `telemetry-live-ops` is a machine-local
+whole-document fork, while `review-controller` preserves one product-review
+method behind provider-native agent bindings. Every shared pair that is neither
+generated nor declared fails the release gate:
 `scripts/Compare-ProviderSkillParity.ps1 -FailOnUndeclaredFork` exits non-zero
 on an undeclared fork, and on a generated pair whose `description:` diverges
 without a `{{#claude}}` / `{{#codex}}` block in the canon declaring it.

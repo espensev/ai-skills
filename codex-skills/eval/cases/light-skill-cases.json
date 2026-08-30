@@ -643,6 +643,56 @@
     }
   },
   {
+    "id": "review-controller-basic-001",
+    "skill": "review-controller",
+    "prompt": "Use Codex subagents to lead a multi-lens review of the admin onboarding product journey across these five screens. Keep the evidence frozen and workers read-only, then verify every accepted finding.",
+    "checks": {
+      "must_mention": [
+        "product journey",
+        "screens",
+        "read-only",
+        "subagent",
+        "controller",
+        "evidence fingerprint"
+      ],
+      "must_not_mention": [
+        "git diff",
+        "merge blocker",
+        "edit the source",
+        "post the review",
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "fingerprint",
+        "verify"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "review-controller-routing-boundary-001",
+    "skill": "review",
+    "prompt": "Review this small staged diff for merge blockers and report the findings.",
+    "checks": {
+      "must_mention": [
+        "staged",
+        "finding"
+      ],
+      "must_not_mention": [
+        "subagent",
+        "review controller",
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "git diff",
+        "verify"
+      ],
+      "must_create": []
+    }
+  },
+  {
     "id": "diagnosing-bugs-deep-audit-boundary-001",
     "skill": "diagnosing-bugs",
     "prompt": "The service became 35 percent slower after commit abc. Reproduce the regression, find the root cause, fix it, and verify the result.",

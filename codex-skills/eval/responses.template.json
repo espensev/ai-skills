@@ -279,6 +279,24 @@
     "notes": ""
   },
   {
+    "id": "review-controller-basic-001",
+    "selected_skill": "review-controller",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "review-controller-routing-boundary-001",
+    "selected_skill": "review",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "review-deep-audit-boundary-001",
     "selected_skill": "review",
     "output": "",

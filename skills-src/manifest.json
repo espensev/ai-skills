@@ -19,10 +19,12 @@
     "usage-stats"
   ],
   "provider_owned_shared_skills": [
+    "review-controller",
     "telemetry-live-ops"
   ],
-  "notes": "Generated skills are parity-enforced by construction: scripts/Build-ProviderSkillPackages.ps1 -Check byte-verifies both provider copies against the canon, so any per-provider difference must be an explicit conditional block or token in SKILL.src.md. provider_owned_shared_skills are pairs that ship in both packages but are still authored per provider; each needs an entry in declared_provider_forks stating why, and scripts/Compare-ProviderSkillParity.ps1 -FailOnUndeclaredFork fails the release gate on any undeclared fork.",
+  "notes": "Generated skills are parity-enforced by construction: scripts/Build-ProviderSkillPackages.ps1 -Check byte-verifies both provider copies against the canon, so any per-provider difference must be an explicit conditional block or token in SKILL.src.md. provider_owned_shared_skills are same-name skill pairs present in both provider source trees but authored per provider; parity governance is independent of portable export/install selection. Each needs an entry in declared_provider_forks stating why, and scripts/Compare-ProviderSkillParity.ps1 -FailOnUndeclaredFork fails the release gate on any undeclared fork.",
   "declared_provider_forks": {
+    "review-controller": "Shared product-review method with an intentional provider-native binding fork: Claude uses Agent and SendMessage with review-specialist, while Codex uses native collaboration subagents and controller verification.",
     "telemetry-live-ops": "Machine-local ops skill and a declared whole-document fork: the Claude and Codex presentations are intentionally different documents, not one workflow contract. Revisit only if the pair is ever reconciled."
   }
 }

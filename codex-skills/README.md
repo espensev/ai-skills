@@ -85,6 +85,7 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Parallel Agents Light | auto | Route Codex work between local execution, bounded sidecar subagents, split implementation, and full manager campaigns |
 | Repository Conventions | auto | Follow the target repo first, with fallback playbooks for API/backend/frontend structure, Playwright E2E, current research, and bounded local cycles |
 | Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
+| Review Controller | auto | Lead multi-lens product, system, journey, flow, or screen reviews over frozen evidence with read-only native subagents and controller-verified findings |
 | Skill Authoring | auto | Create and revise Agent Skills with focused discovery metadata, progressive disclosure, and package wiring |
 | Usage Stats | auto | Analyze tokens, costs, budgets, forecasts, session/tool activity, and agent performance, preferring measured telemetry API data when available |
 | Verification Loop | auto | Run repo-appropriate build, lint, typecheck, test, and diff review before handoff |
@@ -150,6 +151,7 @@ for d in \
   skills/parallel-agents-light \
   skills/repo-conventions \
   skills/review \
+  skills/review-controller \
   skills/skill-authoring \
   skills/smart-test \
   skills/usage-stats \
@@ -197,6 +199,7 @@ for d in \
   skills/parallel-agents-light \
   skills/repo-conventions \
   skills/review \
+  skills/review-controller \
   skills/skill-authoring \
   skills/smart-test \
   skills/usage-stats \

@@ -20,7 +20,14 @@
     "usage-stats"
   ],
   "source_only_skills": [
-    "telemetry-live-ops"
+    "cc-workflow-builder",
+    "chief-operator",
+    "codebase-design",
+    "docs-clean",
+    "resolving-merge-conflicts",
+    "review-controller",
+    "telemetry-live-ops",
+    "verify"
   ],
   "contract_files": [
     "planning-contract.md",

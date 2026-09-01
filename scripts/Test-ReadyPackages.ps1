@@ -158,6 +158,7 @@ function Test-SkillScriptReferences {
     )
 
     $SkillText = Get-Content -Raw $SkillPath
+    $SkillRoot = Split-Path -Parent $SkillPath
     $BundledFiles = @($RuntimeFiles | ForEach-Object { ($_ -replace "\\", "/").TrimEnd("/") })
     $BundledDirs = @($RuntimeDirectories | ForEach-Object { ($_ -replace "\\", "/").TrimEnd("/") })
     $Matches = [regex]::Matches($SkillText, "scripts/[A-Za-z0-9_./-]+")
@@ -165,6 +166,11 @@ function Test-SkillScriptReferences {
     foreach ($Match in $Matches) {
         $Reference = ($Match.Value -replace "\\", "/").TrimEnd(".", ",", ")", "]", "}", ":", ";", "'", '"')
         if ([string]::IsNullOrWhiteSpace($Reference)) {
+            continue
+        }
+
+        $SkillLocalPath = Join-Path $SkillRoot ($Reference -replace "/", [System.IO.Path]::DirectorySeparatorChar)
+        if (Test-Path -LiteralPath $SkillLocalPath) {
             continue
         }
 

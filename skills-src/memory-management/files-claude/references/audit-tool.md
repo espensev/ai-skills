@@ -1,17 +1,23 @@
 # Memory Audit Tool Reference
 
-`scripts/memory_audit.py` (stdlib-only Python, installed with the package
-runtime files) audits a Claude Code auto-memory directory against the
-memory-management schema. Adapted from the jau123/claude-memory-manager bash
-audit template — see `../ATTRIBUTION.md`.
+`claude-skills/scripts/memory_audit.py` is the canonical, stdlib-only source
+for auditing a Claude Code auto-memory directory against the memory-management
+schema. Installed `scripts/memory_audit.py` files are projections: validate and
+edit the Ai-Skills source, then refresh projections through the installer.
+Adapted from the jau123/claude-memory-manager bash audit template — see
+`../ATTRIBUTION.md`.
 
 ## Running
 
 ```bash
-python scripts/memory_audit.py                 # cwd-derived project memory
-python scripts/memory_audit.py --dir <path>    # explicit memory directory
-CLAUDE_MEMORY_DIR=<path> python scripts/memory_audit.py
+# From the Ai-Skills repository root
+python claude-skills/scripts/memory_audit.py                 # cwd-derived memory
+python claude-skills/scripts/memory_audit.py --dir <path>    # explicit directory
+CLAUDE_MEMORY_DIR=<path> python claude-skills/scripts/memory_audit.py
 ```
+
+On a legacy Windows console, set `PYTHONIOENCODING=utf-8` for the invocation;
+the current source does not reconfigure stdout or stderr itself.
 
 Resolution precedence: `--dir` > `CLAUDE_MEMORY_DIR` > cwd-derived
 `~/.claude/projects/<slug>/memory` (slug = absolute cwd with `:`/`\`/`/`
@@ -31,6 +37,7 @@ reports 0 files at 100% compliance.
 | `feedback` files carry a Why section (`## Why`, `## Root cause`, `**Why:**`, `**Root cause:**`) | hard |
 | Filename kebab-case and matching `name:` | hard |
 | MEMORY.md links resolve to existing files (exact match, digits allowed) | hard |
+| Prose-body `[[wikilinks]]` resolve; frontmatter, MEMORY.md, inline code, and fenced code examples are ignored | hard |
 | Memory files missing from the MEMORY.md index (exact match) | soft |
 | Oversize file: > 100 lines or ≥ 5 H2 sections | soft |
 | Index group with ≥ 15 entries | soft |

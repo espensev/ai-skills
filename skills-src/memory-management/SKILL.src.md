@@ -1,8 +1,8 @@
 ---
 name: memory-management
 {{#claude}}
-description: "Govern the agent memory store with a typed write schema, locality routing, and a hard index budget. Use when recording lessons or decisions, updating or pruning memory, auditing memory health, or deciding whether a fact belongs in memory, rules, code comments, or always-loaded context."
-argument-hint: "<record|update|audit|route> — memory hygiene operation"
+description: "Govern the agent memory store with a typed write schema, locality routing, and a hard index budget. Use when recording lessons or decisions, compressing or pruning memory, filtering out stale, false, or irrelevant entries, auditing memory health, or deciding whether a fact belongs in memory, rules, code comments, or always-loaded context."
+argument-hint: "<record|update|audit|route|compress> — memory hygiene operation"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true
 extracted-from: jau123/claude-memory-manager
@@ -17,8 +17,9 @@ description: "Govern Codex native memory reads and explicitly authorized update 
 
 Keeps durable project memory searchable as it grows: a typed write spec, a
 routing rule for where each fact belongs, and budget discipline for the
-always-loaded surface — plus an audit pass that flags drift before it costs
-recall.
+always-loaded surface — plus an audit pass that flags drift and a cleanup
+pass that acts on it: cutting filler, merging duplicates, and fixing or
+dropping false and irrelevant entries before they cost recall.
 
 ## Scope
 
@@ -44,9 +45,25 @@ memory."
 | `update` | `{{cmd}}memory-management update <topic>` | Update or supersede an existing entry |
 | `route` | `{{cmd}}memory-management route <fact>` | Decide placement: comment, rules, memory, or always-loaded |
 | `audit` | `{{cmd}}memory-management audit` | Run the schema/budget audit and report compliance |
+{{#claude}}
+| `compress` | `{{cmd}}memory-management compress` | Clean the store: dedupe against always-loaded context, delete tombstones, merge same-scenario files, cut filler, and fix or drop false and irrelevant entries — `references/compress.md` |
+{{/claude}}
 
+{{#claude}}
 Default to `route` when the request is a bare fact, `record` when it is
-explicitly a lesson to save.
+explicitly a lesson to save, `compress` when the ask is "reduce / shrink /
+dedupe / clean up / remove old, wrong, or useless memories". A bare
+`{{cmd}}memory-management` with no subcommand runs the full hygiene pass:
+`audit`, then `compress` acting on what the audit found — never a
+report-only audit that changes nothing.
+{{/claude}}
+{{#codex}}
+Default to `route` when the request is a bare fact, `record` when it is
+explicitly a lesson to save. A bare invocation runs `audit` and then, for
+each claim the audit verified as false against live state, drafts a
+correction note for the runtime-authorized update queue — report plus
+proposed fixes, never a report alone.
+{{/codex}}
 {{#codex}}
 
 ## Codex Authority First
@@ -129,6 +146,12 @@ is orthogonal. Split signals:
 Superseded protocol: when a conclusion is overturned, the old file gets
 `⚠️ Superseded by [[new-slug]]` at the top and the new file states what it
 replaces.
+
+False-claim protocol: when live verification contradicts a memory's claim
+about current state, fix it in the same session — rewrite the claim to the
+verified truth (cite the check) or supersede the file. A memory that would
+mislead or cause harm if followed outranks every other hygiene task; a false
+memory is worse than no memory.
 
 ### 5. Index budget — a cache, not a log
 
@@ -307,6 +330,9 @@ the package checkout with `--dir`.
 - Missing retained raw rollouts are distinguished from broken summary links.
 - The compact always-loaded summary stays within its configured budget.
 - Ad-hoc notes have typed lifecycle state and feedback notes include Why/reuse.
+- Registry claims about current state are spot-checked against the live
+  system; each contradicted claim gets one correction note drafted for the
+  authorized update queue.
 {{/codex}}
 
 ---
@@ -331,7 +357,15 @@ backfill.
 ## Workflow
 
 1. Classify the request: recall → read; explicit lesson → propose/record;
-   correction → update; bare fact → route; "clean up memory" → audit.
+{{#claude}}
+   correction → update; bare fact → route; "clean up / prune / shrink
+   memory" → compress; "audit / report health" → audit; bare invocation →
+   audit, then compress on its findings.
+{{/claude}}
+{{#codex}}
+   correction → update; bare fact → route; "clean up memory" → audit plus
+   drafted correction notes for verified false claims.
+{{/codex}}
 2. For recall: search the always-loaded index first, then only the one or two
    backing topic files needed; verify drift-prone facts live when practical.
 3. For `record` or `update`: apply the gate and schema, determine machine
@@ -342,7 +376,19 @@ backfill.
    scope, then write one note through the runtime-authorized queue.
 {{/codex}}
 4. For `audit`: run the provider audit surface described in the mechanics
-   section and report violations without auto-fixing them.
+   section. Audit alone is read-only; when the invocation asked for cleanup
+   (or was bare), feed the findings into the cleanup pass instead of
+   stopping at the report.
+{{#claude}}
+5. For `compress`: follow `references/compress.md` end to end — back up,
+   verify claims against live state, classify (always-loaded duplicates
+   first, false or drifted claims, tombstones, irrelevant entries,
+   same-scenario merges), rewrite survivors, rebuild the index, then run
+   both `scripts/verify_memory.py` and the audit tool. Compress is the one
+   command that deletes; it is gated on the backup existing. Safe-fix
+   classes apply without another confirmation; only deletions of content
+   that cannot be verified live still confirm first.
+{{/claude}}
 
 ---
 
@@ -359,10 +405,25 @@ backfill.
 
 ## Conventions
 
+{{#claude}}
+- Propose-then-confirm for vague record triggers; never bulk-write new
+  memories unprompted. An explicit cleanup request or a bare invocation
+  authorizes the safe-fix classes in `references/compress.md`.
+{{/claude}}
+{{#codex}}
 - Propose-then-confirm for vague triggers; never bulk-write memory unprompted.
+{{/codex}}
 - Update before create; no new index groups once grouping is frozen.
 - Descriptions carry scenario keywords + conclusion, ≤ 160 chars.
-- Audits are read-only; violations are reported, never auto-fixed.
+{{#claude}}
+- `audit` alone is read-only; `compress` acts — with the backup in place it
+  deletes, merges, and rewrites without re-asking, confirming only
+  deletions it cannot verify live.
+{{/claude}}
+{{#codex}}
+- Audits are read-only on generated surfaces; corrections travel as notes
+  through the authorized update queue, never as hand-edits.
+{{/codex}}
 - Current project trackers and verified live state outrank historical memory.
 - Do not report unverified historical or machine-specific claims as current.
 - Keep provider-neutral discipline aligned across the sibling packages, while

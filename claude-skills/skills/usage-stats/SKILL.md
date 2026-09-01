@@ -1,7 +1,7 @@
 ---
 name: usage-stats
 description: "Use when reviewing token/cost usage, budgets, rate-limit forecasts, session tool or timeline activity, agent/campaign efficiency, or execution closeouts. Prefers measured telemetry with an explicitly estimated fallback. Do not use to operate a live telemetry deployment."
-argument-hint: "<summary|closeout|cost|breakdown|budget|forecast|history|tools|agents|timeline|compare|efficiency|trends|export> — usage, cost & agent analytics"
+argument-hint: "<summary|window|closeout|cost|breakdown|budget|forecast|history|tools|agents|timeline|compare|efficiency|trends|export> — usage, cost & agent analytics"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true
 disable-model-invocation: true
@@ -32,6 +32,7 @@ Three routed groups. Default to `summary` if no command given.
 | Command | Usage | Purpose |
 |---------|-------|---------|
 | `cost` | `/usage-stats cost` | Current token position, burn rate, budget check |
+| `window` | `/usage-stats window [H]` | Rolling measured usage across the last H hours (default 24) |
 | `breakdown` | `/usage-stats breakdown` | Per-tool and per-turn token cost attribution |
 | `budget` | `/usage-stats budget [set <N>\|check\|reset]` | Session or daily budget management |
 | `forecast` | `/usage-stats forecast` | Rate-limit proximity and depletion forecast |
@@ -186,6 +187,19 @@ telemetry is **not** reachable fall back to this estimation pipeline.
 
 All estimates are clearly labelled as approximate. Actual API billing may
 differ due to caching, batching, and prompt caching discounts.
+
+---
+
+## Command: `window` — Rolling Usage
+
+1. Parse the optional hour count; default to 24 and reject non-positive values.
+2. Query `/api/llm/overview?hours=H`. If telemetry is unavailable, use the
+   transcript or hooks ladder and label the result **estimated ~approximate**.
+3. Report input, output, and total. Show cached input and reasoning output only
+   as subsets. Include the exact start/end timestamps, source tier, session and
+   completed-step coverage, parse/read errors, and reconciliation delta.
+4. Repeat the returned included/excluded scope. Never relabel native Codex
+   totals as combined ChatGPT account usage.
 
 ---
 

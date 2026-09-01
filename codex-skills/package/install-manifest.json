@@ -10,6 +10,7 @@
   "optional_skills": [
     "audit-gated-subagents",
     "browser-control",
+    "codex-state-cleanup",
     "deep-audit",
     "delegate",
     "diagnosing-bugs",

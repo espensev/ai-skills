@@ -50,12 +50,10 @@ def test_empty_dir_reports_zero_files_and_full_compliance(tmp_path: Path, capsys
     assert "100%" in out
 
 
-def test_unreadable_file_during_audit_exits_2(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_unreadable_file_during_audit_exits_2(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     write_memory(tmp_path, "share-topology.md")
 
-    def _raise(path: Path) -> memory_audit.FileReport:
+    def _raise(path: Path, memory_filenames: set[str]) -> memory_audit.FileReport:
         raise OSError("permission denied")
 
     monkeypatch.setattr(memory_audit, "audit_file", _raise)
@@ -157,6 +155,47 @@ def test_name_filename_mismatch_flagged(tmp_path: Path) -> None:
     path = write_memory(tmp_path, "actual-name.md", name="different-name")
     report = memory_audit.audit_file(path)
     assert any("does not match" in v for v in report.hard)
+
+
+def test_dangling_prose_wikilink_is_hard_violation(tmp_path: Path) -> None:
+    path = write_memory(tmp_path, "source-topic.md", extra="See [[missing-topic]] for details.")
+    report = memory_audit.audit_file(path)
+    assert any("missing-topic.md" in violation for violation in report.hard)
+
+
+def test_existing_prose_wikilink_resolves(tmp_path: Path) -> None:
+    path = write_memory(tmp_path, "source-topic.md", extra="See [[target-topic]].")
+    write_memory(tmp_path, "target-topic.md")
+    report = memory_audit.audit_file(path)
+    assert not any("wikilink" in violation for violation in report.hard)
+
+
+def test_wikilinks_in_frontmatter_and_code_examples_are_ignored(tmp_path: Path) -> None:
+    path = tmp_path / "example-topic.md"
+    path.write_text(
+        "---\n"
+        "name: example-topic\n"
+        "description: illustrates [[frontmatter-example]] syntax\n"
+        "metadata:\n"
+        "  type: reference\n"
+        "---\n\n"
+        "Use `[[inline-example]]` when documenting syntax.\n\n"
+        "```text\n"
+        "[[fenced-example]]\n"
+        "```\n",
+        encoding="utf-8",
+    )
+    report = memory_audit.audit_file(path)
+    assert not any("wikilink" in violation for violation in report.hard)
+
+
+def test_memory_index_wikilink_examples_are_ignored(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    write_memory(tmp_path, "source-topic.md")
+    write_index(tmp_path, "- [source-topic](source-topic.md) — audit ignores `[[index-example]]`\n")
+    assert memory_audit.main(["--dir", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "100%" in out
+    assert "index-example.md" not in out
 
 
 # ---------- per-file soft checks ----------

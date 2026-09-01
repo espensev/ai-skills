@@ -6,6 +6,15 @@ changing, troubleshooting, or accepting the rich MCP path. Normal browser work
 should follow `SKILL.md` and use direct `cdp.mjs` whenever this attachment is
 not proven.
 
+The isolated `devbrowser` ports `9000`/`9001` remain the default automation
+lane. The signed-in provider lane is allowed only when the user explicitly
+names or selects a persistent profile with `providerbrowser <provider>`. Do not
+infer a provider from the site, task, URL, or apparent account need. DevHome
+maintains one shared browser process and endpoint per provider on its
+deterministic, catalog-assigned loopback port. The provider lane runs headless
+by default; use `-Mode Visible` only for login, CAPTCHA, consent, or attended
+work. The persistent provider profile must not be described as isolated.
+
 ## Required end state
 
 The effective MCP launch command must include exactly one DevHome endpoint:
@@ -18,6 +27,24 @@ Use port `9001` instead for the managed headless instance. Both ports are
 loopback-only and use isolated Opera profiles. A bare
 `npx chrome-devtools-mcp@<version>` registration is non-compliant because its
 first browser operation can launch a separate Chrome/profile.
+
+For `providerbrowser <provider>`, use direct CDP by default:
+
+```powershell
+$browser = providerbrowser <provider> -Url 'https://example.com/'
+$port = $browser.Port
+node D:\DevHome\state\codex\skills\browser-control\cdp.mjs --port $port tabs
+```
+
+Concurrent agents use the same provider command. A healthy endpoint owned by
+the exact selected profile and configured executable must be reused to open a
+new tab; never start another browser merely to change its mode. The command
+must fail closed on an occupied or unhealthy port, mismatched or ambiguous
+ownership, or any unproved state. Preserve the command's loopback and identity
+guards. Require
+the result to report `ProfileOwnerVerified = True`; missing or false ownership
+proof is a failure. Do not kill or restart the profile, and do not close user
+tabs.
 
 ## Read-only preflight
 
@@ -34,6 +61,11 @@ Pass only when the effective MCP arguments contain either
 `--browser-url http://127.0.0.1:9000`, and the endpoint probe succeeds. An
 enabled plugin and visible MCP tools do not prove attachment. Do not use
 `list_pages` as the preflight for a bare or unverified registration.
+
+For the provider lane, the only acceptable MCP target is the exact `Endpoint`
+returned by `providerbrowser`. Do not call `list_pages` or any other browser MCP
+tool until the effective `--browser-url` proves that exact target. Otherwise
+use direct `cdp.mjs` with the command-returned `Port`.
 
 If any check is missing or ambiguous, stop the MCP path and use the installed
 direct-CDP helper:
@@ -80,3 +112,10 @@ browser task was requested; direct CDP is the safe fallback.
 Only then may the rich MCP path be described as accepted. Source-package tests
 and direct-CDP smoke tests do not substitute for this attended integration
 check.
+
+## Account-action boundary
+
+Navigation and read-only assistance are scoped to the user's request. Do not
+submit, send, post, purchase, delete, change account settings, or disclose data
+without explicit instruction for that action. Close only disposable tabs the
+agent opened, and only when safe.

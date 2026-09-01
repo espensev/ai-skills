@@ -7,8 +7,9 @@ description: "Govern Codex native memory reads and explicitly authorized update 
 
 Keeps durable project memory searchable as it grows: a typed write spec, a
 routing rule for where each fact belongs, and budget discipline for the
-always-loaded surface — plus an audit pass that flags drift before it costs
-recall.
+always-loaded surface — plus an audit pass that flags drift and a cleanup
+pass that acts on it: cutting filler, merging duplicates, and fixing or
+dropping false and irrelevant entries before they cost recall.
 
 ## Scope
 
@@ -36,7 +37,10 @@ memory."
 | `audit` | `$memory-management audit` | Run the schema/budget audit and report compliance |
 
 Default to `route` when the request is a bare fact, `record` when it is
-explicitly a lesson to save.
+explicitly a lesson to save. A bare invocation runs `audit` and then, for
+each claim the audit verified as false against live state, drafts a
+correction note for the runtime-authorized update queue — report plus
+proposed fixes, never a report alone.
 
 ## Codex Authority First
 
@@ -117,6 +121,12 @@ is orthogonal. Split signals:
 Superseded protocol: when a conclusion is overturned, the old file gets
 `⚠️ Superseded by [[new-slug]]` at the top and the new file states what it
 replaces.
+
+False-claim protocol: when live verification contradicts a memory's claim
+about current state, fix it in the same session — rewrite the claim to the
+verified truth (cite the check) or supersede the file. A memory that would
+mislead or cause harm if followed outranks every other hygiene task; a false
+memory is worse than no memory.
 
 ### 5. Index budget — a cache, not a log
 
@@ -206,6 +216,9 @@ invent `.memory/`, `docs/memory/`, or another store.
 - Missing retained raw rollouts are distinguished from broken summary links.
 - The compact always-loaded summary stays within its configured budget.
 - Ad-hoc notes have typed lifecycle state and feedback notes include Why/reuse.
+- Registry claims about current state are spot-checked against the live
+  system; each contradicted claim gets one correction note drafted for the
+  authorized update queue.
 
 ---
 
@@ -229,13 +242,16 @@ backfill.
 ## Workflow
 
 1. Classify the request: recall → read; explicit lesson → propose/record;
-   correction → update; bare fact → route; "clean up memory" → audit.
+   correction → update; bare fact → route; "clean up memory" → audit plus
+   drafted correction notes for verified false claims.
 2. For recall: search the always-loaded index first, then only the one or two
    backing topic files needed; verify drift-prone facts live when practical.
 3. For `record` or `update`: apply the gate and schema, determine machine
    scope, then write one note through the runtime-authorized queue.
 4. For `audit`: run the provider audit surface described in the mechanics
-   section and report violations without auto-fixing them.
+   section. Audit alone is read-only; when the invocation asked for cleanup
+   (or was bare), feed the findings into the cleanup pass instead of
+   stopping at the report.
 
 ---
 
@@ -255,7 +271,8 @@ backfill.
 - Propose-then-confirm for vague triggers; never bulk-write memory unprompted.
 - Update before create; no new index groups once grouping is frozen.
 - Descriptions carry scenario keywords + conclusion, ≤ 160 chars.
-- Audits are read-only; violations are reported, never auto-fixed.
+- Audits are read-only on generated surfaces; corrections travel as notes
+  through the authorized update queue, never as hand-edits.
 - Current project trackers and verified live state outrank historical memory.
 - Do not report unverified historical or machine-specific claims as current.
 - Keep provider-neutral discipline aligned across the sibling packages, while

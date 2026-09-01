@@ -21,6 +21,7 @@ MANAGER_SKILL = SKILLS / "manager" / "SKILL.md"
 PLANNER_SKILL = SKILLS / "planner" / "SKILL.md"
 LOOP_MASTER_SKILL = SKILLS / "loop-master" / "SKILL.md"
 DEEP_AUDIT_SKILL = SKILLS / "deep-audit" / "SKILL.md"
+DIAGNOSING_BUGS_SKILL = SKILLS / "diagnosing-bugs" / "SKILL.md"
 DEEP_AUDIT_MODE_CONTRACT = SKILLS / "deep-audit" / "references" / "mode-contracts.md"
 DEEP_AUDIT_STATE_CONTRACT = SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md"
 MEMORY_MANAGEMENT_SKILL = SKILLS / "memory-management" / "SKILL.md"
@@ -254,6 +255,18 @@ class TestSkillDocsContract(unittest.TestCase):
             self.assertTrue(description.startswith("Use "), skill)
             self.assertIn("Do not use", description, skill)
 
+    def test_diagnosing_bugs_attributes_hook_owner_and_exact_launcher(self):
+        skill_text = DIAGNOSING_BUGS_SKILL.read_text(encoding="utf-8")
+        skill_policy = " ".join(skill_text.split())
+        for requirement in (
+            "wrapped command and the hooks around it",
+            "exact launcher token",
+            "`python3` is not evidence about `python`",
+            "Identify the owner before proposing a change",
+            "installed plugin cache",
+        ):
+            self.assertIn(requirement, skill_policy)
+
     def test_browser_control_requires_devhome_cdp_attachment(self):
         skill_text = BROWSER_CONTROL_SKILL.read_text(encoding="utf-8")
         cdp_text = BROWSER_CONTROL_CDP.read_text(encoding="utf-8")
@@ -272,6 +285,34 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("Compare `list_pages` with `cdp.mjs tabs`", integration_text)
         for command in ("status", "tabs", "new", "goto", "eval", "text", "screenshot", "close"):
             self.assertIn(command, cdp_text)
+
+    def test_browser_control_provider_lane_is_shared_headless_first_and_catalog_routed(self):
+        skill_text = BROWSER_CONTROL_SKILL.read_text(encoding="utf-8")
+        integration_text = BROWSER_CONTROL_CODEX_INTEGRATION.read_text(encoding="utf-8")
+
+        for text in (" ".join(skill_text.split()), " ".join(integration_text.split())):
+            self.assertIn("providerbrowser <provider>", text)
+            self.assertIn("one shared browser process and endpoint per provider", text)
+            self.assertIn("catalog-assigned", text)
+            self.assertIn("headless by default", text)
+            self.assertIn("login, CAPTCHA, consent, or attended work", text)
+            self.assertIn("exact selected profile and configured executable", text)
+            self.assertIn("open a new tab", text)
+            self.assertIn("never start another browser merely to change its mode", text)
+            self.assertIn("fail closed", text)
+            self.assertIn("must not be described as isolated", text)
+            self.assertIn("explicitly names or selects", text)
+            self.assertIn("Do not infer", text)
+        skill_policy = " ".join(skill_text.split())
+        self.assertIn("$port = $browser.Port", skill_text)
+        self.assertIn("node <skill-dir>/cdp.mjs --port $port tabs", skill_text)
+        self.assertNotIn("--port 9010", skill_text)
+        self.assertNotIn("127.0.0.1:9010", skill_text)
+        self.assertIn("ProfileOwnerVerified = True", skill_policy)
+        self.assertIn("Do not kill or restart", skill_policy)
+        self.assertIn("Do not submit, send, post, purchase, delete, change account settings, or disclose data", skill_policy)
+        self.assertIn("Do not call `list_pages`", integration_text)
+        self.assertIn("ProfileOwnerVerified = True", integration_text)
 
     def test_current_docs_match_runtime_verify_surface(self):
         self.assertIn("validates build, tests, and readiness", README.read_text(encoding="utf-8"))

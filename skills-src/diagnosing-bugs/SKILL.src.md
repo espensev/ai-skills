@@ -1,6 +1,6 @@
 ---
 name: diagnosing-bugs
-description: "Use when the user wants the cause or fix for a reproducible bug, runtime error, flaky behavior, or performance regression. Builds a red-capable feedback loop before changing code. Do not use merely to run or classify a known test suite (use qa), review a diff (use review), or audit runtime efficiency broadly (use deep-audit)."
+description: "Use when the user wants the cause or fix for a reproducible bug, runtime or hook error, flaky behavior, or performance regression. Builds a red-capable feedback loop before changing code. Do not use merely to run or classify a known test suite (use qa), review a diff (use review), or audit runtime efficiency broadly (use deep-audit)."
 {{#claude}}
 disable-model-invocation: true
 argument-hint: "[<symptom|command>] - loop | perf | fix | postmortem"
@@ -83,6 +83,36 @@ Make the signal sharper before expanding the search:
 - Pin time, random seed, locale, environment, and filesystem paths when useful.
 - Remove unrelated services, data, and initialization.
 - For flaky bugs, run repeated attempts and report the reproduction rate.
+
+### Wrapper and Hook Failures
+
+When a command is wrapped by lifecycle hooks, the diagnostic surface includes
+both the wrapped command and the hooks around it. Build a two-part loop: one
+minimal invocation that reproduces the visible hook banner and one direct probe
+of the hook command or launcher. A valid wrapped command and a failing hook can
+coexist.
+
+1. Capture the exact event and tool label, status, exit code, stderr, and time.
+2. Enumerate matching registrations from the effective provider configuration
+   and the contributing plugin manifests. Identify the owner before proposing a
+   change.
+3. Replay the exact launcher token from the registration in the same process
+   environment. Do not silently substitute a similar command.
+4. Classify the failing boundary: registration, launcher/dependency, hook body,
+   wrapped tool, or post-processing.
+5. Re-run the original wrapped invocation after the repair; a direct launcher
+   probe alone is not end-to-end verification.
+
+On Windows, resolve the exact launcher token with `Get-Command <token> -All`
+and `where.exe <token>`, then run it and record `$LASTEXITCODE`. `python3` is
+not evidence about `python`; they can resolve to different executables, and an
+App Execution Alias can fail while another Python installation works.
+
+Treat enabled status, registration, and byte convergence as configuration
+evidence, not behavioral health. Treat an installed plugin cache as evidence,
+not an editing surface: repair the owning source or supported provider setting.
+Do not blame the wrapped payload from a `PreToolUse` or `PostToolUse` banner
+until the hook boundary has been separated and reproduced.
 
 ---
 

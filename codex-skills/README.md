@@ -75,6 +75,7 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Skill | Trigger | Purpose |
 |---|---|---|
 | Audit-Gated Subagents | auto | Run review-first multi-agent audits with PASS 0 maps, chief/operator gates, lane ownership, independent reviewers, and safety stops |
+| Codex State Cleanup | auto | Audit, compress, and safely prune native memory, archived sessions, databases, caches, logs, and temporary Codex state |
 | Deep Audit | auto | Run evidence-first, resumable runtime-efficiency audits across hot paths, allocation/retention, I/O, concurrency, queues, retries, scaling, and lifecycle behavior |
 | Delegate | auto | Route one bounded, already-fetched transform to local Ollama via the `ollama-telemetry` MCP tools when readiness and task class allow it |
 | Diagnosing Bugs | auto | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
@@ -140,6 +141,7 @@ for d in \
   skills/loop-master \
   skills/audit-gated-subagents \
   skills/browser-control \
+  skills/codex-state-cleanup \
   skills/deep-audit \
   skills/delegate \
   skills/diagnosing-bugs \
@@ -188,6 +190,7 @@ done
 for d in \
   skills/loop-master \
   skills/audit-gated-subagents \
+  skills/codex-state-cleanup \
   skills/deep-audit \
   skills/delegate \
   skills/diagnosing-bugs \

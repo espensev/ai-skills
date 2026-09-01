@@ -34,6 +34,9 @@ STALE_DAYS = 30
 _KEBAB = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _LINK_TARGET = re.compile(r"\(([A-Za-z0-9._-]+\.md)\)")
 _MD_LINK = re.compile(r"\[[^\]]+\]\([^)]+\)")
+_WIKILINK = re.compile(r"\[\[([^\[\]\n]+)\]\]")
+_FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
+_INLINE_CODE = re.compile(r"`+[^`\n]*`+")
 _WHY = re.compile(r"^\s*(?:##\s+(?:why|root\s+cause)\b|\*\*(?:why|root\s+cause)\s*:?\s*\*\*)", re.IGNORECASE)
 _H2 = re.compile(r"^##[^#]")
 _TOP_KEY = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):\s*(.*)$")
@@ -107,7 +110,33 @@ def _parse_frontmatter(lines: list[str]) -> tuple[dict[str, str], str | None, in
     return fields, nested_type or flat_type, end
 
 
-def audit_file(path: Path) -> FileReport:
+def _prose_wikilink_targets(lines: list[str]) -> set[str]:
+    """Return normalized wikilink targets outside fenced and inline code."""
+    targets: set[str] = set()
+    fence: tuple[str, int] | None = None
+    for line in lines:
+        marker_match = _FENCE.match(line)
+        if fence is not None:
+            if marker_match:
+                marker = marker_match.group(1)
+                if marker[0] == fence[0] and len(marker) >= fence[1]:
+                    fence = None
+            continue
+        if marker_match:
+            marker = marker_match.group(1)
+            fence = (marker[0], len(marker))
+            continue
+
+        prose = _INLINE_CODE.sub("", line)
+        for match in _WIKILINK.finditer(prose):
+            target = match.group(1).split("|", 1)[0].split("#", 1)[0].strip()
+            if not target:
+                continue
+            targets.add(target if target.endswith(".md") else f"{target}.md")
+    return targets
+
+
+def audit_file(path: Path, memory_filenames: set[str] | None = None) -> FileReport:
     """Run all per-file hard and soft checks on one memory topic file."""
     report = FileReport(path=path)
     text = path.read_text(encoding="utf-8", errors="replace")
@@ -133,6 +162,14 @@ def audit_file(path: Path) -> FileReport:
             report.hard.append(f"frontmatter name '{name}' does not match filename")
         if mem_type == "feedback" and not any(_WHY.match(line) for line in body):
             report.hard.append("feedback file missing a Why section (## Why / ## Root cause / **Why:**)")
+
+    if memory_filenames is None:
+        memory_filenames = {
+            candidate.name for candidate in path.parent.glob("*.md") if candidate.name != INDEX_NAME and not candidate.name.startswith(".")
+        }
+    for target in sorted(_prose_wikilink_targets(body)):
+        if target not in memory_filenames:
+            report.hard.append(f"broken prose wikilink target: {target}")
 
     if not _KEBAB.match(path.stem):
         report.hard.append(f"filename '{path.name}' is not kebab-case")
@@ -196,8 +233,9 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         files = sorted(p for p in memory_dir.glob("*.md") if p.name != INDEX_NAME and not p.name.startswith("."))
-        reports = [audit_file(p) for p in files]
-        index_report = audit_index(memory_dir / INDEX_NAME, {p.name for p in files})
+        memory_filenames = {p.name for p in files}
+        reports = [audit_file(p, memory_filenames) for p in files]
+        index_report = audit_index(memory_dir / INDEX_NAME, memory_filenames)
     except OSError as exc:
         print(f"error: cannot read memory directory: {exc}", file=sys.stderr)
         return 2

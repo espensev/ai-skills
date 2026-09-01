@@ -24,6 +24,7 @@ Three routed groups. Default to `summary` if no command given.
 | Command | Usage | Purpose |
 |---------|-------|---------|
 | `cost` | `$usage-stats cost` | Current token position, burn rate, budget check |
+| `window` | `$usage-stats window [H]` | Rolling measured usage across the last H hours (default 24) |
 | `breakdown` | `$usage-stats breakdown` | Per-tool and per-turn token cost attribution |
 | `budget` | `$usage-stats budget [set <N>\|check\|reset]` | Session or daily budget management |
 | `forecast` | `$usage-stats forecast` | Rate-limit proximity and depletion forecast |
@@ -102,6 +103,17 @@ numbers as exact.
    them to the total again. These counters cover completed model steps only:
    the current final response is not included until after it is emitted. Report
    the last counter timestamp so that coverage is explicit.
+
+   For a rolling window across Codex sessions, resolve
+   `scripts/codex_usage_window.py` relative to this `SKILL.md` and run:
+   ```bash
+   python "<usage-stats-skill-dir>/scripts/codex_usage_window.py" --hours 24 --json
+   ```
+   Use this native collector before heuristic transcript sizing when telemetry
+   is unavailable. It sums cumulative counter deltas, ignores duplicate counter
+   events, tolerates an actively written final line, and reports reconciliation
+   and coverage. Preserve its `scope`: it does not include ChatGPT web/app
+   conversations or usage stored under another Codex home.
 
 2. **Hooks JSONL log** (Tier 2 — richest local source for tool events, if
    hooks instrumentation is configured for this installation):
@@ -184,6 +196,21 @@ fall back to this estimation pipeline.
 
 All estimates are clearly labelled as approximate. Actual API billing may
 differ due to caching, batching, and prompt caching discounts.
+
+---
+
+## Command: `window` — Rolling Usage
+
+1. Parse the optional hour count; default to 24 and reject non-positive values.
+2. Run `scripts/codex_usage_window.py` from the installed `usage-stats` skill
+   directory with `--hours H --json`. Treat its native counter deltas as
+   **Tier 1 measured**. If the native session root is unavailable, try the
+   telemetry overview endpoint before considering an estimate.
+3. Report input, output, and total. Show cached input and reasoning output only
+   as subsets. Include the exact start/end timestamps, source tier, session and
+   completed-step coverage, parse/read errors, and reconciliation delta.
+4. Repeat the returned included/excluded scope. Never relabel native Codex
+   totals as combined ChatGPT account usage.
 
 ---
 

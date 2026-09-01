@@ -10,12 +10,12 @@ deliberately explicit: `release-manifest.json` selects ready packages, and each
 package's `package/install-manifest.json` selects the skills, runtime files,
 contracts, workflows, and wrappers that are exported.
 
-41 install-ready skills ship across two provider-specific packages:
+42 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
 | **claude-skills** | 16 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
-| **codex-skills** | 25 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
+| **codex-skills** | 26 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
 
 > Counts reflect each ready package's `package/install-manifest.json`.
 > Explicit `source_only_skills` entries and unmanifested imported material stay as
@@ -86,6 +86,10 @@ Playwright E2E, current research, and bounded inspect-edit-verify cycles.
 | **usage-stats** | Token/cost/budget/forecast intelligence, compact execution closeouts, session tool/agent/timeline analytics, and agent performance/cost reports — measured counters first with heuristic fallback |
 | **deep-audit** | Run evidence-backed, resumable runtime-efficiency audits with explicit safety and evidence boundaries |
 | **skill-authoring** | Create or revise Agent Skills with focused discovery metadata, progressive disclosure, support files, and package wiring |
+
+`codex-state-cleanup` (Codex only) audits, compresses, and safely prunes native
+memory, archived sessions, databases, caches, logs, and temporary state under
+the physical Codex home.
 
 ### DevHome browser control
 

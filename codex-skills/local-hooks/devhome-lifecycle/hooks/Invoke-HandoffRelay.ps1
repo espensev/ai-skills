@@ -43,7 +43,11 @@ param(
 
     [Parameter(Mandatory = $false)]
     [ValidateRange(512, 262144)]
-    [int] $MaxPublishedBytes = 32768
+    [int] $MaxPublishedBytes = 32768,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateRange(20, 400)]
+    [int] $PublishLockAttempts = 20
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,8 +60,28 @@ $script:Stage = 'startup'
 $script:Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
 function Write-NeutralHookResult {
-    Write-Output '{}'
+    param(
+        [Parameter(Mandatory = $false)]
+        [string] $SystemMessage
+    )
+
+    if ([string]::IsNullOrWhiteSpace($SystemMessage)) {
+        Write-Output '{}'
+    }
+    else {
+        [ordered]@{
+            systemMessage = $SystemMessage
+        } | ConvertTo-Json -Compress | Write-Output
+    }
     exit 0
+}
+
+function Write-HandoffFailureResult {
+    param([Parameter(Mandatory)][string] $Code)
+
+    Write-NeutralHookResult -SystemMessage (
+        'Handoff Relay: automatic context refresh needs another try.'
+    )
 }
 
 function Resolve-NormalizedPath {
@@ -671,20 +695,62 @@ function Move-AttemptToArchive {
     )
 
     $timestamp = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
-    if (Test-Path -LiteralPath $Paths.State -PathType Leaf) {
-        $stateArchive = Join-Path $Paths.Root "$script:SessionKey.$Kind.$timestamp.state.json"
-        Move-Item -LiteralPath $Paths.State -Destination $stateArchive -Force
-    }
     if (Test-Path -LiteralPath $Paths.Draft -PathType Leaf) {
         $draftArchive = Join-Path $Paths.Root "$script:SessionKey.$Kind.$timestamp.draft.md"
         Move-Item -LiteralPath $Paths.Draft -Destination $draftArchive -Force
     }
+    if (Test-Path -LiteralPath $Paths.State -PathType Leaf) {
+        $stateArchive = Join-Path $Paths.Root "$script:SessionKey.$Kind.$timestamp.state.json"
+        Move-Item -LiteralPath $Paths.State -Destination $stateArchive -Force
+    }
+}
+
+function Move-LooseDraftsToArchive {
+    param([Parameter(Mandatory)][object] $Paths)
+
+    if (-not (Test-Path -LiteralPath $Paths.Root -PathType Container)) {
+        return 0
+    }
+
+    $moved = 0
+    foreach ($draft in @(
+        Get-ChildItem -LiteralPath $Paths.Root -File -Filter '*.draft.md'
+    )) {
+        $match = [regex]::Match(
+            $draft.Name,
+            '^(?<key>[0-9a-f]{32})\.draft\.md$',
+            [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+        )
+        if (-not $match.Success) {
+            continue
+        }
+
+        $key = $match.Groups['key'].Value
+        $statePath = Join-Path $Paths.Root "$key.state.json"
+        if (Test-Path -LiteralPath $statePath -PathType Leaf) {
+            continue
+        }
+
+        $timestamp = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
+        $archivePath = Join-Path $Paths.Root "$key.orphaned.$timestamp.draft.md"
+        try {
+            Move-Item -LiteralPath $draft.FullName -Destination $archivePath
+            $moved++
+        }
+        catch {
+            if (Test-Path -LiteralPath $draft.FullName -PathType Leaf) {
+                throw
+            }
+        }
+    }
+
+    return $moved
 }
 
 function Enter-ProjectPublishLock {
     param([Parameter(Mandatory)][string] $Path)
 
-    for ($attempt = 0; $attempt -lt 20; $attempt++) {
+    for ($attempt = 0; $attempt -lt $PublishLockAttempts; $attempt++) {
         try {
             return [System.IO.FileStream]::new(
                 $Path,
@@ -878,6 +944,11 @@ function ConvertTo-CleanHandoff {
         if ([string]::IsNullOrWhiteSpace($line)) {
             continue
         }
+        $plainSection = Get-CanonicalSectionName -Heading $line
+        if ($null -ne $plainSection) {
+            $currentSection = $plainSection
+            continue
+        }
         if ($null -eq $currentSection) {
             $ignoredLines++
             continue
@@ -1024,10 +1095,14 @@ function ConvertTo-HandoffDocument {
 }
 
 function Write-ContinuationResult {
-    param([Parameter(Mandatory)][string] $Instruction)
+    param(
+        [Parameter(Mandatory)][string] $Instruction,
+        [Parameter(Mandatory)][string] $SystemMessage
+    )
 
     $output = if ($Provider -ceq 'Claude') {
         [ordered]@{
+            systemMessage = $SystemMessage
             hookSpecificOutput = [ordered]@{
                 hookEventName = 'Stop'
                 additionalContext = $Instruction
@@ -1036,6 +1111,7 @@ function Write-ContinuationResult {
     }
     else {
         [ordered]@{
+            systemMessage = $SystemMessage
             decision = 'block'
             reason = $Instruction
         }
@@ -1060,27 +1136,42 @@ function Initialize-HandoffDraft {
         Write-HealthRecord -Status FAILED -Code 'unsafe-reparse-traversal'
         Write-NeutralHookResult
     }
-    if (
-        (Test-Path -LiteralPath $Paths.State -PathType Leaf) -or
-        (Test-Path -LiteralPath $Paths.Draft -PathType Leaf)
-    ) {
-        Move-AttemptToArchive -Paths $Paths -Kind orphaned
-    }
+    $quarantinedDrafts = 0
+    $lock = Enter-ProjectPublishLock -Path $Paths.Lock
+    try {
+        if (-not (Test-HandoffPathSetIsSafe -Target $Context.Target -Paths $Paths)) {
+            Write-HealthRecord -Status FAILED -Code 'unsafe-reparse-traversal'
+            Write-NeutralHookResult
+        }
+        $quarantinedDrafts = Move-LooseDraftsToArchive -Paths $Paths
+        if (
+            (Test-Path -LiteralPath $Paths.State -PathType Leaf) -or
+            (Test-Path -LiteralPath $Paths.Draft -PathType Leaf)
+        ) {
+            Move-AttemptToArchive -Paths $Paths -Kind orphaned
+        }
 
-    $state = [ordered]@{
-        schema = 'handoff-relay-state.v1'
-        phase = 'awaiting-draft'
-        provider = $Provider.ToLowerInvariant()
-        sessionKey = $script:SessionKey
-        target = $Context.Target
-        workspace = $Context.Workspace
-        project = $Context.ProjectSlug
-        draft = $Paths.Draft
-        baselineHash = Get-SharedFileHash -Path $Context.Target
-        createdUtc = [DateTime]::UtcNow.ToString('o')
+        $state = [ordered]@{
+            schema = 'handoff-relay-state.v1'
+            phase = 'awaiting-draft'
+            provider = $Provider.ToLowerInvariant()
+            sessionKey = $script:SessionKey
+            target = $Context.Target
+            workspace = $Context.Workspace
+            project = $Context.ProjectSlug
+            draft = $Paths.Draft
+            baselineHash = Get-SharedFileHash -Path $Context.Target
+            createdUtc = [DateTime]::UtcNow.ToString('o')
+        }
+        Write-AtomicJson -Path $Paths.State -Value $state
     }
-    Write-AtomicJson -Path $Paths.State -Value $state
-    Write-HealthRecord -Status PREPARED -Code 'awaiting-draft'
+    finally {
+        $lock.Dispose()
+    }
+    Write-HealthRecord `
+        -Status PREPARED `
+        -Code 'awaiting-draft' `
+        -Details @{ quarantinedDrafts = $quarantinedDrafts }
 
     $instruction = @"
 Handoff Relay: prepare the concise next-session handoff before finishing.
@@ -1089,11 +1180,22 @@ Canonical: $($Context.Target)
 Workspace: $($Context.Workspace)
 Draft: $($Paths.Draft)
 
-Write only the draft path; do not edit the canonical file. The relay will clean, validate, hash-check, lock, and atomically publish it on the next Stop pass. This is bounded Remember project state, not Codex native memory.
+Write the handoff to the file at Draft with a file-editing tool; do not edit the canonical file. The relay will clean, validate, hash-check, lock, and atomically publish it on the next Stop pass. This is bounded Remember project state, not Codex native memory.
 
-Use these exact headings in this order: Summary, Outcome, Verified state, Changed surfaces, Verification, Open risks, Next gate. Use bullets only. Summary has at most 2 bullets. Verified-state bullets use `[verified] ... Evidence: ...`. Risk bullets use `[risk] ... Basis: ...`, or `None.`. Do not include guesses, speculation, unsupported claims, process narration, code fences, or extra prose. Keep each bullet under 30 words where practical. Current verified state outranks the old handoff.
+Do not answer with only the draft path. After the draft write succeeds, repeat the substantive user-facing closeout you had already provided and add one final sentence: `Handoff prepared for automatic publication.` Do not claim publication from the draft write; the relay will surface the publication result separately.
+
+Before the file edit, keep any commentary to a single line: use exactly ``Preparing handoff.`` Do not describe the proposed handoff contents, verification, or outcome in commentary.
+
+Use these exact Markdown headings in this order: `## Summary`, `## Outcome`, `## Verified state`, `## Changed surfaces`, `## Verification`, `## Open risks`, `## Next gate`. Use bullets only. Summary has at most 2 bullets. Verified-state bullets use `[verified] ... Evidence: ...`. Risk bullets use `[risk] ... Basis: ...`, or `None.`. Do not include guesses, speculation, unsupported claims, process narration, code fences, or extra prose. Keep each bullet under 30 words where practical. Current verified state outranks the old handoff.
 "@.Trim()
-    Write-ContinuationResult -Instruction $instruction
+    $preparationMessage = 'Preparing handoff.'
+    if ($quarantinedDrafts -gt 0) {
+        $noun = if ($quarantinedDrafts -eq 1) { 'draft' } else { 'drafts' }
+        $preparationMessage += " The relay quarantined $quarantinedDrafts stale $noun."
+    }
+    Write-ContinuationResult `
+        -Instruction $instruction `
+        -SystemMessage $preparationMessage
 }
 
 function Complete-HandoffDraft {
@@ -1104,10 +1206,29 @@ function Complete-HandoffDraft {
 
     if (-not (Test-HandoffPathSetIsSafe -Target $Context.Target -Paths $Paths)) {
         Write-HealthRecord -Status FAILED -Code 'unsafe-reparse-traversal'
+        Write-HandoffFailureResult -Code 'unsafe-reparse-traversal'
+    }
+    if (-not (Test-Path -LiteralPath $Paths.Root -PathType Container)) {
+        Write-HealthRecord -Status SKIPPED -Code 'no-active-attempt'
         Write-NeutralHookResult
     }
-    if (-not (Test-Path -LiteralPath $Paths.State -PathType Leaf)) {
-        Write-HealthRecord -Status FAILED -Code 'state-missing'
+    $lock = Enter-ProjectPublishLock -Path $Paths.Lock
+    try {
+        if (-not (Test-HandoffPathSetIsSafe -Target $Context.Target -Paths $Paths)) {
+            Write-HealthRecord -Status FAILED -Code 'unsafe-reparse-traversal'
+            Write-HandoffFailureResult -Code 'unsafe-reparse-traversal'
+        }
+        if (-not (Test-Path -LiteralPath $Paths.State -PathType Leaf)) {
+        if (Test-Path -LiteralPath $Paths.Draft -PathType Leaf) {
+            Move-AttemptToArchive -Paths $Paths -Kind orphaned
+            Write-HealthRecord `
+                -Status FAILED `
+                -Code 'state-missing' `
+                -Details @{ draftQuarantined = $true }
+            Write-HandoffFailureResult -Code 'state-missing'
+        }
+
+        Write-HealthRecord -Status SKIPPED -Code 'no-active-attempt'
         Write-NeutralHookResult
     }
 
@@ -1118,7 +1239,7 @@ function Complete-HandoffDraft {
     catch {
         Move-AttemptToArchive -Paths $Paths -Kind failed
         Write-HealthRecord -Status FAILED -Code 'state-invalid'
-        Write-NeutralHookResult
+        Write-HandoffFailureResult -Code 'state-invalid'
     }
 
     $expectedDraft = Resolve-NormalizedPath -Path $Paths.Draft
@@ -1145,13 +1266,13 @@ function Complete-HandoffDraft {
     if (-not $stateIsValid) {
         Move-AttemptToArchive -Paths $Paths -Kind failed
         Write-HealthRecord -Status FAILED -Code 'state-contract-mismatch'
-        Write-NeutralHookResult
+        Write-HandoffFailureResult -Code 'state-contract-mismatch'
     }
 
     if (-not (Test-Path -LiteralPath $Paths.Draft -PathType Leaf)) {
         Move-AttemptToArchive -Paths $Paths -Kind failed
         Write-HealthRecord -Status FAILED -Code 'draft-missing'
-        Write-NeutralHookResult
+        Write-HandoffFailureResult -Code 'draft-missing'
     }
     $draftInfo = Get-Item -LiteralPath $Paths.Draft
     if ($draftInfo.Length -gt $MaxDraftBytes) {
@@ -1159,7 +1280,7 @@ function Complete-HandoffDraft {
         Write-HealthRecord -Status FAILED -Code 'draft-too-large' -Details @{
             maximumBytes = $MaxDraftBytes
         }
-        Write-NeutralHookResult
+        Write-HandoffFailureResult -Code 'draft-too-large'
     }
 
     $cleaned = ConvertTo-CleanHandoff -Draft (Read-SharedText -Path $Paths.Draft)
@@ -1170,7 +1291,7 @@ function Complete-HandoffDraft {
             -Code 'draft-invalid' `
             -Cleaning $cleaned.Cleaning `
             -Details @{ missingSections = ($cleaned.MissingSections -join ',') }
-        Write-NeutralHookResult
+        Write-HandoffFailureResult -Code 'draft-invalid'
     }
 
     $document = ConvertTo-HandoffDocument -Cleaned $cleaned -State $state
@@ -1185,16 +1306,9 @@ function Complete-HandoffDraft {
                 actualBytes = $documentBytes
                 maximumBytes = $MaxPublishedBytes
             }
-        Write-NeutralHookResult
+        Write-HandoffFailureResult -Code 'document-too-large'
     }
 
-    $lock = $null
-    try {
-        $lock = Enter-ProjectPublishLock -Path $Paths.Lock
-        if (-not (Test-HandoffPathSetIsSafe -Target $Context.Target -Paths $Paths)) {
-            Write-HealthRecord -Status FAILED -Code 'unsafe-reparse-traversal'
-            Write-NeutralHookResult
-        }
         $currentHash = Get-SharedFileHash -Path $Context.Target
         if ([string] $state.baselineHash -cne $currentHash) {
             Move-AttemptToArchive -Paths $Paths -Kind conflict
@@ -1202,7 +1316,10 @@ function Complete-HandoffDraft {
                 -Status CONFLICT `
                 -Code 'canonical-changed' `
                 -Cleaning $cleaned.Cleaning
-            Write-NeutralHookResult
+            Write-NeutralHookResult -SystemMessage (
+                'Handoff Relay: a newer next-session context already exists; ' +
+                'this attempt was saved for review.'
+            )
         }
 
         Write-AtomicText -Path $Context.Target -Content $document
@@ -1213,12 +1330,12 @@ function Complete-HandoffDraft {
             -Cleaning $cleaned.Cleaning
     }
     finally {
-        if ($null -ne $lock) {
-            $lock.Dispose()
-        }
+        $lock.Dispose()
     }
 
-    Write-NeutralHookResult
+    Write-NeutralHookResult -SystemMessage (
+        'Handoff Relay: next-session context refreshed.'
+    )
 }
 
 try {
@@ -1285,5 +1402,11 @@ catch {
             stage = $script:Stage
             exceptionType = $_.Exception.GetType().Name
         }
+    if ($script:Stage -ceq 'complete') {
+        Write-HandoffFailureResult -Code 'unexpected-error'
+    }
+    if ($script:Stage -ceq 'prepare') {
+        Write-HandoffFailureResult -Code 'unexpected-error'
+    }
     Write-NeutralHookResult
 }

@@ -24,8 +24,9 @@ trust state by hand.
   derive from ambient `CODEX_HOME`; do not claim full no-AppData placement until
   the production adapter pins those paths to physical DevHome.
 - Known blocker: the installed Remember PostToolUse integration currently
-  exceeds the adapter's three-second bound and fails open; a green cache/runtime
-  check does not prove Remember capture.
+  exceeds the adapter's three-second bound and fails open. It can touch liveness
+  markers before timing out; a green cache/runtime check or marker alone does
+  not prove end-to-end Remember capture.
 
 The package remains outside the portable provider manifests. The
 `devhome-lifecycle@ai-skills` plugin contributes this skill and one startup
@@ -36,12 +37,17 @@ shared Stop implementation installed into both agents.
 Handoff Relay uses a verified two-pass draft protocol. It resolves the nearest
 enrolled ancestor for nested working directories, writes agent output to
 session-scoped temporary state, structurally cleans the seven-section handoff,
-then hash-checks and atomically publishes under a project lock. Read the latest
-redacted result at
-`D:\DevHome\state\remember\handoff-relay\latest-status.json`; do not edit or
-promote draft/conflict files by hand. The cleaner removes unsupported forms and
-explicit speculation, bounds each bullet to 512 text elements and 1,024 UTF-8
-bytes, and caps publication at 32 KiB. It does not semantically prove a claim.
+then hash-checks and atomically publishes under a project lock. Exact section
+names are accepted with or without Markdown heading prefixes. Preparation and
+the final outcome surface as bounded plain-language UI messages; internal error
+codes stay in health records. A bare draft path is not a completion result. Read
+the global most-recent redacted
+result at `D:\DevHome\state\remember\handoff-relay\latest-status.json`; it can
+be overwritten by a later project. Do not edit or promote draft/conflict files
+by hand. State-less raw drafts are quarantined as orphaned on the next attempt
+for that project. The cleaner removes unsupported forms and explicit
+speculation, bounds each bullet to 512 text elements and 1,024 UTF-8 bytes, and
+caps publication at 32 KiB. It does not semantically prove a claim.
 
 ## Refresh the plugin choice
 
@@ -71,6 +77,34 @@ Run the read-only convergence check from the source authority:
 ```powershell
 & 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeCodexHooks.ps1' -Check
 ```
+
+## Diagnose visible hook failures
+
+Convergence checks prove only the owned source-to-projection bytes. They do not
+clear failures from foreign plugin hooks and they do not prove behavioral
+capture. For a visible `PreToolUse:<tool>` or `PostToolUse:<tool>` error:
+
+1. Preserve the exact event/tool label, status text, exit code, and timestamp.
+2. Inspect effective `D:\DevHome\state\claude\settings.json` registrations and
+   the enabled plugin manifests. Map the matching command to its owner before
+   changing anything; Hookify and other foreign plugin hooks are outside this
+   package's source authority.
+3. Probe the exact failing launcher token in the hook process environment. For
+   a `python3` registration on Windows, run `Get-Command python3 -All`,
+   `where.exe python3`, and `python3 --version`, recording `$LASTEXITCODE`.
+   Probe `python` or `py -3` separately only to identify a supported repair;
+   their success does not make `python3` healthy.
+4. Reproduce with one harmless tool call, apply any authorized fix at the
+   owning source or supported provider setting, restart the affected provider,
+   and repeat that same call.
+
+Treat `.remember\tmp\capture-alive`, `post-tool-ran`, and hook log pings as
+liveness breadcrumbs, not durable capture output. Check whether the adapter
+checkpoint/mirror and the event's expected Remember artifact advance, and
+compare `D:\DevHome\state\codex\remember-adapter\logs\adapter-errors.log`
+before and after the exact event. Do not patch an installed plugin cache, and do
+not disable or rewrite a foreign hook without user authorization. A successful
+DevHome lifecycle `-Check` does not clear a foreign hook failure.
 
 ## Synchronize
 

@@ -34,13 +34,17 @@ reconciler; it does not register a second copy of the behavior hooks below.
 Handoff Relay is one shared, synchronous implementation with provider-specific
 `Stop` output: Claude receives non-error `additionalContext`; Codex receives its
 strict `decision: block` continuation shape. It defers while Claude reports
-background tasks or session crons.
+background tasks or session crons. Both providers receive bounded
+`systemMessage` notices when preparation starts and when publication succeeds,
+fails, or conflicts.
 
 The first Stop verifies `snd-desk`, resolves the canonical target, snapshots its
 hash, and creates a session/turn-scoped draft under the enrolled project's
-`tmp\handoff-relay` directory. The agent writes only that draft. The second Stop
-validates the state and draft, takes a per-project lock, rejects a changed
-canonical hash as a preserved conflict, and atomically publishes `remember.md`.
+`tmp\handoff-relay` directory. The agent edits only that file, then repeats its
+substantive user-facing closeout instead of replacing it with a bare draft path.
+The second Stop validates the state and draft, takes a per-project lock, rejects
+a changed canonical hash as a preserved conflict, and atomically publishes
+`remember.md`.
 
 Target resolution accepts the latest exact `Write next handoff to:` declaration
 only from a developer/system transcript record. Without one, it walks `cwd` and
@@ -51,7 +55,8 @@ targets, relative paths, unenrolled projects, and paths outside that store do
 not write a handoff.
 
 Published handoffs use seven ordered sections: Summary, Outcome, Verified state,
-Changed surfaces, Verification, Open risks, and Next gate. The cleaner keeps
+Changed surfaces, Verification, Open risks, and Next gate. The cleaner accepts
+those exact section names with or without Markdown heading prefixes, keeps
 bullets only, deduplicates and caps them, limits the body to 450 words, removes
 extra prose/code/unknown sections, and drops explicitly unverified or
 speculative fact bullets. Verified-state bullets require `[verified]` plus
@@ -62,15 +67,29 @@ Each bullet is also bounded to 512 text elements and 1,024 UTF-8 bytes; the
 published document is capped at 32 KiB.
 
 The latest redacted result is written atomically to
-`D:\DevHome\state\remember\handoff-relay\latest-status.json`. Raw failed or
-conflicting drafts remain under the enrolled project's bounded temporary relay
-directory for diagnosis. Shutdown remains fail-open after recording a bounded
-failure.
+`D:\DevHome\state\remember\handoff-relay\latest-status.json`. This is a global
+most-recent record and can be replaced by a later project, so the live
+`systemMessage` uses plain outcome language while internal diagnostics retain
+stable error codes. The handoff header is the completion evidence for a specific
+turn. Raw failed or conflicting drafts remain under the enrolled
+project's bounded temporary relay directory for diagnosis. A state-less raw
+draft is quarantined as `*.orphaned.*.draft.md` on the next relay attempt for
+that project instead of remaining indefinitely active-looking. Shutdown remains
+fail-open after recording a bounded failure.
 
 Current acceptance blocker: the installed Remember `0.20.0` PostToolUse hook
 exceeds the adapter's three-second upstream bound, so the adapter fails open and
-does not produce the expected capture markers. The feature review linked below
-records the reproduction.
+can leave liveness markers even when end-to-end capture is not proven. Treat
+`capture-alive`, `post-tool-ran`, and hook log pings as breadcrumbs only; require
+the expected checkpoint/mirror or Remember artifact to advance without a
+matching adapter failure. The feature review linked below records the
+reproduction.
+
+Visible Claude hook errors must be attributed to their registration owner. An
+owned projection check does not clear foreign plugin hooks such as Hookify. Probe
+the registration's exact launcher token in Claude's environment (`python3` is
+distinct from `python` on Windows), then repair the owning source or supported
+provider setting rather than an installed plugin cache.
 
 The raw Claude Remember hooks stay unregistered. `Invoke-RememberAdapter.py`
 translates Codex transcripts into the narrow Claude transcript shape expected by

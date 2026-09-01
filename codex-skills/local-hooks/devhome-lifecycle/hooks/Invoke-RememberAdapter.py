@@ -52,6 +52,7 @@ PAYLOAD_PIPE_POLL_SECONDS = 0.001
 SESSION_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 VERSION_PATTERN = re.compile(r"^\d+(?:\.\d+)*$")
 MAX_SOURCE_LINE_BYTES = 8 * 1024 * 1024
+MAX_REMEMBER_CONFIG_BYTES = 64 * 1024
 CHECKPOINT_SCHEMA_VERSION = 1
 CHECKPOINT_INTEGRITY_FIELDS = (
     "schema_version",
@@ -82,21 +83,26 @@ class HookContext:
 
 @dataclass(frozen=True)
 class AdapterLayout:
+    codex_home: Path
     root: Path
     claude_config: Path
     checkpoints: Path
     locks: Path
     logs: Path
+    upstream_home: Path
 
     @classmethod
     def for_home(cls, codex_home: Path) -> "AdapterLayout":
-        root = Path(codex_home) / "remember-adapter"
+        home = Path(codex_home)
+        root = home / "remember-adapter"
         return cls(
+            codex_home=home,
             root=root,
             claude_config=root / "claude-config",
             checkpoints=root / "checkpoints",
             locks=root / "locks",
             logs=root / "logs",
+            upstream_home=root / "upstream-home",
         )
 
     def mirror_path(self, context: HookContext) -> Path:
@@ -457,6 +463,96 @@ def discover_remember_plugin(codex_home: Path) -> Path:
     return max(candidates, key=lambda candidate: candidate[0])[1]
 
 
+def _normalized_path(path: Path) -> str:
+    return os.path.normcase(os.path.normpath(os.path.abspath(path)))
+
+
+def _replace_file_bytes(path: Path, payload: bytes) -> None:
+    """Replace one small adapter-owned file atomically when its bytes changed."""
+    try:
+        if path.is_file() and path.read_bytes() == payload:
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                prefix=f".{path.name}.",
+                suffix=".tmp",
+                dir=path.parent,
+                delete=False,
+            ) as stream:
+                temporary_path = Path(stream.name)
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary_path, path)
+            temporary_path = None
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+    except OSError as error:
+        raise AdapterError("remember-config-mirror-failed") from error
+
+
+def _unique_json_object(pairs: Sequence[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate-json-key")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(_value: str) -> None:
+    raise ValueError("nonstandard-json-constant")
+
+
+def _prepare_remember_routing(context: HookContext, layout: AdapterLayout) -> None:
+    """Validate central routing, mirror it privately, and precreate one store."""
+    remember_root = layout.codex_home.parent / "remember"
+    config_path = remember_root / "config.json"
+    try:
+        with config_path.open("rb") as stream:
+            config_bytes = stream.read(MAX_REMEMBER_CONFIG_BYTES + 1)
+    except OSError as error:
+        raise AdapterError("remember-config-unavailable") from error
+    if len(config_bytes) > MAX_REMEMBER_CONFIG_BYTES:
+        raise AdapterError("remember-config-too-large")
+    try:
+        config = json.loads(
+            config_bytes,
+            object_pairs_hook=_unique_json_object,
+            parse_constant=_reject_json_constant,
+        )
+    except (UnicodeDecodeError, ValueError, RecursionError) as error:
+        raise AdapterError("remember-config-invalid") from error
+    if not isinstance(config, Mapping):
+        raise AdapterError("remember-config-invalid")
+
+    data_dir = config.get("data_dir")
+    if not isinstance(data_dir, str) or not data_dir:
+        raise AdapterError("remember-routing-invalid")
+    expected_template = remember_root / "projects" / "{slug}"
+    try:
+        candidate = Path(data_dir)
+        if (
+            not candidate.is_absolute()
+            or _normalized_path(candidate) != _normalized_path(expected_template)
+        ):
+            raise AdapterError("remember-routing-invalid")
+    except (OSError, ValueError) as error:
+        raise AdapterError("remember-routing-invalid") from error
+
+    mirrored_config = layout.upstream_home / ".remember" / "config.json"
+    _replace_file_bytes(mirrored_config, config_bytes)
+    selected_project = remember_root / "projects" / slug_project(context.cwd)
+    try:
+        selected_project.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        raise AdapterError("remember-project-create-failed") from error
+
+
 def invoke_upstream(
     context: HookContext,
     layout: AdapterLayout,
@@ -464,7 +560,10 @@ def invoke_upstream(
     raw_payload: str,
 ) -> subprocess.CompletedProcess[str]:
     """Run one unchanged Remember hook through the explicit Git Bash boundary."""
-    claude_exe = Path.home() / ".local" / "bin" / "claude.exe"
+    real_home_path = Path.home()
+    real_home = os.environ.get("HOME") or str(real_home_path)
+    real_userprofile = os.environ.get("USERPROFILE") or str(real_home_path)
+    claude_exe = real_home_path / ".local" / "bin" / "claude.exe"
     hook_name = HOOK_SCRIPTS.get(context.event)
     if hook_name is None:
         raise AdapterError("unsupported-event")
@@ -480,6 +579,7 @@ def invoke_upstream(
     if not hook_script.is_file():
         raise AdapterError("remember-hook-missing")
 
+    _prepare_remember_routing(context, layout)
     layout.claude_config.mkdir(parents=True, exist_ok=True)
     upstream_env = os.environ.copy()
     upstream_env.update(
@@ -489,6 +589,10 @@ def invoke_upstream(
             "CLAUDE_CONFIG_DIR": str(layout.claude_config),
             "REMEMBER_CLAUDE_BIN": str(wrapper),
             "REMEMBER_REAL_CLAUDE_BIN": str(claude_exe),
+            "REMEMBER_REAL_HOME": real_home,
+            "REMEMBER_REAL_USERPROFILE": real_userprofile,
+            "HOME": str(layout.upstream_home),
+            "USERPROFILE": str(layout.upstream_home),
         }
     )
     command = [str(GIT_BASH_EXE), "--noprofile", "--norc", hook_script.as_posix()]

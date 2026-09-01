@@ -535,6 +535,12 @@ This paragraph is intentionally ignored.
             $output.reason | Should -Match 'Handoff Relay'
             $output.reason | Should -Match ([regex]::Escape($target))
             $output.reason | Should -Match 'not Codex native memory'
+            $output.reason | Should -Match 'Write the handoff to the file at Draft'
+            $output.reason | Should -Match 'Do not answer with only the draft path'
+            $output.reason | Should -Match 'repeat the substantive user-facing closeout'
+            $output.reason | Should -Match 'use exactly `Preparing handoff\.`'
+            $output.reason | Should -Match 'Do not describe the proposed handoff contents'
+            $output.systemMessage | Should -BeExactly 'Preparing handoff.'
             $result.Output | Should -Not -Match 'System32'
             Test-Path -LiteralPath $target | Should -BeFalse -Because 'the hook delegates summarization to the active agent'
         }
@@ -665,6 +671,7 @@ This paragraph is intentionally ignored.
             $claudeOutput.PSObject.Properties.Name | Should -Not -Contain 'decision'
             $claudeOutput.hookSpecificOutput.hookEventName | Should -BeExactly 'Stop'
             $claudeOutput.hookSpecificOutput.additionalContext | Should -Match 'Draft:'
+            $claudeOutput.systemMessage | Should -Match 'preparing'
 
             $codex = Invoke-HandoffRelayProcess `
                 -RememberProjectsRoot $script:RememberProjectsRoot `
@@ -679,7 +686,342 @@ This paragraph is intentionally ignored.
             $codexOutput = $codex.Output | ConvertFrom-Json -Depth 20
             $codexOutput.decision | Should -BeExactly 'block'
             $codexOutput.reason | Should -Match 'Draft:'
+            $codexOutput.systemMessage | Should -Match 'preparing'
             $codexOutput.PSObject.Properties.Name | Should -Not -Contain 'hookSpecificOutput'
+        }
+
+        It 'quarantines a loose stale draft before preparing the current attempt' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $relayRoot = Join-Path $projectRoot 'tmp\handoff-relay'
+            $null = New-Item -ItemType Directory -Path $relayRoot -Force
+            $staleKey = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+            $staleDraft = Join-Path $relayRoot "$staleKey.draft.md"
+            'stale draft retained from an old continuation prompt' |
+                Set-Content -LiteralPath $staleDraft -Encoding utf8NoBOM
+
+            $result = Invoke-HandoffRelayProcess `
+                -RememberProjectsRoot $script:RememberProjectsRoot `
+                -Payload @{
+                    hook_event_name = 'Stop'
+                    session_id = 'stale-sweep-session'
+                    turn_id = 'stale-sweep-turn'
+                    cwd = 'D:\Development\AI-related'
+                    stop_hook_active = $false
+                }
+
+            $output = $result.Output | ConvertFrom-Json
+            $output.decision | Should -BeExactly 'block'
+            $output.systemMessage | Should -Match 'quarantined 1 stale draft'
+            Test-Path -LiteralPath $staleDraft | Should -BeFalse
+            $archives = @(
+                Get-ChildItem -LiteralPath $relayRoot -Filter "$staleKey.orphaned.*.draft.md"
+            )
+            $archives.Count | Should -BeExactly 1
+            (Get-Content -Raw -LiteralPath $archives[0].FullName).Trim() |
+                Should -BeExactly 'stale draft retained from an old continuation prompt'
+
+            $healthPath = Join-Path (
+                Split-Path -Parent $script:RememberProjectsRoot
+            ) 'handoff-relay\latest-status.json'
+            $health = Get-Content -Raw -LiteralPath $healthPath | ConvertFrom-Json
+            $health.status | Should -BeExactly 'PREPARED'
+            $health.details.quarantinedDrafts | Should -BeExactly '1'
+        }
+
+        It 'serializes concurrent initializers before they inspect or create attempt files' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $relayRoot = Join-Path $projectRoot 'tmp\handoff-relay'
+            $null = New-Item -ItemType Directory -Path $relayRoot -Force
+            $looseKey = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+            $looseDraft = Join-Path $relayRoot "$looseKey.draft.md"
+            'loose draft visible before either initializer enters the lock' |
+                Set-Content -LiteralPath $looseDraft -Encoding utf8NoBOM
+            $verifierPath = New-TestMachineVerifier
+            $publishLock = [System.IO.FileStream]::new(
+                (Join-Path $relayRoot 'publish.lock'),
+                [System.IO.FileMode]::OpenOrCreate,
+                [System.IO.FileAccess]::ReadWrite,
+                [System.IO.FileShare]::None
+            )
+            $invocations = @()
+            try {
+                foreach ($suffix in @('a', 'b')) {
+                    $inputPath = Join-Path $TestDrive "concurrent-init-$suffix-input.json"
+                    $outputPath = Join-Path $TestDrive "concurrent-init-$suffix-output.json"
+                    $errorPath = Join-Path $TestDrive "concurrent-init-$suffix-error.txt"
+                    @{
+                        hook_event_name = 'Stop'
+                        session_id = "concurrent-init-session-$suffix"
+                        turn_id = "concurrent-init-turn-$suffix"
+                        cwd = 'D:\Development\AI-related'
+                        stop_hook_active = $false
+                    } | ConvertTo-Json -Depth 20 -Compress |
+                        Set-Content -LiteralPath $inputPath -Encoding utf8NoBOM -NoNewline
+                    $process = Start-Process `
+                        -FilePath (Get-Command pwsh).Source `
+                        -ArgumentList @(
+                            '-NoLogo',
+                            '-NoProfile',
+                            '-NonInteractive',
+                            '-File',
+                            $script:HandoffRelayScript,
+                            '-RememberProjectsRoot',
+                            $script:RememberProjectsRoot,
+                            '-Provider',
+                            'Codex',
+                            '-VerifierPath',
+                            $verifierPath,
+                            '-PublishLockAttempts',
+                            '120'
+                        ) `
+                        -RedirectStandardInput $inputPath `
+                        -RedirectStandardOutput $outputPath `
+                        -RedirectStandardError $errorPath `
+                        -PassThru
+                    $invocations += [pscustomobject]@{
+                        Process = $process
+                        OutputPath = $outputPath
+                        ErrorPath = $errorPath
+                    }
+                }
+
+                Start-Sleep -Milliseconds 1000
+                $exitedWhileLocked = @(
+                    $invocations | Where-Object { $_.Process.HasExited }
+                ).Count
+                $statesWhileLocked = @(
+                    Get-ChildItem -LiteralPath $relayRoot -Filter '*.state.json'
+                ).Count
+                $looseDraftPresentWhileLocked = Test-Path `
+                    -LiteralPath $looseDraft `
+                    -PathType Leaf
+            }
+            finally {
+                $publishLock.Dispose()
+            }
+
+            foreach ($invocation in $invocations) {
+                $invocation.Process.WaitForExit(10000) | Should -BeTrue
+            }
+            $exitedWhileLocked | Should -BeExactly 0
+            $statesWhileLocked | Should -BeExactly 0
+            $looseDraftPresentWhileLocked | Should -BeTrue
+
+            $outputs = @(
+                foreach ($invocation in $invocations) {
+                    (Get-Content -Raw -LiteralPath $invocation.OutputPath) |
+                        ConvertFrom-Json
+                }
+            )
+            @($outputs | Where-Object decision -EQ 'block') | Should -HaveCount 2
+            Test-Path -LiteralPath $looseDraft | Should -BeFalse
+            @(
+                Get-ChildItem `
+                    -LiteralPath $relayRoot `
+                    -Filter "$looseKey.orphaned.*.draft.md"
+            ) | Should -HaveCount 1
+            $firstDraft = Get-HandoffRelayDraftPath -Output (
+                Get-Content -Raw -LiteralPath $invocations[0].OutputPath
+            )
+            'active draft written after its initializer released the project lock' |
+                Set-Content -LiteralPath $firstDraft -Encoding utf8NoBOM
+            $firstState = $firstDraft -replace '\.draft\.md$', '.state.json'
+            Test-Path -LiteralPath $firstState -PathType Leaf | Should -BeTrue
+            Test-Path -LiteralPath $firstDraft -PathType Leaf | Should -BeTrue
+            @(
+                Get-ChildItem -LiteralPath $relayRoot -Filter '*.orphaned.*.draft.md'
+            ) | Should -HaveCount 1
+        }
+
+        It 'reports a preparation lock timeout without starting or publishing an attempt' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $relayRoot = Join-Path $projectRoot 'tmp\handoff-relay'
+            $null = New-Item -ItemType Directory -Path $relayRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            '# stable handoff' | Set-Content -LiteralPath $target -Encoding utf8NoBOM
+            $publishLock = [System.IO.FileStream]::new(
+                (Join-Path $relayRoot 'publish.lock'),
+                [System.IO.FileMode]::OpenOrCreate,
+                [System.IO.FileAccess]::ReadWrite,
+                [System.IO.FileShare]::None
+            )
+            try {
+                $result = Invoke-HandoffRelayProcess `
+                    -RememberProjectsRoot $script:RememberProjectsRoot `
+                    -Payload @{
+                        hook_event_name = 'Stop'
+                        session_id = 'preparation-timeout-session'
+                        turn_id = 'preparation-timeout-turn'
+                        cwd = 'D:\Development\AI-related'
+                        stop_hook_active = $false
+                    }
+            }
+            finally {
+                $publishLock.Dispose()
+            }
+
+            $output = $result.Output | ConvertFrom-Json
+            $output.systemMessage | Should -BeExactly (
+                'Handoff Relay: automatic context refresh needs another try.'
+            )
+            $output.PSObject.Properties.Name | Should -Not -Contain 'decision'
+            $output.PSObject.Properties.Name | Should -Not -Contain 'reason'
+            $output.PSObject.Properties.Name | Should -Not -Contain 'hookSpecificOutput'
+            @(
+                Get-ChildItem -LiteralPath $relayRoot -Filter '*.state.json'
+            ) | Should -HaveCount 0
+            @(
+                Get-ChildItem -LiteralPath $relayRoot -Filter '*.draft.md'
+            ) | Should -HaveCount 0
+            (Get-Content -Raw -LiteralPath $target).Trim() |
+                Should -BeExactly '# stable handoff'
+
+            $healthPath = Join-Path (
+                Split-Path -Parent $script:RememberProjectsRoot
+            ) 'handoff-relay\latest-status.json'
+            $health = Get-Content -Raw -LiteralPath $healthPath | ConvertFrom-Json
+            $health.status | Should -BeExactly 'FAILED'
+            $health.code | Should -BeExactly 'unexpected-error'
+            $health.details.stage | Should -BeExactly 'prepare'
+        }
+
+        It 'reports an unexpected completion error without changing the canonical handoff' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            '# stable handoff' | Set-Content -LiteralPath $target -Encoding utf8NoBOM
+            $payload = @{
+                hook_event_name = 'Stop'
+                session_id = 'unexpected-completion-session'
+                turn_id = 'unexpected-completion-turn'
+                cwd = 'D:\Development\AI-related'
+                stop_hook_active = $false
+            }
+
+            $first = Invoke-HandoffRelayProcess `
+                -RememberProjectsRoot $script:RememberProjectsRoot `
+                -Payload $payload
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            New-TestHandoffDraft -Marker 'MUST-NOT-PUBLISH' |
+                Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+            $lockPath = Join-Path (Split-Path -Parent $draftPath) 'publish.lock'
+            $publishLock = [System.IO.FileStream]::new(
+                $lockPath,
+                [System.IO.FileMode]::OpenOrCreate,
+                [System.IO.FileAccess]::ReadWrite,
+                [System.IO.FileShare]::None
+            )
+            try {
+                $payload.stop_hook_active = $true
+                $second = Invoke-HandoffRelayProcess `
+                    -RememberProjectsRoot $script:RememberProjectsRoot `
+                    -Payload $payload
+            }
+            finally {
+                $publishLock.Dispose()
+            }
+
+            $output = $second.Output | ConvertFrom-Json
+            $output.systemMessage | Should -BeExactly (
+                'Handoff Relay: automatic context refresh needs another try.'
+            )
+            (Get-Content -Raw -LiteralPath $target).Trim() |
+                Should -BeExactly '# stable handoff'
+
+            $healthPath = Join-Path (
+                Split-Path -Parent $script:RememberProjectsRoot
+            ) 'handoff-relay\latest-status.json'
+            $health = Get-Content -Raw -LiteralPath $healthPath | ConvertFrom-Json
+            $health.status | Should -BeExactly 'FAILED'
+            $health.code | Should -BeExactly 'unexpected-error'
+            $health.details.stage | Should -BeExactly 'complete'
+        }
+
+        It 'preserves active and archived attempts when draft archival cannot start' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            '# stable handoff' | Set-Content -LiteralPath $target -Encoding utf8NoBOM
+            $firstPayload = @{
+                hook_event_name = 'Stop'
+                session_id = 'archive-race-session'
+                turn_id = 'archive-race-turn'
+                cwd = 'D:\Development\AI-related'
+                stop_hook_active = $false
+            }
+
+            $first = Invoke-HandoffRelayProcess `
+                -RememberProjectsRoot $script:RememberProjectsRoot `
+                -Payload $firstPayload
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            $statePath = $draftPath -replace '\.draft\.md$', '.state.json'
+            '# invalid draft held across archival' |
+                Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+            $relayRoot = Split-Path -Parent $draftPath
+            $failedDraft = Join-Path $relayRoot (
+                'dddddddddddddddddddddddddddddddd.failed.20260825T010203004Z.draft.md'
+            )
+            $conflictState = Join-Path $relayRoot (
+                'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.conflict.20260825T010203004Z.state.json'
+            )
+            $nonRawDraft = Join-Path $relayRoot 'not-a-session-key.draft.md'
+            $looseKey = 'cccccccccccccccccccccccccccccccc'
+            $looseDraft = Join-Path $relayRoot "$looseKey.draft.md"
+            'failed archive' | Set-Content -LiteralPath $failedDraft -Encoding utf8NoBOM
+            '{"archive":"conflict"}' |
+                Set-Content -LiteralPath $conflictState -Encoding utf8NoBOM
+            'not an exact raw name' |
+                Set-Content -LiteralPath $nonRawDraft -Encoding utf8NoBOM
+            'truly loose draft' | Set-Content -LiteralPath $looseDraft -Encoding utf8NoBOM
+
+            $draftLock = [System.IO.FileStream]::new(
+                $draftPath,
+                [System.IO.FileMode]::Open,
+                [System.IO.FileAccess]::Read,
+                [System.IO.FileShare]::Read
+            )
+            try {
+                $firstPayload.stop_hook_active = $true
+                $failedCompletion = Invoke-HandoffRelayProcess `
+                    -RememberProjectsRoot $script:RememberProjectsRoot `
+                    -Payload $firstPayload
+            }
+            finally {
+                $draftLock.Dispose()
+            }
+
+            $secondPreparation = Invoke-HandoffRelayProcess `
+                -RememberProjectsRoot $script:RememberProjectsRoot `
+                -Payload @{
+                    hook_event_name = 'Stop'
+                    session_id = 'concurrent-preparation-session'
+                    turn_id = 'concurrent-preparation-turn'
+                    cwd = 'D:\Development\AI-related'
+                    stop_hook_active = $false
+                }
+
+            ($failedCompletion.Output | ConvertFrom-Json).systemMessage |
+                Should -BeExactly 'Handoff Relay: automatic context refresh needs another try.'
+            ($secondPreparation.Output | ConvertFrom-Json).decision |
+                Should -BeExactly 'block'
+            Test-Path -LiteralPath $statePath -PathType Leaf | Should -BeTrue
+            Test-Path -LiteralPath $draftPath -PathType Leaf | Should -BeTrue
+            (Get-Content -Raw -LiteralPath $draftPath).Trim() |
+                Should -BeExactly '# invalid draft held across archival'
+            @(Get-ChildItem -LiteralPath $relayRoot -Filter '*.orphaned.*.draft.md' |
+                Where-Object Name -Like "$(Split-Path -LeafBase $draftPath).orphaned.*") |
+                Should -HaveCount 0
+            Test-Path -LiteralPath $looseDraft | Should -BeFalse
+            @(Get-ChildItem -LiteralPath $relayRoot -Filter "$looseKey.orphaned.*.draft.md") |
+                Should -HaveCount 1
+            (Get-Content -Raw -LiteralPath $failedDraft).Trim() |
+                Should -BeExactly 'failed archive'
+            (Get-Content -Raw -LiteralPath $conflictState).Trim() |
+                Should -BeExactly '{"archive":"conflict"}'
+            (Get-Content -Raw -LiteralPath $nonRawDraft).Trim() |
+                Should -BeExactly 'not an exact raw name'
+            (Get-Content -Raw -LiteralPath $target).Trim() |
+                Should -BeExactly '# stable handoff'
         }
 
         It 'cleans a noisy draft and atomically publishes the compact fixed schema on the second Stop' {
@@ -707,7 +1049,11 @@ This paragraph is intentionally ignored.
                 -RememberProjectsRoot $script:RememberProjectsRoot `
                 -Payload $payload
 
-            $second.Output.Trim() | Should -BeExactly '{}'
+            $secondOutput = $second.Output | ConvertFrom-Json
+            $secondOutput.PSObject.Properties.Name | Should -Not -Contain 'decision'
+            $secondOutput.systemMessage | Should -BeExactly (
+                'Handoff Relay: next-session context refreshed.'
+            )
             $published = Get-Content -Raw -LiteralPath $target
             $published | Should -Match '^# Handoff'
             $published | Should -Match 'handoff-relay:v1'
@@ -728,6 +1074,102 @@ This paragraph is intentionally ignored.
             $health.cleaning.droppedItems | Should -BeGreaterThan 0
             $health.cleaning.truncatedItems | Should -BeGreaterThan 0
             $health.cleaning.ignoredLines | Should -BeGreaterThan 0
+        }
+
+        It 'accepts exact section names without Markdown prefixes and publishes the handoff' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            '# old handoff' | Set-Content -LiteralPath $target -Encoding utf8NoBOM
+            $payload = @{
+                hook_event_name = 'Stop'
+                session_id = 'plain-heading-session'
+                turn_id = 'plain-heading-turn'
+                cwd = 'D:\Development\AI-related'
+                stop_hook_active = $false
+            }
+
+            $first = Invoke-HandoffRelayProcess `
+                -RememberProjectsRoot $script:RememberProjectsRoot `
+                -Payload $payload
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            @'
+Summary
+- Plain headings came from the exact failed runtime shape.
+Outcome
+- The completed work remains available for the next session.
+Verified state
+- [verified] The regression fixture is complete. Evidence: every required section is present.
+Changed surfaces
+- Source and test fixtures changed.
+Verification
+- The isolated relay process reached its publication pass.
+Open risks
+- None.
+Next gate
+- Run the full lifecycle suite.
+'@ | Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+
+            $payload.stop_hook_active = $true
+            $second = Invoke-HandoffRelayProcess `
+                -RememberProjectsRoot $script:RememberProjectsRoot `
+                -Payload $payload
+
+            $secondOutput = $second.Output | ConvertFrom-Json
+            $secondOutput.systemMessage | Should -BeExactly (
+                'Handoff Relay: next-session context refreshed.'
+            )
+            $published = Get-Content -Raw -LiteralPath $target
+            $published | Should -Match '(?m)^## Summary\r?$'
+            $published | Should -Match 'Plain headings came from the exact failed runtime shape.'
+        }
+
+        It 'quarantines and reports a current draft whose transaction state disappeared' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            '# stable handoff' | Set-Content -LiteralPath $target -Encoding utf8NoBOM
+            $payload = @{
+                hook_event_name = 'Stop'
+                session_id = 'missing-state-session'
+                turn_id = 'missing-state-turn'
+                cwd = 'D:\Development\AI-related'
+                stop_hook_active = $false
+            }
+
+            $first = Invoke-HandoffRelayProcess `
+                -RememberProjectsRoot $script:RememberProjectsRoot `
+                -Payload $payload
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            New-TestHandoffDraft -Marker 'MISSING-STATE-MARKER' |
+                Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+            $statePath = $draftPath -replace '\.draft\.md$', '.state.json'
+            Remove-Item -LiteralPath $statePath -Force
+
+            $payload.stop_hook_active = $true
+            $second = Invoke-HandoffRelayProcess `
+                -RememberProjectsRoot $script:RememberProjectsRoot `
+                -Payload $payload
+
+            $secondOutput = $second.Output | ConvertFrom-Json
+            $secondOutput.systemMessage | Should -BeExactly (
+                'Handoff Relay: automatic context refresh needs another try.'
+            )
+            (Get-Content -Raw -LiteralPath $target).Trim() | Should -BeExactly '# stable handoff'
+            Test-Path -LiteralPath $draftPath | Should -BeFalse
+            @(
+                Get-ChildItem `
+                    -LiteralPath (Split-Path -Parent $draftPath) `
+                    -Filter '*.orphaned.*.draft.md'
+            ).Count | Should -BeExactly 1
+
+            $healthPath = Join-Path (
+                Split-Path -Parent $script:RememberProjectsRoot
+            ) 'handoff-relay\latest-status.json'
+            $health = Get-Content -Raw -LiteralPath $healthPath | ConvertFrom-Json
+            $health.status | Should -BeExactly 'FAILED'
+            $health.code | Should -BeExactly 'state-missing'
+            $health.details.draftQuarantined | Should -BeExactly 'True'
         }
 
         It 'drops explicit speculation from factual sections without rejecting a contract-valid risk' {
@@ -961,7 +1403,11 @@ This paragraph is intentionally ignored.
                 -RememberProjectsRoot $script:RememberProjectsRoot `
                 -Payload $payload
 
-            $second.Output.Trim() | Should -BeExactly '{}'
+            $failureMessage = ($second.Output | ConvertFrom-Json).systemMessage
+            $failureMessage | Should -BeExactly (
+                'Handoff Relay: automatic context refresh needs another try.'
+            )
+            $failureMessage | Should -Not -Match 'draft-invalid|canonical|not published'
             (Get-Content -Raw -LiteralPath $target).Trim() | Should -BeExactly '# preserved handoff'
             $healthPath = Join-Path (Split-Path -Parent $script:RememberProjectsRoot) 'handoff-relay\latest-status.json'
             $health = Get-Content -Raw -LiteralPath $healthPath | ConvertFrom-Json
@@ -1661,6 +2107,16 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
             $manifest.skills | Should -BeExactly './skills/'
             Test-Path -LiteralPath $script:PluginSkill -PathType Leaf | Should -BeTrue
             (Get-Content -Raw -LiteralPath $script:PluginSkill) | Should -Match '(?m)^name: devhome-lifecycle$'
+        }
+
+        It 'documents behavioral health and foreign hook attribution' {
+            $skill = Get-Content -Raw -LiteralPath $script:PluginSkill
+
+            $skill | Should -Match 'durable capture output'
+            $skill | Should -Match 'exact failing launcher token'
+            $skill | Should -Match 'Get-Command python3 -All'
+            $skill | Should -Match 'foreign plugin hooks'
+            $skill | Should -Match 'does not clear a foreign hook failure'
         }
 
         It 'registers one reconciliation hook without duplicating behavior hooks' {

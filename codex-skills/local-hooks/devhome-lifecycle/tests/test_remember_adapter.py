@@ -144,9 +144,20 @@ def make_fake_plugin(
     return root
 
 
-def make_echo_plugin(home: Path, version: str) -> Path:
-    body = '#!/bin/bash\nprintf "%s\\n%s\\n" "$CLAUDE_CONFIG_DIR" "$CLAUDE_PROJECT_DIR" >&2\ncat\n'
-    return make_fake_plugin(home, version, complete=True, body=body)
+def write_remember_routing(codex_home: Path, **overrides: object) -> Path:
+    remember_root = codex_home.parent / "remember"
+    config = {
+        "data_dir": (remember_root / "projects" / "{slug}").as_posix(),
+        **overrides,
+    }
+    config_path = remember_root / "config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps(config, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return config_path
 
 
 def process_fixture(testcase: unittest.TestCase, event: str = "PostToolUse"):
@@ -155,6 +166,7 @@ def process_fixture(testcase: unittest.TestCase, event: str = "PostToolUse"):
     source = home / "sessions" / "2026" / "08" / "13" / "rollout-session-1.jsonl"
     append_jsonl(source, user_record("smoke"))
     context = adapter.HookContext(event, "session-1", Path(r"D:\Devtools"), source)
+    write_remember_routing(home)
     return home, context, adapter.AdapterLayout.for_home(home)
 
 
@@ -746,27 +758,176 @@ class BridgeTests(unittest.TestCase):
         make_fake_plugin(home, "0.21.0", complete=False)
         self.assertEqual(adapter.discover_remember_plugin(home).name, "0.20.0")
 
-    def test_real_git_bash_receives_private_environment_and_payload(self):
+    def test_real_git_bash_receives_private_home_and_atomically_mirrored_routing(self):
         home, context, layout = process_fixture(self)
-        plugin = make_echo_plugin(home, "0.20.0")
+        source_config = home.parent / "remember" / "config.json"
+        selected_project = (
+            home.parent / "remember" / "projects" / adapter.slug_project(context.cwd)
+        )
+        real_home = home.parent / "real-home"
+        real_userprofile = home.parent / "real-userprofile"
+        fake_claude = real_userprofile / ".local" / "bin" / "claude.exe"
+        fake_claude.parent.mkdir(parents=True)
+        fake_claude.write_bytes(b"must-not-run")
+        actual_home = Path(os.environ.get("CODEX_HOME", r"D:\DevHome\state\codex"))
+        actual_plugin = adapter.discover_remember_plugin(actual_home)
+        probe = home.parent / "probe-python-home.py"
+        probe.write_text(
+            (
+                "import json, sys\n"
+                "from pathlib import Path\n"
+                "sys.path.insert(0, sys.argv[1])\n"
+                "from pipeline import spawn_guard\n"
+                "print(json.dumps({'home': str(Path.home()), "
+                "'record_dir': str(spawn_guard.record_dir())}, separators=(',', ':')))\n"
+            ),
+            encoding="utf-8",
+        )
+        hook_body = (
+            "#!/bin/bash\n"
+            f'[ -d "{selected_project.as_posix()}" ] || exit 61\n'
+            '[ ! -e "$CLAUDE_PROJECT_DIR/.remember" ] || exit 62\n'
+            'printf "%s\\n%s\\n%s\\n%s\\n%s\\n" "$(cygpath -w "$HOME")" "$(cygpath -w "$REMEMBER_REAL_HOME")" "$(cygpath -w "$USERPROFILE")" "$(cygpath -w "$REMEMBER_REAL_USERPROFILE")" "$(cygpath -w "$CLAUDE_CONFIG_DIR")" >&2\n'
+            f'"{Path(sys.executable).as_posix()}" -B "{probe.as_posix()}" "{actual_plugin.as_posix()}" >&2\n'
+            'cat "$HOME/.remember/config.json" >&2\n'
+            "cat\n"
+        )
+        plugin = make_fake_plugin(home, "0.20.0", complete=True, body=hook_body)
         payload_text = json.dumps(hook_payload(context))
-        result = adapter.invoke_upstream(context, layout, plugin, payload_text)
-        self.assertEqual(json.loads(result.stdout)["session_id"], context.session_id)
-        private_root, project_dir = result.stderr.splitlines()
-        self.assertEqual(native_git_bash_path(private_root), layout.claude_config)
-        self.assertEqual(native_git_bash_path(project_dir), context.cwd)
+        with mock.patch.dict(
+            os.environ,
+            {"HOME": str(real_home), "USERPROFILE": str(real_userprofile)},
+            clear=False,
+        ):
+            result = adapter.invoke_upstream(context, layout, plugin, payload_text)
 
-    def test_installed_post_tool_hook_bootstraps_capture_markers(self):
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["session_id"], context.session_id)
+        (
+            private_home,
+            restored_home,
+            private_userprofile,
+            restored_userprofile,
+            private_config,
+            python_probe,
+            mirrored_config,
+        ) = result.stderr.splitlines()
+        probe_result = json.loads(python_probe)
+        expected_record_dir = (
+            layout.upstream_home / ".remember" / "run" / "summarizers"
+        )
+        self.assertEqual(native_git_bash_path(private_home), layout.upstream_home)
+        self.assertEqual(native_git_bash_path(restored_home), real_home)
+        self.assertEqual(native_git_bash_path(private_userprofile), layout.upstream_home)
+        self.assertEqual(native_git_bash_path(restored_userprofile), real_userprofile)
+        self.assertEqual(native_git_bash_path(private_config), layout.claude_config)
+        self.assertEqual(Path(probe_result["home"]), layout.upstream_home)
+        self.assertEqual(Path(probe_result["record_dir"]), expected_record_dir)
+        self.assertTrue(expected_record_dir.is_relative_to(layout.root))
+        mirrored_path = layout.upstream_home / ".remember" / "config.json"
+        self.assertEqual(mirrored_path.read_bytes(), source_config.read_bytes())
+        self.assertEqual(mirrored_config, source_config.read_text(encoding="utf-8").strip())
+        self.assertEqual(list(mirrored_path.parent.glob(f".{mirrored_path.name}.*.tmp")), [])
+        self.assertTrue(selected_project.is_dir())
+        self.assertFalse((context.cwd / ".remember").exists())
+
+    def assert_routing_rejected(self, mode: str) -> None:
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        home = root / "codex"
+        project = root / "project"
+        project.mkdir()
+        source = home / "sessions" / "2026" / "08" / "14" / "rollout.jsonl"
+        append_jsonl(source, user_record("routing gate"))
+        context = adapter.HookContext("PostToolUse", "session-1", project, source)
+        config_path = write_remember_routing(home)
+        expected_data_dir = (home.parent / "remember" / "projects" / "{slug}").as_posix()
+        if mode == "missing":
+            config_path.unlink()
+        elif mode == "malformed":
+            config_path.write_bytes(b"{")
+        elif mode == "oversized":
+            config_path.write_bytes(b"{" + (b" " * (64 * 1024)) + b"}")
+        elif mode == "wrong-root":
+            config_path.write_text(
+                json.dumps(
+                    {"data_dir": (root / "other" / "projects" / "{slug}").as_posix()}
+                ),
+                encoding="utf-8",
+            )
+        elif mode == "duplicate-data-dir":
+            encoded = json.dumps(expected_data_dir)
+            config_path.write_text(
+                f'{{"data_dir":{encoded},"data_dir":{encoded}}}',
+                encoding="utf-8",
+            )
+        elif mode.startswith("constant:"):
+            constant = mode.removeprefix("constant:")
+            config_path.write_text(
+                f'{{"data_dir":{json.dumps(expected_data_dir)},"value":{constant}}}',
+                encoding="utf-8",
+            )
+        else:
+            self.fail(f"unknown routing rejection mode: {mode}")
+
+        marker = root / "upstream-ran"
+        make_fake_plugin(
+            home,
+            "0.20.0",
+            complete=True,
+            body=(
+                "#!/bin/bash\n"
+                f'printf invoked > "{marker.as_posix()}"\n'
+                "cat\n"
+            ),
+        )
+        environment = os.environ.copy()
+        environment["CODEX_HOME"] = str(home)
+        result = subprocess.run(
+            [sys.executable, str(MODULE_PATH), "--event", context.event],
+            input=json.dumps(hook_payload(context)),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env=environment,
+            timeout=10,
+            check=False,
+        )
+
+        layout = adapter.AdapterLayout.for_home(home)
+        selected_project = (
+            home.parent / "remember" / "projects" / adapter.slug_project(context.cwd)
+        )
+        self.assertEqual(
+            (result.returncode, result.stdout.strip(), result.stderr),
+            (0, "{}", ""),
+        )
+        self.assertFalse(marker.exists())
+        self.assertFalse(selected_project.exists())
+        self.assertFalse((layout.upstream_home / ".remember" / "config.json").exists())
+        self.assertFalse((project / ".remember").exists())
+
+    def test_missing_invalid_and_wrong_root_routing_never_fall_back(self):
+        for mode in ("missing", "malformed", "oversized", "wrong-root"):
+            with self.subTest(mode=mode):
+                self.assert_routing_rejected(mode)
+
+    def test_duplicate_data_dir_routing_never_falls_back(self):
+        self.assert_routing_rejected("duplicate-data-dir")
+
+    def test_nonstandard_json_constants_never_fall_back(self):
+        for constant in ("NaN", "Infinity", "-Infinity"):
+            with self.subTest(constant=constant):
+                self.assert_routing_rejected(f"constant:{constant}")
+
+    def test_installed_post_tool_hook_uses_validated_temp_sibling_store(self):
         raw = Path(self.enterContext(tempfile.TemporaryDirectory()))
         home = raw / "codex"
         user_home = raw / "home"
         project = raw / "project"
         project.mkdir()
-        config_path = user_home / ".remember" / "config.json"
-        config_path.parent.mkdir(parents=True)
-        config_path.write_text(
-            json.dumps({"thresholds": {"delta_lines_trigger": 1_000_000}}),
-            encoding="utf-8",
+        config_path = write_remember_routing(
+            home,
+            thresholds={"delta_lines_trigger": 1_000_000},
         )
         fake_claude = user_home / ".local" / "bin" / "claude.exe"
         fake_claude.parent.mkdir(parents=True)
@@ -799,7 +960,10 @@ class BridgeTests(unittest.TestCase):
             result = adapter.invoke_upstream(context, layout, plugin, payload_text)
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        remember_tmp = project / ".remember" / "tmp"
+        selected_project = (
+            home.parent / "remember" / "projects" / adapter.slug_project(project)
+        )
+        remember_tmp = selected_project / "tmp"
         self.assertTrue((remember_tmp / "post-tool-ran").is_file(), result.stderr)
         self.assertTrue(
             (remember_tmp / "capture-alive.d" / context.session_id).is_file(),
@@ -813,8 +977,13 @@ class BridgeTests(unittest.TestCase):
         self.assertFalse((remember_tmp / "save-session.pid").exists())
         self.assertFalse((remember_tmp / "last-save.json").exists())
         self.assertFalse((remember_tmp / "last-save-ts").exists())
-        autonomous_logs = project / ".remember" / "logs" / "autonomous"
+        autonomous_logs = selected_project / "logs" / "autonomous"
         self.assertEqual(list(autonomous_logs.glob("*")), [])
+        self.assertEqual(
+            (layout.upstream_home / ".remember" / "config.json").read_bytes(),
+            config_path.read_bytes(),
+        )
+        self.assertFalse((project / ".remember").exists())
         self.assertEqual(fake_claude.read_bytes(), b"must-not-run")
 
     def test_upstream_failure_is_neutral_and_diagnostics_are_redacted(self):
@@ -953,15 +1122,27 @@ class BridgeTests(unittest.TestCase):
         )
         self.assertEqual((result.returncode, result.stdout), (0, "context-line\n"))
 
-    def test_claude_wrapper_clears_private_config_and_forwards_arguments(self):
+    def test_claude_wrapper_restores_home_and_userprofile_before_nested_claude(self):
         temp_root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         fake = temp_root / "fake-claude.cmd"
         fake.write_text(
-            "@echo off\nif defined CLAUDE_CONFIG_DIR exit /b 41\necho %*\n",
+            (
+                "@echo off\n"
+                "if defined CLAUDE_CONFIG_DIR exit /b 41\n"
+                'if /i not "%HOME%"=="%EXPECTED_HOME%" exit /b 42\n'
+                'if /i not "%USERPROFILE%"=="%EXPECTED_USERPROFILE%" exit /b 43\n'
+                "echo %*\n"
+            ),
             encoding="utf-8",
         )
         environment = os.environ.copy()
         environment["CLAUDE_CONFIG_DIR"] = str(temp_root / "private")
+        environment["HOME"] = str(temp_root / "private-home")
+        environment["REMEMBER_REAL_HOME"] = str(temp_root / "real-home")
+        environment["EXPECTED_HOME"] = environment["REMEMBER_REAL_HOME"]
+        environment["USERPROFILE"] = str(temp_root / "private-userprofile")
+        environment["REMEMBER_REAL_USERPROFILE"] = str(temp_root / "real-userprofile")
+        environment["EXPECTED_USERPROFILE"] = environment["REMEMBER_REAL_USERPROFILE"]
         environment["REMEMBER_REAL_CLAUDE_BIN"] = str(fake)
         result = subprocess.run(
             ["cmd.exe", "/d", "/c", str(WRAPPER_PATH), "--version"],

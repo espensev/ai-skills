@@ -79,6 +79,9 @@ This is the highest-autonomy command. It runs the entire lifecycle without user 
 7. **Auto-advance** through subsequent groups as agents complete
 8. **Merge** all agent worktrees into main
 9. **Verify** builds, tests, and readiness
+{{#claude}}
+10. **Deliver** the validated campaign with a narrow commit and normal push
+{{/claude}}
 
 ```
 {{cmd}}manager go "Add X feature with Y approach"
@@ -330,6 +333,25 @@ state directly.
    ```
    If `[commands].build` is configured, run that too.
 
+{{#claude}}
+6. **Deliver before cleanup.** Stage only campaign-owned validated files,
+   create a focused commit (unless the campaign commits are already reachable),
+   and normally push the current branch without another confirmation. If commit
+   or push fails, preserve the worktrees and report the exact gate.
+
+7. **Clean up only proven-safe worktrees.** Refuse dirty worktrees. Remove a
+   branch only when it is reachable from the delivered commit; preserve every
+   unmerged branch:
+   ```bash
+   git worktree remove <path>
+   git merge-base --is-ancestor <branch> HEAD && git branch -d <branch>
+   ```
+
+8. **Report summary.** For each agent: no-op / merged / conflict-resolved.
+   Include test results, delivered commit and remote ref, preserved recovery
+   worktrees, and any issues.
+{{/claude}}
+{{#codex}}
 6. **Clean up.** Remove all agent worktrees and branches:
    ```bash
    git worktree remove <path> --force
@@ -338,6 +360,7 @@ state directly.
 
 7. **Report summary.** For each agent: no-op / merged / conflict-resolved.
    Include test results and any issues.
+{{/codex}}
 
 ### Conflict resolution rules:
 
@@ -579,6 +602,16 @@ This loop continues until all agents are done or blocked by failures.
 Never leave TODOs in spec files during plan execution. Read source files and write
 complete, actionable instructions.
 
+{{#claude}}
+### Delivery is part of completion
+After verification passes, stage only campaign-owned files, commit them, and
+normally push the current branch. The initiating implementation request is the
+authorization; do not stop for a second approval. Never force-push or rewrite
+history. On missing authentication, ambiguous ownership/ancestry, or push
+failure, preserve the local commit and recovery worktrees and report the exact
+remaining gate.
+
+{{/claude}}
 ### Error recovery
 Failed agent → mark failed → log the error → continue with remaining agents.
 Report failures in the final summary. Do not halt the pipeline for a single failure.

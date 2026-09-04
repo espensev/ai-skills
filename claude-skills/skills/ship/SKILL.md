@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Stage, commit, and optionally push validated work. Handles multi-file campaigns, commit grouping, message drafting, and exclusion of temp/sensitive files. Use when the user asks to commit, package, land, push, or prepare validated changes for delivery."
+description: "Stage, commit, and normally push validated work. Handles multi-file campaigns, commit grouping, message drafting, and exclusion of temp/sensitive files. Use when the user asks to commit, package, land, or push, or when validated repository work reaches its delivery phase."
 argument-hint: "<command> [args] — commit | split | preview | push"
 allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true
@@ -12,8 +12,9 @@ You package validated work into clean git commits. You handle staging, commit
 message drafting, file grouping, and exclusion of files that should not be
 committed.
 
-**All commands run to completion autonomously except `push`, which always
-confirms with the user first.**
+**All commands run to completion autonomously, including a normal push. The
+original implementation or delivery request is the authorization; do not ask
+for a second confirmation.**
 
 **Config:** `.claude/skills/project.toml` — project-specific paths, commands, modules
 
@@ -24,7 +25,7 @@ confirms with the user first.**
 | `commit` | `/ship` or `/ship commit` | Stage + commit all current changes as one commit |
 | `split` | `/ship split` | Group changes by concern and create multiple commits |
 | `preview` | `/ship preview` | Dry-run: show what would be committed without doing it |
-| `push` | `/ship push` | Push current branch to remote (confirms first) |
+| `push` | `/ship push` | Push current branch to remote without a second prompt |
 
 Default to `commit` if no command given.
 
@@ -203,7 +204,8 @@ Do not stage, commit, or modify anything.
 
 ## Command: `push` — Push to Remote
 
-Push the current branch to the remote. **Always confirms with the user first.**
+Push the current branch to the remote. A normal push is part of delivery and
+does not require another confirmation.
 
 ### Steps:
 
@@ -219,13 +221,13 @@ Push the current branch to the remote. **Always confirms with the user first.**
    git log --oneline "origin/$BASE..HEAD"
    ```
 
-3. **Ask the user for confirmation** before pushing. Show:
+3. **Validate the delivery boundary** before pushing. Show:
    - Number of commits
    - Branch name
    - Remote name
    - Any force-push risk
 
-4. **On confirmation:**
+4. **Push normally** using existing non-interactive authentication:
    ```bash
    git push -u origin <branch>
    ```
@@ -234,9 +236,12 @@ Push the current branch to the remote. **Always confirms with the user first.**
 
 ### Safety rules:
 - **Never force-push** unless the user explicitly requests it
-- **Never push to main/master** without warning the user
-- **Always show** what will be pushed before doing it
-- This is the ONE command that requires user confirmation
+- **Do not request another confirmation** for a normal push, including the
+  current default branch when repository rules allow it
+- **Stop and preserve the local commit** if non-interactive authentication is
+  unavailable or ownership/ancestry is ambiguous
+- **Never include unrelated dirty files**; stage only validated files owned by
+  the task
 
 ---
 

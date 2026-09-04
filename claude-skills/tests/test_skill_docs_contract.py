@@ -18,6 +18,9 @@ PRODUCT_BACKLOG = ROOT / "docs" / "product-cost-optimization-backlog.md"
 FILE_MAP = ROOT / "docs" / "file-map.md"
 EXAMPLES_README = ROOT / "examples" / "README.md"
 MANAGER_SKILL = SKILLS / "manager" / "SKILL.md"
+SHIP_SKILL = SKILLS / "ship" / "SKILL.md"
+CHIEF_OPERATOR_SKILL = SKILLS / "chief-operator" / "SKILL.md"
+BUILDER_AGENT = ROOT / "agent-definitions" / "builder.md"
 PLANNER_SKILL = SKILLS / "planner" / "SKILL.md"
 DEEP_AUDIT_SKILL = SKILLS / "deep-audit" / "SKILL.md"
 DIAGNOSING_BUGS_SKILL = SKILLS / "diagnosing-bugs" / "SKILL.md"
@@ -181,6 +184,23 @@ class TestSkillDocsContract(unittest.TestCase):
         manager = MANAGER_SKILL.read_text(encoding="utf-8")
         self.assertNotIn("### Phase 1: Load context", manager)
         self.assertIn("planning policy is loaded on demand", manager)
+
+    def test_validated_work_is_committed_and_normally_pushed_without_a_second_gate(self):
+        manager = MANAGER_SKILL.read_text(encoding="utf-8")
+        ship = SHIP_SKILL.read_text(encoding="utf-8")
+        chief_operator = CHIEF_OPERATOR_SKILL.read_text(encoding="utf-8")
+        builder = BUILDER_AGENT.read_text(encoding="utf-8")
+
+        self.assertIn("Deliver before cleanup", manager)
+        self.assertIn("normally push the current branch", manager)
+        self.assertNotIn("git worktree remove <path> --force", manager)
+        self.assertIn("does not require another confirmation", ship)
+        self.assertNotIn("Always confirms with the user first", ship)
+        self.assertNotIn("This is the ONE command that requires user confirmation", ship)
+        self.assertIn("normally push the current branch without another prompt", chief_operator)
+        self.assertNotIn("Approval gates (merge, push", chief_operator)
+        self.assertIn("create a focused commit", builder)
+        self.assertIn("the orchestrator owns the reviewed normal push", builder)
 
     def test_collision_prone_skills_use_trigger_first_descriptions(self):
         for skill in (

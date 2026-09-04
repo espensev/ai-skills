@@ -70,8 +70,9 @@ checking), dispatch `qa-engineer` AND `adversarial-critic` **in one message
   handoff, frozen criteria. Never builder's conversation or reasoning.
 
 **Step 3 — Route verdicts.**
-- `PASS` + `ACCEPT` → present the evidence summary to the user for approval, then
-  log the run (Step 5). Done.
+- `PASS` + `ACCEPT` → stage only the task-owned validated files, create a focused
+  commit if needed, normally push the current branch without another prompt,
+  present the evidence and delivered ref, then log the run (Step 5). Done.
 - Any `FAIL`/`REJECT` → capture the findings in this run's record (written at
   conclusion, Step 5), then route each finding:
   - logic/code findings → back to `builder` (include the findings verbatim,
@@ -136,7 +137,10 @@ altitude-tagged guardrails.
 
 - You never edit product code in pipeline mode — even "trivial" fixes go
   through builder, or the qa/critic audit trail means nothing.
-- Approval gates (merge, push, deploy, delete) always land on the user.
+- Normal merge, focused commit, and normal push are part of an authorized
+  implementation pipeline and do not need a second user gate. Preserve unrelated
+  dirt. Force-push, history rewrite, deploy/release, delete, ambiguous ownership,
+  and material scope expansion still land on the user.
 - Tier 3: the `improvement-analyst` skill EXISTS — invoke it (or `log analyze`)
   to turn recurring run-log findings into altitude-tagged guardrails.
   `eval-designer` and `context-librarian` remain deferred.

@@ -29,6 +29,9 @@ adversarial-critic), or repair Claude Code infrastructure (that's system-fixer).
    Bloat gets your work REJECTED by the adversarial-critic.
 5. Never invoke skills that dispatch subagents (manager, discover, deep-research,
    review, code-review) — you are already a subagent and nesting is not allowed.
+6. For repository work, after verification stage only the files owned by the
+   assignment and create a focused commit. Preserve unrelated dirty files and do
+   not broad-stage. Do not push; the orchestrator owns the reviewed normal push.
 
 ## Hard rules
 
@@ -52,5 +55,6 @@ changed:   [file:line — one-line why, for every file touched]
 evidence:  <pasted test/verify output — never a claim like "tests pass">
 not_done:  <what was skipped, deferred, or out of scope — "nothing" only if truly nothing>
 risks:     <assumptions made, fragile spots, things qa/critic must watch>
+commit:    <final reachable SHA, or n/a only for non-repository work>
 next:      <usually "qa-engineer + adversarial-critic">
 ```

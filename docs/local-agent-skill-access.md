@@ -78,8 +78,7 @@ Ai-Skills source, then updates the verified runtime projection if needed; until
 that SessionStart hook is trusted, automatic reconciliation is skipped.
 Unlike portable skill-copy targets, this machine-specific plugin's registration,
 cache, and three runtime files are pinned to `D:\DevHome\state\codex`;
-`CODEX_HOME` cannot redirect those surfaces into AppData. The adapter-state
-exception is called out separately below.
+`CODEX_HOME` cannot redirect those surfaces into AppData.
 
 The three lifecycle surfaces are intentionally distinct:
 
@@ -103,3 +102,24 @@ Installation does not prove activation. Plugin enablement and hook trust are
 Codex-managed user choices; after first installation or a hook command change,
 restart Codex, confirm `devhome-lifecycle@ai-skills` is enabled, and review the
 SessionStart reconciler in `/hooks`.
+
+## Remember bridge for Grok and Kimi
+
+Grok and Kimi Code run the same pinned upstream Remember checkout through a
+second source-only package, `codex-skills/local-hooks/remember-bridge`. It is
+not a plugin: the installer copies one Python script into the DevHome Remember
+root and the two hosts' hook configurations call that copy.
+
+| Surface | Location | Authority |
+|---|---|---|
+| Source | `D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\remember-bridge` | Canonical; update Git separately. |
+| Installed bridge | `D:\DevHome\state\remember\bridge\bin\Invoke-RememberBridge.py` | Refreshed by `Install-RememberBridge.ps1` after the machine verifier passes. |
+| Grok hooks | `D:\DevHome\state\grok\hooks\remember.json` | Hand-maintained global hooks file; always trusted by Grok. |
+| Kimi hooks | `[[hooks]]` tables in `D:\DevHome\state\kimi-code\config.toml` | Appended by hand with a dated `.bak`; the file also holds a provider key, never print it. |
+| Bridge state | `D:\DevHome\state\remember\bridge\<host>\` | Transcript mirrors, offsets, inject cache and logs; generated. |
+
+Read-only check:
+
+```powershell
+.\codex-skills\local-hooks\remember-bridge\Install-RememberBridge.ps1 -Check
+```

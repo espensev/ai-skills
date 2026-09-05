@@ -133,6 +133,19 @@ DevHome runtime projection:
 .\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeCodexHooks.ps1 -Check
 ```
 
+The Grok/Kimi Remember bridge is a second source-only package with its own
+tests. `Test-ReleaseReadiness.ps1` does not run them yet; run them by hand
+after touching `codex-skills\local-hooks\remember-bridge` and treat a failure
+as a live capture blocker for those two hosts. The end-to-end case needs Git
+Bash and the pinned checkout at `D:\DevHome\state\remember\artifacts\remember-current`
+and skips itself elsewhere:
+
+```powershell
+python -B -m unittest .\codex-skills\local-hooks\remember-bridge\tests\test_remember_bridge.py
+Invoke-Pester -Path .\codex-skills\local-hooks\remember-bridge\tests\RememberBridge-Install.Tests.ps1
+.\codex-skills\local-hooks\remember-bridge\Install-RememberBridge.ps1 -Check
+```
+
 Finally restart Codex, confirm `devhome-lifecycle@ai-skills` is enabled, review
 and trust the current SessionStart command in `/hooks`, and perform one attended
 new-session smoke. Source acquisition is outside all of these checks; none of

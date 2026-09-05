@@ -99,6 +99,17 @@ their isolated contract tests.
 The component stays out of `package/install-manifest.json`. Plugin enablement
 and hook trust remain user-controlled Codex state.
 
+`local-hooks/remember-bridge/` is the second source-only companion: the
+Grok/Kimi hook bridge that mirrors each host's transcript into a Claude-shaped
+JSONL and runs the pinned upstream Remember hook scripts. It is not a Codex
+plugin and has no `.codex-plugin` manifest.
+
+| Surface | Location | Rule |
+|---|---|---|
+| Source authority | `local-hooks/remember-bridge/` | Edit and review here; `Invoke-RememberBridge.py`, installer, README, tests. |
+| Installed copy | `D:\DevHome\state\remember\bridge\bin\Invoke-RememberBridge.py` | Refresh through `Install-RememberBridge.ps1`; hook commands point here. |
+| Bridge state | `D:\DevHome\state\remember\bridge\<host>\` | Mirrors, offsets, inject cache, logs; generated, never edited. |
+
 ## Agent Specs
 
 | Pattern | Purpose |

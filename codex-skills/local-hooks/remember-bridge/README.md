@@ -77,8 +77,11 @@ and logs the new process id.
 Probed on 2026-09-05 with a hook that spawns sleepers of every kind and
 records its own job-object state:
 
-- **Grok 1.0.13** runs each hook through `pwsh.exe` inside a Windows Job
-  Object and terminates that job the moment the hook returns. Plain
+- **Grok 1.0.13** runs each hook through `pwsh.exe` and kills every process
+  the hook started the moment the hook returns (the binary carries the Job
+  Object API names and `ProcessGroup::attach`; the probe's own job-object
+  reading was the same under Kimi, where children survive, so the mechanism
+  is inferred and the outcome is what was measured). Plain
   children, `CREATE_BREAKAWAY_FROM_JOB | DETACHED_PROCESS` children and
   double-forked grandchildren all died within a second, mid-session as well
   as at exit; the store's `logs\autonomous\save-*.log` files held only the
@@ -212,7 +215,7 @@ exercises the installer against disposable targets with fake verifiers.
   ten-second exit budget; the detached launch needs well under a second,
   and the flush itself then runs unattended.
 - Under Grok the in-tree `SessionStart` hook loses its own background
-  children (recovery force save, consolidation) to the job-object kill; see
+  children (recovery force save, consolidation) to Grok's kill-on-return; see
   "Host process trees".
 
 ## Rollback

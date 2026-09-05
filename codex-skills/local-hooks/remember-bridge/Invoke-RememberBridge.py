@@ -15,7 +15,7 @@ Runs as the hook command on a host whose hook payload and transcript Remember
    always names the mirror as `transcript_path` for capture events (no
    mirror, no upstream call). On Grok the two capture hooks (PostToolUse,
    SessionEnd) are launched detached through WMI `Win32_Process.Create`,
-   outside the Job Object Grok terminates when the hook returns, so
+   outside the process tree Grok kills when the hook returns, so
    upstream's backgrounded save survives the hook (see DETACHED_HOSTS),
 4. caches the SessionStart memory block and injects it once: Grok on the first
    PreToolUse (`additionalContext`), Kimi on the first UserPromptSubmit,
@@ -70,8 +70,9 @@ INJECT_CLIP = 9500
 CLIP_MARKER = "\n[remember-bridge: memory block clipped at 9,500 characters]"
 UPSTREAM_WAIT_SECONDS = 300
 # Hosts that terminate a hook's whole process tree when the hook returns.
-# Grok assigns each hook to a Windows Job Object (KILL_ON_JOB_CLOSE, no
-# breakaway) and terminates it as soon as the hook exits, so upstream's
+# Grok kills every process a hook started as soon as the hook exits (its
+# binary carries the Job Object API names; the probe could not separate
+# Grok's own job from the harness job it ran under), so upstream's
 # backgrounded save-session.sh dies with it (probe 2026-09-05: only a child
 # created through WMI, outside the hook's tree and job, survived). For these
 # hosts the bridge launches the capture hooks detached through

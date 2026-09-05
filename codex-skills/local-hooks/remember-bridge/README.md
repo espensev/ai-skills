@@ -42,12 +42,19 @@ with the host's native payload on stdin. In order it:
    is never split across two runs.
 3. Runs `scripts/<event>-hook.sh` from the pinned checkout through Git Bash
    with the environment Claude Code would provide: `CLAUDE_PLUGIN_ROOT` and
-   `PLUGIN_ROOT` (the checkout), `CLAUDE_PROJECT_DIR` (the project),
-   `CLAUDE_CONFIG_DIR=<bridge_root>\<host>` (so Remember's own transcript
-   lookup finds the mirror), `HOME` when unset (so `~/.remember/config.json`
-   is read). Stdin is a flat snake_case payload with `hook_event_name`,
-   `session_id`, `transcript_path` (only once the mirror exists), `cwd`, and
-   `source` or `reason` where the event carries one.
+   `PLUGIN_ROOT` (the checkout), `CLAUDE_PROJECT_DIR` (the project), `HOME`
+   when unset (so `~/.remember/config.json` is read). `CLAUDE_CONFIG_DIR` is
+   left alone: the nested `claude` summarizer reads its credentials from it,
+   and pointing it at the bridge root made every save fail with "Not logged
+   in". Stdin is a flat snake_case payload with `hook_event_name`,
+   `session_id`, `transcript_path`, `cwd`, and `source` or `reason` where the
+   event carries one. `PostToolUse` and `SessionEnd` always name the mirror
+   as `transcript_path`; when no mirror exists they skip upstream entirely,
+   because without that path Remember falls back to the newest transcript
+   under `~/.claude/projects/<slug>/` and would save a Claude Code session
+   under the Grok or Kimi session id. On Grok these two capture hooks are
+   launched detached (see "Host process trees" below); everything else runs
+   in-tree because the bridge needs its stdout.
 4. Handles recall. `SessionStart` stdout is cached at
    `<bridge_root>\<host>\inject\<session_id>.md` and printed nowhere. Grok
    receives it once, on the first `PreToolUse` of the session, as
@@ -58,10 +65,43 @@ with the host's native payload on stdin. In order it:
    and, when the Remember user config resolves a store, into that store's
    `logs\memory-YYYY-MM-DD.log` next to upstream's own lines.
 
-Every path exits 0 so the host is never blocked. The bridge waits only for
-the direct `bash` child (up to 300 s, never killed) and leaves upstream's
-disowned `SessionEnd` flush alone; stdout and stderr go through temporary
-files so a grandchild holding the pipe cannot stall the hook.
+Every path exits 0 so the host is never blocked. In-tree, the bridge waits
+only for the direct `bash` child (up to 300 s, never killed) and leaves
+upstream's disowned `SessionEnd` flush alone; stdout and stderr go through
+temporary files so a grandchild holding the pipe cannot stall the hook.
+Detached, it waits only for the WMI launcher (about a quarter of a second)
+and logs the new process id.
+
+## Host process trees
+
+Probed on 2026-09-05 with a hook that spawns sleepers of every kind and
+records its own job-object state:
+
+- **Grok 1.0.13** runs each hook through `pwsh.exe` inside a Windows Job
+  Object and terminates that job the moment the hook returns. Plain
+  children, `CREATE_BREAKAWAY_FROM_JOB | DETACHED_PROCESS` children and
+  double-forked grandchildren all died within a second, mid-session as well
+  as at exit; the store's `logs\autonomous\save-*.log` files held only the
+  `[post-tool] save triggered` header. Only a process created through WMI
+  `Win32_Process.Create` (parent `WmiPrvSE.exe`, outside the tree and the
+  job) survived. The bridge therefore launches `post-tool-hook.sh` and
+  `session-end-hook.sh` that way on Grok: it writes the payload, a
+  three-line launcher and a `.ps1` under `<bridge_root>\grok\tmp\detached\`
+  (pruned after two days), passes the full environment block explicitly
+  (WMI replaces the block rather than extending it), hides the console with
+  `ShowWindow=0`, and appends upstream's stdout/stderr to
+  `<bridge_root>\grok\logs\detached.log` (rotated at 2 MB). `SessionStart`
+  still runs in-tree because its stdout is the memory block, so the
+  background work that hook starts itself (the `features.recovery` force
+  save, `run-consolidation.sh`) does not survive under Grok; recovery is off
+  in this store's config and consolidation also runs from Claude sessions.
+- **Kimi Code 0.41.0** runs hooks through `cmd.exe` and lets every child
+  outlive both the hook and the session, so Kimi stays in-tree. Kimi's `-p`
+  mode never fires `SessionEnd`; only an interactive session flushes at exit.
+
+`REMEMBER_BRIDGE_DETACH=always|never` overrides the per-host default for
+both capture events. A failed detached launch falls back to the in-tree run
+and records `detach_error=` in the bridge log.
 
 A bare invocation prints the resolved configuration (plugin root, bridge
 root, bash, host homes, Remember config, data directory, hook script
@@ -128,6 +168,7 @@ carries its own environment instead of relying on hook `env` fields.
 | `REMEMBER_BRIDGE_ROOT` | `D:/DevHome/state/remember/bridge` | Mirrors, offsets, inject cache and bridge logs, per host. |
 | `REMEMBER_BRIDGE_BASH` | `C:/Program Files/Git/bin/bash.exe`, then `bash` on PATH | Shell that runs the upstream scripts. |
 | `GROK_HOME`, `KIMI_CODE_HOME` | `~/.grok`, `~/.kimi-code` | Where the native transcripts are looked up. |
+| `REMEMBER_BRIDGE_DETACH` | `auto` (Grok detached, Kimi in-tree) | `always` or `never` forces how `PostToolUse` and `SessionEnd` reach upstream. |
 
 Remember's own knobs still apply to the upstream scripts (`~/.remember/config.json`
 with `data_dir`, `REMEMBER_SUMMARIZER`, `REMEMBER_SUMMARIZER_FALLBACK`). The
@@ -143,9 +184,11 @@ Invoke-Pester -Path .\codex-skills\local-hooks\remember-bridge\tests\RememberBri
 The Python suite covers payload normalisation, the slug port (parity with
 `pipeline/slug.py`), both translators on sanitised captures, incremental
 mirroring, transcript lookup, config resolution, the per-event flows with a
-fake upstream, the grandchild-never-blocks contract with real Git Bash, and
-one end-to-end run of the pinned `save-session.sh --dry` over a bridge-built
-mirror (skipped when the checkout or Git Bash is absent). The Pester suite
+fake upstream, the detached-launch policy with a fake launcher, the
+grandchild-never-blocks contract with real Git Bash, one real WMI launch of
+a fixture script (skipped without Windows PowerShell), and one end-to-end
+run of the pinned `save-session.sh --dry` over a bridge-built mirror
+(skipped when the checkout or Git Bash is absent). The Pester suite
 exercises the installer against disposable targets with fake verifiers.
 
 ## Known limitations
@@ -163,6 +206,14 @@ exercises the installer against disposable targets with fake verifiers.
 - The store log says `claude-code` for the envelope because the mirror is
   Claude-shaped. Upstream issues proposing native `grok` and `kimi` hosts
   would remove the mirror step at a later pin bump.
+- Kimi `-p` (headless) sessions never fire `SessionEnd`, so their tail is
+  captured only by a mid-session save or by the next session's recovery
+  (off in this store's config). Grok bounds its `SessionEnd` hooks with a
+  ten-second exit budget; the detached launch needs well under a second,
+  and the flush itself then runs unattended.
+- Under Grok the in-tree `SessionStart` hook loses its own background
+  children (recovery force save, consolidation) to the job-object kill; see
+  "Host process trees".
 
 ## Rollback
 

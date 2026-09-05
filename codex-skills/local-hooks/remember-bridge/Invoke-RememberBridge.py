@@ -10,7 +10,13 @@ Runs as the hook command on a host whose hook payload and transcript Remember
    under `<bridge_root>/<host>/projects/<slug>/<session_id>.jsonl`,
 3. runs the upstream hook script through Git Bash with the environment Claude
    Code would have provided (`CLAUDE_PLUGIN_ROOT`, `CLAUDE_PROJECT_DIR`,
-   `CLAUDE_CONFIG_DIR`, `HOME`) and a flat snake_case payload on stdin,
+   `HOME`; never `CLAUDE_CONFIG_DIR`, which the nested `claude` summarizer
+   needs for its credentials) and a flat snake_case payload on stdin that
+   always names the mirror as `transcript_path` for capture events (no
+   mirror, no upstream call). On Grok the two capture hooks (PostToolUse,
+   SessionEnd) are launched detached through WMI `Win32_Process.Create`,
+   outside the Job Object Grok terminates when the hook returns, so
+   upstream's backgrounded save survives the hook (see DETACHED_HOSTS),
 4. caches the SessionStart memory block and injects it once: Grok on the first
    PreToolUse (`additionalContext`), Kimi on the first UserPromptSubmit,
 5. writes one `[bridge]` log line per event to `<bridge_root>/<host>/logs/`
@@ -29,6 +35,8 @@ Environment (all optional):
     REMEMBER_BRIDGE_ROOT         bridge state root            (default D:/DevHome/state/remember/bridge)
     REMEMBER_BRIDGE_BASH         bash to run upstream with    (default C:/Program Files/Git/bin/bash.exe, then PATH)
     GROK_HOME, KIMI_CODE_HOME    host homes                   (default ~/.grok, ~/.kimi-code)
+    REMEMBER_BRIDGE_DETACH       auto|always|never: run the capture hooks outside the host's
+                                 process tree (default auto = Grok yes, Kimi no)
 """
 
 from __future__ import annotations
@@ -61,6 +69,19 @@ GIT_BASH = "C:/Program Files/Git/bin/bash.exe"
 INJECT_CLIP = 9500
 CLIP_MARKER = "\n[remember-bridge: memory block clipped at 9,500 characters]"
 UPSTREAM_WAIT_SECONDS = 300
+# Hosts that terminate a hook's whole process tree when the hook returns.
+# Grok assigns each hook to a Windows Job Object (KILL_ON_JOB_CLOSE, no
+# breakaway) and terminates it as soon as the hook exits, so upstream's
+# backgrounded save-session.sh dies with it (probe 2026-09-05: only a child
+# created through WMI, outside the hook's tree and job, survived). For these
+# hosts the bridge launches the capture hooks detached through
+# Win32_Process.Create instead of in-tree. REMEMBER_BRIDGE_DETACH=always|never
+# overrides the per-host default.
+DETACHED_HOSTS = frozenset({"grok"})
+DETACH_MODES = ("auto", "always", "never")
+DETACHED_FILE_MAX_AGE_SECONDS = 2 * 24 * 3600
+DETACHED_LOG_ROTATE_BYTES = 2 * 1024 * 1024
+LAUNCHER_WAIT_SECONDS = 45
 SESSION_ID_RE = re.compile(r"^[a-f0-9][a-f0-9-]*$")
 SESSION_START_SOURCES = frozenset({"startup", "resume", "clear", "compact", "fork"})
 REASON_RE = re.compile(r"^[A-Za-z0-9_]+$")
@@ -220,12 +241,21 @@ def store_dir_for(cfg: BridgeConfig, slug: str | None) -> str | None:
 
 
 def upstream_env(cfg: BridgeConfig, host: str, project: str | None, base_env) -> dict:
+    """Environment for the upstream hook script.
+
+    `CLAUDE_CONFIG_DIR` is deliberately left alone. Upstream's summarizer runs
+    the `claude` CLI, which reads its credentials from that directory, so
+    pointing it at the bridge root turned every save into "Not logged in".
+    Upstream's directory fallbacks (`claude_projects_dir()`, `_session_dir`)
+    therefore resolve to Claude Code's own transcripts, which is why
+    `_run_event` never lets a capture event reach upstream without an explicit
+    `transcript_path`: with one supplied, those fallbacks are never consulted.
+    """
     env = {key: value for key, value in base_env.items() if key != "REMEMBER_TRANSCRIPT_PATH"}
     env["CLAUDE_PLUGIN_ROOT"] = cfg.plugin_root
     env["PLUGIN_ROOT"] = cfg.plugin_root
     if project:
         env["CLAUDE_PROJECT_DIR"] = project
-    env["CLAUDE_CONFIG_DIR"] = cfg.host_root(host)
     if not env.get("HOME"):
         env["HOME"] = cfg.home
     return env
@@ -580,6 +610,145 @@ def run_upstream(cfg: BridgeConfig, script: str, payload_text: str, env: dict, c
     return UpstreamResult(rc, _read_and_discard(out_path), _read_and_discard(err_path), elapsed)
 
 
+# ── detached launch (outside the host's job object / process tree) ───────────
+
+@dataclass
+class LaunchResult:
+    ok: bool
+    detail: str
+    elapsed_ms: int
+    pid: int | None = None
+
+
+def detach_mode(env) -> str:
+    mode = (env.get("REMEMBER_BRIDGE_DETACH") or "auto").strip().lower()
+    return mode if mode in DETACH_MODES else "auto"
+
+
+def should_detach(host: str, event: str, env) -> bool:
+    if event not in CAPTURE_EVENTS:
+        return False
+    mode = detach_mode(env)
+    if mode == "always":
+        return True
+    if mode == "never":
+        return False
+    return host in DETACHED_HOSTS
+
+
+def _sh_quote(value: str) -> str:
+    return "'" + value.replace("'", "'\\''") + "'"
+
+
+def _ps_quote(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def powershell_path(env) -> str | None:
+    system_root = env.get("SystemRoot") or env.get("SYSTEMROOT") or env.get("windir") or "C:/Windows"
+    candidate = os.path.join(system_root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+    if os.path.isfile(candidate):
+        return candidate
+    return shutil.which("pwsh") or shutil.which("powershell")
+
+
+def prune_detached_files(directory: str, now: float | None = None) -> int:
+    """Remove launch scripts and payloads older than DETACHED_FILE_MAX_AGE_SECONDS."""
+    now = time.time() if now is None else now
+    removed = 0
+    for path in glob.glob(os.path.join(directory, "*")):
+        try:
+            if now - os.path.getmtime(path) > DETACHED_FILE_MAX_AGE_SECONDS:
+                os.remove(path)
+                removed += 1
+        except OSError:
+            continue
+    return removed
+
+
+def _rotate_log(path: str) -> None:
+    try:
+        if os.path.getsize(path) > DETACHED_LOG_ROTATE_BYTES:
+            os.replace(path, path + ".1")
+    except OSError:
+        pass
+
+
+def launch_detached(cfg: BridgeConfig, script: str, payload_text: str, env: dict, cwd: str | None,
+                    host_root: str, event: str, sid: str) -> LaunchResult:
+    """Start `bash <script> < payload` through WMI so it is not our descendant.
+
+    Win32_Process.Create runs in the WMI provider host, so the new process is
+    neither in the caller's Job Object nor reachable from its process tree.
+    The environment block is passed explicitly (WMI replaces, not extends,
+    the block when EnvironmentVariables is given) and the console is hidden
+    with ShowWindow=0. Upstream's stdout/stderr go to
+    `<host_root>/logs/detached.log`; its own narrative still lands in the
+    store log as usual.
+    """
+    started = time.monotonic()
+    if not cfg.bash:
+        return LaunchResult(False, "bash not found (REMEMBER_BRIDGE_BASH, Git for Windows, PATH)", 0)
+    powershell = powershell_path(env)
+    if not powershell:
+        return LaunchResult(False, "powershell.exe/pwsh not found for the detached launch", 0)
+    work_dir = f"{host_root}/tmp/detached"
+    log_path = f"{host_root}/logs/detached.log"
+    try:
+        os.makedirs(work_dir, exist_ok=True)
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    except OSError as exc:
+        return LaunchResult(False, f"cannot prepare {work_dir}: {exc}", int((time.monotonic() - started) * 1000))
+    prune_detached_files(work_dir)
+    _rotate_log(log_path)
+    stamp = f"{_dt.datetime.now().strftime('%Y%m%d-%H%M%S')}-{os.getpid()}-{event}-{sid[:8] or 'nosid'}"
+    payload_path = f"{work_dir}/{stamp}.json"
+    sh_path = f"{work_dir}/{stamp}.sh"
+    ps1_path = f"{work_dir}/{stamp}.ps1"
+    header = f"$(date +%H:%M:%S) [bridge] detached {event} session={sid or '-'} script={os.path.basename(script)} pid=$$"
+    sh_lines = [
+        "#!/bin/bash",
+        f"cd {_sh_quote(cwd)} 2>/dev/null || true" if cwd else "true",
+        f'printf \'%s\\n\' "{header}" >> {_sh_quote(log_path)}',
+        f"exec bash {_sh_quote(script)} < {_sh_quote(payload_path)} >> {_sh_quote(log_path)} 2>&1",
+    ]
+    block = [f"{key}={value}" for key, value in env.items()
+             if key and not key.startswith("=") and "\n" not in value and "\x00" not in value]
+    command_line = f'"{cfg.bash}" "{sh_path}"'
+    ps_lines = [
+        "$ErrorActionPreference = 'Stop'",
+        "$vars = [string[]]@(" + ",".join(_ps_quote(item) for item in block) + ")",
+        "$startup = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ ShowWindow = [uint16]0; EnvironmentVariables = $vars }",
+        "$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = "
+        + _ps_quote(command_line) + "; ProcessStartupInformation = $startup }",
+        'Write-Output ("rv=" + $r.ReturnValue + " pid=" + $r.ProcessId)',
+        "exit [int]$r.ReturnValue",
+    ]
+    try:
+        with open(payload_path, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(payload_text)
+        with open(sh_path, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write("\n".join(sh_lines) + "\n")
+        with open(ps1_path, "w", encoding="utf-8-sig", newline="\r\n") as handle:
+            handle.write("\n".join(ps_lines) + "\n")
+    except OSError as exc:
+        return LaunchResult(False, f"cannot write launch files: {exc}", int((time.monotonic() - started) * 1000))
+    try:
+        proc = subprocess.run(
+            [powershell, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", ps1_path],
+            capture_output=True, text=True, timeout=LAUNCHER_WAIT_SECONDS,
+            stdin=subprocess.DEVNULL, env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return LaunchResult(False, f"launcher failed: {exc}", int((time.monotonic() - started) * 1000))
+    elapsed = int((time.monotonic() - started) * 1000)
+    match = re.search(r"rv=(\d+) pid=(\d*)", proc.stdout or "")
+    if proc.returncode == 0 and match and match.group(1) == "0":
+        return LaunchResult(True, "wmi", elapsed, int(match.group(2)) if match.group(2) else None)
+    detail = (proc.stdout or "").strip()[-120:] or (proc.stderr or "").strip()[-200:] or f"launcher rc={proc.returncode}"
+    return LaunchResult(False, f"Win32_Process.Create failed: {detail}", elapsed)
+
+
 # ── inject-once cache ────────────────────────────────────────────────────────
 
 def inject_cache_path(host_root: str, sid: str) -> str:
@@ -660,6 +829,8 @@ def print_config(cfg: BridgeConfig, stdout) -> None:
         f"kimi_home={cfg.kimi_home} (exists={'yes' if os.path.isdir(cfg.kimi_home) else 'no'})",
         f"remember_config={cfg.remember_config or 'none'}",
         f"data_dir={cfg.data_dir or 'none (Remember will use its own default)'}",
+        f"detach={detach_mode(os.environ)} (capture hooks run outside the host's process tree on: {', '.join(sorted(DETACHED_HOSTS))})",
+        f"powershell={powershell_path(os.environ) or 'not found'}",
     ]
     for event, script in HOOK_SCRIPTS.items():
         if script:
@@ -700,13 +871,14 @@ def parse_args(argv: list[str]) -> tuple[str | None, str | None, list[str]]:
 
 # ── main ─────────────────────────────────────────────────────────────────────
 
-def main(argv=None, *, stdin=None, stdout=None, stderr=None, env=None, runner=None) -> int:
+def main(argv=None, *, stdin=None, stdout=None, stderr=None, env=None, runner=None, launcher=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     stdin = sys.stdin if stdin is None else stdin
     stdout = sys.stdout if stdout is None else stdout
     stderr = sys.stderr if stderr is None else stderr
     env = os.environ if env is None else env
     runner = runner or run_upstream
+    launcher = launcher or launch_detached
     host, event, problems = parse_args(argv)
     cfg = BridgeConfig.from_env(env)
     if host is None and event is None and not problems:
@@ -716,7 +888,7 @@ def main(argv=None, *, stdin=None, stdout=None, stderr=None, env=None, runner=No
         print_config(cfg, stdout)
         return 0
     try:
-        return _run_event(cfg, host, event, problems, stdin, stdout, stderr, env, runner)
+        return _run_event(cfg, host, event, problems, stdin, stdout, stderr, env, runner, launcher)
     except Exception as exc:  # a hook must never block the host
         try:
             BridgeLogger(cfg.host_root(host) if host in HOSTS else None, None, stderr).line(host=host, event=event, error=f"{type(exc).__name__}: {exc}")
@@ -730,7 +902,7 @@ def main(argv=None, *, stdin=None, stdout=None, stderr=None, env=None, runner=No
             pass
 
 
-def _run_event(cfg, host, event, problems, stdin, stdout, stderr, env, runner) -> int:
+def _run_event(cfg, host, event, problems, stdin, stdout, stderr, env, runner, launcher=launch_detached) -> int:
     if host not in HOSTS:
         BridgeLogger(None, None, stderr).line(host=host, event=event, error="unknown host; expected grok or kimi")
         return 0
@@ -781,6 +953,14 @@ def _run_event(cfg, host, event, problems, stdin, stdout, stderr, env, runner) -
                 fields["mirror_note"] = mirrored.note
         else:
             fields["mirror_note"] = "native transcript not found"
+        if not (mirror_path and os.path.isfile(mirror_path)):
+            # Without a transcript_path upstream falls back to the newest
+            # transcript under Claude Code's own projects directory and would
+            # save a Claude session under this host's session id.
+            fields["upstream"] = "skipped"
+            fields["skip_reason"] = "no mirror to hand upstream"
+            logger.line(**fields, ms=int((time.monotonic() - started) * 1000))
+            return 0
 
     prefix = ""
     if event == "UserPromptSubmit" and host == "kimi" and sid_ok:
@@ -812,7 +992,19 @@ def _run_event(cfg, host, event, problems, stdin, stdout, stderr, env, runner) -
         if isinstance(reason, str) and REASON_RE.match(reason):
             upstream_payload["reason"] = reason
 
-    result = runner(cfg, script, json.dumps(upstream_payload, ensure_ascii=False) + "\n", upstream_env(cfg, host, project, env), project)
+    payload_text = json.dumps(upstream_payload, ensure_ascii=False) + "\n"
+    child_env = upstream_env(cfg, host, project, env)
+    if should_detach(host, event, env):
+        launched = launcher(cfg, script, payload_text, child_env, project, host_root, event, sid)
+        if launched.ok:
+            fields.update(mode="detached", launcher=launched.detail, launch_ms=launched.elapsed_ms)
+            if launched.pid:
+                fields["pid"] = launched.pid
+            logger.line(**fields, ms=int((time.monotonic() - started) * 1000))
+            return 0
+        fields["detach_error"] = launched.detail
+    fields["mode"] = "inline"
+    result = runner(cfg, script, payload_text, child_env, project)
     fields["rc"] = "timeout" if result.rc is None else result.rc
     fields["upstream_ms"] = result.elapsed_ms
     if result.stderr.strip():

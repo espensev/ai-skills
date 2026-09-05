@@ -126,6 +126,22 @@ class FakeRunner:
         return bridge.UpstreamResult(rc=self.rc, stdout=self.stdout, stderr="", elapsed_ms=1)
 
 
+class FakeLauncher:
+    """Stands in for launch_detached: records calls, returns a canned result."""
+
+    def __init__(self, ok=True, detail="wmi", pid=4242):
+        self.calls = []
+        self.ok = ok
+        self.detail = detail
+        self.pid = pid
+
+    def __call__(self, cfg, script, payload_text, env, cwd, host_root, event, sid):
+        self.calls.append({"script": script, "payload": json.loads(payload_text), "env": env, "cwd": cwd, "host_root": host_root, "event": event, "sid": sid})
+        if not self.ok:
+            return bridge.LaunchResult(False, "Win32_Process.Create failed: rv=8", 12, None)
+        return bridge.LaunchResult(True, self.detail, 12, self.pid)
+
+
 def base_env(tmp, host_dirs=True):
     env = {
         "USERPROFILE": str(Path(tmp) / "home"),
@@ -144,11 +160,11 @@ def base_env(tmp, host_dirs=True):
     return env
 
 
-def run_main(argv, stdin_obj, env, runner):
+def run_main(argv, stdin_obj, env, runner, launcher=None):
     out = io.StringIO()
     err = io.StringIO()
     stdin = io.StringIO(json.dumps(stdin_obj) if isinstance(stdin_obj, dict) else stdin_obj)
-    rc = bridge.main(argv, stdin=stdin, stdout=out, stderr=err, env=env, runner=runner)
+    rc = bridge.main(argv, stdin=stdin, stdout=out, stderr=err, env=env, runner=runner, launcher=launcher or FakeLauncher())
     return rc, out.getvalue(), err.getvalue()
 
 
@@ -463,18 +479,21 @@ class ConfigTests(unittest.TestCase):
         cfg = bridge.BridgeConfig.from_env({"HOME": "/h", "GROK_HOME": "D:\\g", "KIMI_CODE_HOME": "D:/k", "REMEMBER_BRIDGE_ROOT": "D:/b", "REMEMBER_BRIDGE_PLUGIN_ROOT": "D:/p"}, exists=lambda p: False, which=lambda n: None)
         self.assertEqual((cfg.home, cfg.grok_home, cfg.kimi_home, cfg.bridge_root, cfg.plugin_root), ("/h", "D:/g", "D:/k", "D:/b", "D:/p"))
 
-    def test_upstream_env_sets_the_claude_shaped_variables(self):
+    def test_upstream_env_sets_the_claude_shaped_variables_but_never_config_dir(self):
         cfg = bridge.BridgeConfig.from_env({"USERPROFILE": "C:/Users/u", "PATH": "x"}, exists=lambda p: False, which=lambda n: None)
         env = bridge.upstream_env(cfg, "grok", "D:/proj", {"PATH": "x", "USERPROFILE": "C:/Users/u", "REMEMBER_TRANSCRIPT_PATH": "ambient"})
         self.assertEqual(env["CLAUDE_PLUGIN_ROOT"], cfg.plugin_root)
         self.assertEqual(env["PLUGIN_ROOT"], cfg.plugin_root)
         self.assertEqual(env["CLAUDE_PROJECT_DIR"], "D:/proj")
-        self.assertEqual(env["CLAUDE_CONFIG_DIR"], cfg.bridge_root + "/grok")
+        # The nested `claude` summarizer reads its credentials from this
+        # directory; pointing it at the bridge root made every save fail
+        # with "Not logged in".
+        self.assertNotIn("CLAUDE_CONFIG_DIR", env)
         self.assertEqual(env["HOME"], "C:/Users/u")
         self.assertNotIn("REMEMBER_TRANSCRIPT_PATH", env)
         self.assertNotIn("REMEMBER_SUMMARIZER", env)
-        env = bridge.upstream_env(cfg, "kimi", "D:/proj", {"HOME": "/keep"})
-        self.assertEqual(env["HOME"], "/keep")
+        env = bridge.upstream_env(cfg, "kimi", "D:/proj", {"HOME": "/keep", "CLAUDE_CONFIG_DIR": "D:/ambient"})
+        self.assertEqual((env["HOME"], env["CLAUDE_CONFIG_DIR"]), ("/keep", "D:/ambient"))
 
     def test_bare_invocation_prints_configuration(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -495,9 +514,12 @@ class EventFlowTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
         self.env = base_env(self.tmp.name)
+        # The inline flow is what most of these tests pin; the detached
+        # policy has its own tests below that drop this override.
+        self.env["REMEMBER_BRIDGE_DETACH"] = "never"
         self.project = self.root / "proj"
         self.project.mkdir()
-        self.grok_native = write_jsonl(self.root / "grok" / "sessions" / "D%3A%5Cproj" / GROK_SID / "chat_history.jsonl", grok_lines())
+        self.grok_native =write_jsonl(self.root / "grok" / "sessions" / "D%3A%5Cproj" / GROK_SID / "chat_history.jsonl", grok_lines())
         self.kimi_native = write_jsonl(self.root / "kimi" / "sessions" / "wd_proj_1" / KIMI_SID / "agents" / "main" / "wire.jsonl", kimi_lines())
 
     def tearDown(self):
@@ -581,7 +603,7 @@ class EventFlowTests(unittest.TestCase):
         call = runner.calls[0]
         self.assertTrue(call["script"].endswith("post-tool-hook.sh"))
         self.assertEqual(call["payload"]["transcript_path"], str(mirror).replace("\\", "/"))
-        self.assertEqual(call["env"]["CLAUDE_CONFIG_DIR"], self.env["REMEMBER_BRIDGE_ROOT"].replace("\\", "/") + "/grok")
+        self.assertNotIn("CLAUDE_CONFIG_DIR", call["env"])
         self.assertEqual(call["cwd"], str(self.project).replace("\\", "/"))
 
     def test_kimi_session_end_mirrors_main_agent_and_passes_reason(self):
@@ -604,14 +626,79 @@ class EventFlowTests(unittest.TestCase):
         self.assertEqual(len(runner.calls), 1)
         self.assertNotIn("session_id", runner.calls[0]["payload"])
 
-    def test_missing_native_transcript_still_calls_upstream(self):
+    def test_missing_native_transcript_skips_upstream(self):
+        # Without a transcript_path upstream would fall back to the newest
+        # Claude Code transcript and save it under this Grok session id.
         runner = FakeRunner()
         payload = self.grok_payload("session_end")
         payload["sessionId"] = "0199aaaa-0000-7000-8000-000000000001"
-        rc, _, _ = run_main(["--host", "grok", "--event", "SessionEnd"], payload, self.env, runner)
-        self.assertEqual(rc, 0)
-        self.assertEqual(len(runner.calls), 1)
-        self.assertNotIn("transcript_path", runner.calls[0]["payload"])
+        rc, out, _ = run_main(["--host", "grok", "--event", "SessionEnd"], payload, self.env, runner)
+        self.assertEqual((rc, out, runner.calls), (0, "", []))
+        log = (Path(self.env["REMEMBER_BRIDGE_ROOT"]) / "grok" / "logs" / "bridge.log").read_text(encoding="utf-8")
+        self.assertIn("upstream=skipped", log)
+        self.assertIn("native transcript not found", log)
+
+    def detach_env(self, mode=None):
+        env = dict(self.env)
+        env.pop("REMEMBER_BRIDGE_DETACH", None)
+        if mode:
+            env["REMEMBER_BRIDGE_DETACH"] = mode
+        return env
+
+    def bridge_log(self, host, env=None):
+        return (Path((env or self.env)["REMEMBER_BRIDGE_ROOT"]) / host / "logs" / "bridge.log").read_text(encoding="utf-8")
+
+    def test_grok_capture_events_launch_upstream_detached_by_default(self):
+        runner, launcher = FakeRunner(), FakeLauncher()
+        env = self.detach_env()
+        rc, out, _ = run_main(["--host", "grok", "--event", "PostToolUse"], self.grok_payload("post_tool_use", toolName="Bash"), env, runner, launcher)
+        self.assertEqual((rc, out, runner.calls), (0, "", []))
+        self.assertEqual(len(launcher.calls), 1)
+        call = launcher.calls[0]
+        self.assertTrue(call["script"].endswith("post-tool-hook.sh"))
+        self.assertEqual(call["payload"]["transcript_path"], str(self.mirror_path("grok", GROK_SID)).replace("\\", "/"))
+        self.assertNotIn("CLAUDE_CONFIG_DIR", call["env"])
+        self.assertEqual(call["env"]["CLAUDE_PLUGIN_ROOT"], env["REMEMBER_BRIDGE_PLUGIN_ROOT"].replace("\\", "/"))
+        self.assertEqual((call["event"], call["sid"], call["cwd"]), ("PostToolUse", GROK_SID, str(self.project).replace("\\", "/")))
+        self.assertEqual(call["host_root"], env["REMEMBER_BRIDGE_ROOT"].replace("\\", "/") + "/grok")
+        log = self.bridge_log("grok", env)
+        self.assertIn("mode=detached", log)
+        self.assertIn("launcher=wmi", log)
+        self.assertIn("pid=4242", log)
+        rc, _, _ = run_main(["--host", "grok", "--event", "SessionEnd"], self.grok_payload("session_end", reason="shutdown"), env, runner, launcher)
+        self.assertEqual((rc, len(runner.calls), len(launcher.calls)), (0, 0, 2))
+        self.assertEqual(launcher.calls[1]["payload"]["reason"], "shutdown")
+        self.assertTrue(launcher.calls[1]["script"].endswith("session-end-hook.sh"))
+
+    def test_kimi_capture_events_stay_inline_by_default(self):
+        runner, launcher = FakeRunner(), FakeLauncher()
+        env = self.detach_env()
+        rc, _, _ = run_main(["--host", "kimi", "--event", "SessionEnd"], self.kimi_payload("SessionEnd", reason="exit"), env, runner, launcher)
+        self.assertEqual((rc, len(runner.calls), launcher.calls), (0, 1, []))
+        self.assertIn("mode=inline", self.bridge_log("kimi", env))
+
+    def test_detach_override_always_and_never(self):
+        runner, launcher = FakeRunner(), FakeLauncher()
+        run_main(["--host", "kimi", "--event", "PostToolUse"], self.kimi_payload("PostToolUse", tool_name="Bash"), self.detach_env("always"), runner, launcher)
+        self.assertEqual((len(runner.calls), len(launcher.calls)), (0, 1))
+        run_main(["--host", "grok", "--event", "SessionEnd"], self.grok_payload("session_end"), self.detach_env("never"), runner, launcher)
+        self.assertEqual((len(runner.calls), len(launcher.calls)), (1, 1))
+
+    def test_session_start_and_prompt_are_never_detached(self):
+        runner, launcher = FakeRunner(stdout="mem"), FakeLauncher()
+        env = self.detach_env("always")
+        run_main(["--host", "grok", "--event", "SessionStart"], self.grok_payload("session_start"), env, runner, launcher)
+        run_main(["--host", "kimi", "--event", "UserPromptSubmit"], self.kimi_payload("UserPromptSubmit", prompt="hi"), env, runner, launcher)
+        self.assertEqual((len(runner.calls), launcher.calls), (2, []))
+
+    def test_failed_detached_launch_falls_back_to_inline(self):
+        runner, launcher = FakeRunner(), FakeLauncher(ok=False)
+        env = self.detach_env()
+        rc, _, _ = run_main(["--host", "grok", "--event", "PostToolUse"], self.grok_payload("post_tool_use"), env, runner, launcher)
+        self.assertEqual((rc, len(runner.calls), len(launcher.calls)), (0, 1, 1))
+        log = self.bridge_log("grok", env)
+        self.assertIn("detach_error=", log)
+        self.assertIn("mode=inline", log)
 
     def test_unknown_event_and_host_exit_zero(self):
         runner = FakeRunner()
@@ -659,6 +746,36 @@ class EventFlowTests(unittest.TestCase):
         self.assertIn("[bridge]", logs[0].read_text(encoding="utf-8"))
 
 
+# ── detached-launch policy and helpers ───────────────────────────────────────
+
+class DetachPolicyTests(unittest.TestCase):
+    def test_should_detach_follows_the_host_default_and_the_override(self):
+        self.assertTrue(bridge.should_detach("grok", "PostToolUse", {}))
+        self.assertTrue(bridge.should_detach("grok", "SessionEnd", {}))
+        self.assertFalse(bridge.should_detach("grok", "SessionStart", {}))
+        self.assertFalse(bridge.should_detach("grok", "UserPromptSubmit", {"REMEMBER_BRIDGE_DETACH": "always"}))
+        self.assertFalse(bridge.should_detach("kimi", "SessionEnd", {}))
+        self.assertTrue(bridge.should_detach("kimi", "SessionEnd", {"REMEMBER_BRIDGE_DETACH": "always"}))
+        self.assertFalse(bridge.should_detach("grok", "SessionEnd", {"REMEMBER_BRIDGE_DETACH": "never"}))
+        self.assertTrue(bridge.should_detach("grok", "SessionEnd", {"REMEMBER_BRIDGE_DETACH": "bogus"}), "unknown values mean auto")
+        self.assertEqual(bridge.detach_mode({"REMEMBER_BRIDGE_DETACH": " Always "}), "always")
+
+    def test_quoting_helpers(self):
+        self.assertEqual(bridge._sh_quote("it's"), "'it'\\''s'")
+        self.assertEqual(bridge._ps_quote("it's"), "'it''s'")
+
+    def test_prune_detached_files_removes_only_stale_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old = Path(tmp) / "old.sh"
+            new = Path(tmp) / "new.sh"
+            old.write_text("x", encoding="utf-8")
+            new.write_text("y", encoding="utf-8")
+            stale = time.time() - bridge.DETACHED_FILE_MAX_AGE_SECONDS - 60
+            os.utime(old, (stale, stale))
+            self.assertEqual(bridge.prune_detached_files(tmp), 1)
+            self.assertEqual([p.name for p in Path(tmp).iterdir()], ["new.sh"])
+
+
 # ── real bash: the bridge must not wait for a grandchild ─────────────────────
 
 @unittest.skipUnless(HAVE_BASH, "Git Bash not available")
@@ -686,6 +803,44 @@ class GrandchildTests(unittest.TestCase):
             elapsed = time.monotonic() - started
             self.assertEqual(result.stdout.strip(), "first")
             self.assertLess(elapsed, 4.0, f"a grandchild inheriting stdout must not block the bridge ({elapsed:.1f}s)")
+
+
+# ── real WMI launch: the detached child runs outside our process tree ────────
+
+HAVE_POWERSHELL = os.name == "nt" and bridge.powershell_path(os.environ) is not None
+
+
+@unittest.skipUnless(HAVE_BASH and HAVE_POWERSHELL, "needs Git Bash and Windows PowerShell")
+class DetachedLaunchTests(unittest.TestCase):
+    def test_launch_detached_runs_the_script_with_payload_env_and_cwd(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            marker = root / "marker.txt"
+            script = root / "fixture-hook.sh"
+            script.write_text("#!/bin/bash\nread -r payload\nprintf '%s|%s|%s|%s\\n' \"$payload\" \"$CLAUDE_PLUGIN_ROOT\" \"$(pwd)\" \"$PPID\" > \"$MARKER\"\nexit 0\n", encoding="utf-8")
+            cfg = bridge.BridgeConfig.from_env({"USERPROFILE": tmp, "PATH": os.environ.get("PATH", "")})
+            self.assertIsNotNone(cfg.bash)
+            env = dict(os.environ)
+            env["MARKER"] = str(marker).replace("\\", "/")
+            env["CLAUDE_PLUGIN_ROOT"] = "D:/pinned"
+            host_root = str(root / "bridge" / "grok").replace("\\", "/")
+            cwd = str(root).replace("\\", "/")
+            result = bridge.launch_detached(cfg, str(script).replace("\\", "/"), '{"hook_event_name": "SessionEnd"}\n', env, cwd, host_root, "SessionEnd", GROK_SID)
+            self.assertTrue(result.ok, result.detail)
+            self.assertIsNotNone(result.pid)
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline and not marker.exists():
+                time.sleep(0.25)
+            self.assertTrue(marker.exists(), "the detached script never ran")
+            payload, plugin_root, pwd, ppid = marker.read_text(encoding="utf-8").strip().split("|")
+            self.assertEqual(payload, '{"hook_event_name": "SessionEnd"}')
+            self.assertEqual(plugin_root, "D:/pinned", "the environment block must reach the detached child")
+            self.assertTrue(pwd.endswith(root.name), pwd)
+            self.assertEqual(ppid, "1", "an MSYS parent pid of 1 means the child was not spawned by this process tree")
+            generated = sorted(p.suffix for p in (Path(host_root) / "tmp" / "detached").iterdir())
+            self.assertEqual(generated, [".json", ".ps1", ".sh"])
+            detached_log = (Path(host_root) / "logs" / "detached.log").read_text(encoding="utf-8")
+            self.assertIn(f"detached SessionEnd session={GROK_SID} script=fixture-hook.sh", detached_log)
 
 
 # ── end-to-end against the pinned checkout ───────────────────────────────────

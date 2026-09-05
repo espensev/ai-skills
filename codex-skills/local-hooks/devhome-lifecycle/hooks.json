@@ -1,5 +1,5 @@
 {
-  "description": "Windows-native DevHome safety guardrails and Remember compatibility hooks.",
+  "description": "Windows-native DevHome safety guardrails and the Codex Handoff Relay.",
   "hooks": {
     "PreToolUse": [
       {
@@ -11,19 +11,6 @@
             "commandWindows": "pwsh -NoProfile -File \"D:\\DevHome\\state\\codex\\hooks\\Invoke-DevHomeHook.ps1\" -Event PreToolUse",
             "timeout": 5,
             "statusMessage": "Checking DevHome safety policy"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "D:\\DevHome\\state\\codex\\hooks\\Invoke-RememberAdapter.cmd --event SessionStart",
-            "commandWindows": "D:\\DevHome\\state\\codex\\hooks\\Invoke-RememberAdapter.cmd --event SessionStart",
-            "timeout": 20,
-            "statusMessage": "Loading Remember context through Codex adapter"
           }
         ]
       }
@@ -41,30 +28,9 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "D:\\DevHome\\state\\codex\\hooks\\Invoke-RememberAdapter.cmd --event PostToolUse",
-            "commandWindows": "D:\\DevHome\\state\\codex\\hooks\\Invoke-RememberAdapter.cmd --event PostToolUse",
-            "async": true,
-            "timeout": 5,
-            "statusMessage": "Capturing Codex session for Remember"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "D:\\DevHome\\state\\codex\\hooks\\Invoke-RememberAdapter.cmd --event Stop",
-            "commandWindows": "D:\\DevHome\\state\\codex\\hooks\\Invoke-RememberAdapter.cmd --event Stop",
-            "timeout": 5,
-            "statusMessage": "Finalizing Remember transcript capture"
-          },
           {
             "type": "command",
             "command": "pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"D:\\DevHome\\state\\codex\\hooks\\Invoke-HandoffRelay.ps1\" -Provider Codex",

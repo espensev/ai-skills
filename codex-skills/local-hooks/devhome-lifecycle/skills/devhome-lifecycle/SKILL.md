@@ -1,6 +1,6 @@
 ---
 name: devhome-lifecycle
-description: Check, synchronize, or diagnose the machine-local DevHome Codex safety and Remember lifecycle hooks plus the shared Claude/Codex Handoff Relay on enrolled snd-desk. Use when asked about hook drift, lifecycle plugin status, automatic handoffs, or updating either DevHome hook projection.
+description: Check, synchronize, or diagnose the machine-local DevHome Codex safety lifecycle hooks plus the shared Claude/Codex Handoff Relay on enrolled snd-desk. Use when asked about hook drift, lifecycle plugin status, automatic handoffs, or updating either DevHome hook projection.
 ---
 
 # DevHome lifecycle
@@ -13,24 +13,20 @@ trust state by hand.
 
 - Source authority:
   `D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle`
-- Codex projection: `D:\DevHome\state\codex\hooks.json` and the five owned
+- Codex projection: `D:\DevHome\state\codex\hooks.json` and the two owned
   scripts under `D:\DevHome\state\codex\hooks`
 - Claude projection: `D:\DevHome\state\claude\settings.json` plus
   `D:\DevHome\state\claude\hooks\Invoke-HandoffRelay.ps1`
 - Plugin cache:
   `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle`; never
   develop there or relocate it through `CODEX_HOME`
-- Known blocker: adapter-generated mirrors, locks, checkpoints, and logs still
-  derive from ambient `CODEX_HOME`; do not claim full no-AppData placement until
-  the production adapter pins those paths to physical DevHome.
-- Known blocker: the installed Remember PostToolUse integration currently
-  exceeds the adapter's three-second bound and fails open. It can touch liveness
-  markers before timing out; a green cache/runtime check or marker alone does
-  not prove end-to-end Remember capture.
+- Remember: Codex capture runs through the upstream `remember@remember-dev`
+  plugin (pinned checkout `D:\DevHome\state\remember\artifacts\remember-current`),
+  not through this package; the former Windows adapter was retired in 0.3.1.
 
 The package remains outside the portable provider manifests. The
 `devhome-lifecycle@ai-skills` plugin contributes this skill and one startup
-reconciler; the five Codex event groups remain registered only through the
+reconciler; the three Codex event groups remain registered only through the
 installed DevHome projection so they do not execute twice. Handoff Relay is the
 shared Stop implementation installed into both agents.
 
@@ -98,11 +94,10 @@ capture. For a visible `PreToolUse:<tool>` or `PostToolUse:<tool>` error:
    owning source or supported provider setting, restart the affected provider,
    and repeat that same call.
 
-Treat `.remember\tmp\capture-alive`, `post-tool-ran`, and hook log pings as
-liveness breadcrumbs, not durable capture output. Check whether the adapter
-checkpoint/mirror and the event's expected Remember artifact advance, and
-compare `D:\DevHome\state\codex\remember-adapter\logs\adapter-errors.log`
-before and after the exact event. Do not patch an installed plugin cache, and do
+Treat hook log pings as liveness breadcrumbs, not durable capture output. For
+Remember, check whether the store checkpoint (`tmp\last-save.json`) and the
+event's expected artifact under `D:\DevHome\state\remember\projects\<slug>`
+advance before and after the exact event. Do not patch an installed plugin cache, and do
 not disable or rewrite a foreign hook without user authorization. A successful
 DevHome lifecycle `-Check` does not clear a foreign hook failure.
 

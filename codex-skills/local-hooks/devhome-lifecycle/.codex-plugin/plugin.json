@@ -1,6 +1,6 @@
 {
   "name": "devhome-lifecycle",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Keep the verified DevHome lifecycle hooks and Handoff Relay synchronized.",
   "author": {
     "name": "espensev"

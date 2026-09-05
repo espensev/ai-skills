@@ -1663,9 +1663,9 @@ Next gate
     }
 
     Context 'Codex hook configuration' {
-        It 'runs the registered SessionStart command through PowerShell and cmd' {
+        It 'runs the registered UserPromptSubmit command through PowerShell and cmd' {
             $config = Get-Content -Raw -LiteralPath $script:HooksConfig | ConvertFrom-Json
-            $command = $config.hooks.SessionStart[0].hooks[0].command
+            $command = $config.hooks.UserPromptSubmit[0].hooks[0].command
 
             $results = foreach ($shell in @('PowerShell', 'Cmd')) {
                 [pscustomobject]@{
@@ -1681,17 +1681,17 @@ Next gate
             }
         }
 
-        It 'registers the approved Windows-native safety and Remember adapter hooks' {
+        It 'registers the approved Windows-native safety and Handoff Relay hooks' {
             $config = Get-Content -Raw -LiteralPath $script:HooksConfig | ConvertFrom-Json
 
             $eventNames = @($config.hooks.PSObject.Properties.Name)
             $eventNames | Should -Contain 'PreToolUse'
-            $eventNames | Should -Contain 'SessionStart'
             $eventNames | Should -Contain 'UserPromptSubmit'
-            $eventNames | Should -Contain 'PostToolUse'
             $eventNames | Should -Contain 'Stop'
+            $eventNames | Should -Not -Contain 'SessionStart' -Because 'Remember context now arrives through the remember@remember-dev plugin hooks, not this projection'
+            $eventNames | Should -Not -Contain 'PostToolUse' -Because 'the retired Remember adapter was the only PostToolUse registration'
             $config.hooks.PreToolUse[0].matcher | Should -Be '^(?:Bash|apply_patch|Edit|Write)$'
-            @($config.hooks.UserPromptSubmit).Count | Should -Be 1 -Because 'prompt blockers and prompt consumers run concurrently, so Remember must consume only the accepted transcript'
+            @($config.hooks.UserPromptSubmit).Count | Should -Be 1 -Because 'the secret blocker is the only prompt-time registration owned by this projection'
             $registrations = @(
                 @{
                     Hook = $config.hooks.PreToolUse[0].hooks[0]
@@ -1702,19 +1702,7 @@ Next gate
                     Command = 'pwsh -NoProfile -File "D:\DevHome\state\codex\hooks\Invoke-DevHomeHook.ps1" -Event UserPromptSubmit'
                 },
                 @{
-                    Hook = $config.hooks.SessionStart[0].hooks[0]
-                    Command = 'D:\DevHome\state\codex\hooks\Invoke-RememberAdapter.cmd --event SessionStart'
-                },
-                @{
-                    Hook = $config.hooks.PostToolUse[0].hooks[0]
-                    Command = 'D:\DevHome\state\codex\hooks\Invoke-RememberAdapter.cmd --event PostToolUse'
-                },
-                @{
                     Hook = $config.hooks.Stop[0].hooks[0]
-                    Command = 'D:\DevHome\state\codex\hooks\Invoke-RememberAdapter.cmd --event Stop'
-                },
-                @{
-                    Hook = $config.hooks.Stop[0].hooks[1]
                     Command = 'pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "D:\DevHome\state\codex\hooks\Invoke-HandoffRelay.ps1" -Provider Codex'
                 }
             )
@@ -1722,20 +1710,14 @@ Next gate
                 $registration.Hook.command | Should -BeExactly $registration.Command
                 $registration.Hook.commandWindows | Should -BeExactly $registration.Command
             }
-            $config.hooks.SessionStart[0].hooks[0].timeout | Should -Be 20
-            $config.hooks.SessionStart[0].hooks[0].statusMessage | Should -Be 'Loading Remember context through Codex adapter'
-            $config.hooks.PostToolUse[0].hooks[0].timeout | Should -Be 5
-            $config.hooks.PostToolUse[0].hooks[0].async | Should -BeTrue -Because 'Remember capture is informational and must not add Git Bash latency to every tool call'
-            $config.hooks.PostToolUse[0].hooks[0].statusMessage | Should -Be 'Capturing Codex session for Remember'
             @($config.hooks.Stop).Count | Should -Be 1
             $config.hooks.Stop[0].PSObject.Properties.Name | Should -Not -Contain 'matcher'
-            @($config.hooks.Stop[0].hooks).Count | Should -Be 2
+            @($config.hooks.Stop[0].hooks).Count | Should -Be 1 -Because 'Handoff Relay is the only Stop registration once the Remember adapter is retired'
             $config.hooks.Stop[0].hooks[0].timeout | Should -Be 5
-            $config.hooks.Stop[0].hooks[0].statusMessage | Should -Be 'Finalizing Remember transcript capture'
-            $config.hooks.Stop[0].hooks[1].timeout | Should -Be 5
-            $config.hooks.Stop[0].hooks[1].statusMessage | Should -Be 'Handoff Relay: preparing next-session context'
+            $config.hooks.Stop[0].hooks[0].statusMessage | Should -Be 'Handoff Relay: preparing next-session context'
             ($config | ConvertTo-Json -Depth 20) | Should -Not -Match 'bash \\"'
             ($config | ConvertTo-Json -Depth 20) | Should -Not -Match 'remember\\[0-9]+\.[0-9]+\.[0-9]+'
+            ($config | ConvertTo-Json -Depth 20) | Should -Not -Match 'Invoke-RememberAdapter|Invoke-RememberClaude'
         }
 
         It 'does not register the raw Remember plugin hooks' {
@@ -1912,9 +1894,6 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
             $expectedFiles = @(
                 'hooks.json',
                 'hooks\Invoke-DevHomeHook.ps1',
-                'hooks\Invoke-RememberAdapter.cmd',
-                'hooks\Invoke-RememberAdapter.py',
-                'hooks\Invoke-RememberClaude.cmd',
                 'hooks\Invoke-HandoffRelay.ps1'
             )
             foreach ($relativePath in $expectedFiles) {

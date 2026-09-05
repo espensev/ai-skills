@@ -87,15 +87,14 @@ Codebase analysis providers and synthesis pipeline.
 
 `local-hooks/devhome-lifecycle/` is not part of the portable campaign runtime.
 It contains the repository authority for `devhome-lifecycle@ai-skills`, its
-single startup reconciler, the five-file DevHome behavior-hook projection, and
+single startup reconciler, the three-file DevHome behavior-hook projection, and
 their isolated contract tests.
 
 | Surface | Location | Rule |
 |---|---|---|
 | Source authority | `local-hooks/devhome-lifecycle/` | Edit and review here. |
 | Plugin cache | `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle\` | Materialized projection; refresh through the root installer. |
-| Runtime projection | `D:\DevHome\state\codex\hooks.json` plus four files under `hooks\` | Reconcile from source; never develop in place. |
-| Adapter-generated state | `<CODEX_HOME>\remember-adapter\` (current implementation) | Known placement blocker: production must be pinned to physical DevHome before no-AppData acceptance. |
+| Runtime projection | `D:\DevHome\state\codex\hooks.json` plus two files under `hooks\` | Reconcile from source; never develop in place. |
 
 The component stays out of `package/install-manifest.json`. Plugin enablement
 and hook trust remain user-controlled Codex state.

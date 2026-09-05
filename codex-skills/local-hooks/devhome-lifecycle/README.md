@@ -5,15 +5,14 @@ hooks and the shared Claude/Codex **Handoff Relay** used on verified controller
 `snd-desk`. The installed projections are under `D:\DevHome\state\codex` and
 `D:\DevHome\state\claude`; do not develop the runtime copies independently.
 
-Known placement blocker: `Invoke-RememberAdapter.py` currently derives its
-generated mirrors, locks, checkpoints, and logs from ambient `CODEX_HOME`.
-Plugin/cache/runtime-file placement is pinned to DevHome, but the broader
-no-AppData lifecycle requirement is not complete until adapter state is pinned
-as well.
+Codex Remember capture is not part of this package. It runs through the
+upstream Claude Remember Codex plugin (`remember@remember-dev`, served from the
+pinned checkout at `D:\DevHome\state\remember\artifacts\remember-current`);
+the former Windows adapter was retired in 0.3.1.
 
 The package is source-only. It is deliberately absent from
 `release-manifest.json` and `codex-skills/package/install-manifest.json` because
-the DevHome guardrails and Claude Remember bridge are not portable defaults.
+the DevHome guardrails and Handoff Relay are not portable defaults.
 
 It is also exposed as `devhome-lifecycle@ai-skills` through the repository's
 local Codex marketplace. The plugin bundles an operator skill and one startup
@@ -24,10 +23,8 @@ reconciler; it does not register a second copy of the behavior hooks below.
 | Event | Behavior |
 |---|---|
 | `PreToolUse` | Blocks broad destructive commands and direct writes to generated memory or the ACL-protected Sevnet runtime. |
-| `SessionStart` | Loads Remember context through the bounded Windows adapter. |
-| `UserPromptSubmit` | Blocks high-confidence secrets before prompt submission. Remember does not run concurrently on this event. |
-| `PostToolUse` | Captures the accepted transcript for Remember in the background. |
-| `Stop` | Runs final Remember capture and the compact, evidence-labelled Handoff Relay independently; Codex may launch matching handlers concurrently. |
+| `UserPromptSubmit` | Blocks high-confidence secrets before prompt submission. |
+| `Stop` | Runs the compact, evidence-labelled Handoff Relay. |
 
 ## Handoff Relay
 
@@ -77,23 +74,15 @@ draft is quarantined as `*.orphaned.*.draft.md` on the next relay attempt for
 that project instead of remaining indefinitely active-looking. Shutdown remains
 fail-open after recording a bounded failure.
 
-Current acceptance blocker: the installed Remember `0.20.0` PostToolUse hook
-exceeds the adapter's three-second upstream bound, so the adapter fails open and
-can leave liveness markers even when end-to-end capture is not proven. Treat
-`capture-alive`, `post-tool-ran`, and hook log pings as breadcrumbs only; require
-the expected checkpoint/mirror or Remember artifact to advance without a
-matching adapter failure. The feature review linked below records the
-reproduction.
-
 Visible Claude hook errors must be attributed to their registration owner. An
 owned projection check does not clear foreign plugin hooks such as Hookify. Probe
 the registration's exact launcher token in Claude's environment (`python3` is
 distinct from `python` on Windows), then repair the owning source or supported
 provider setting rather than an installed plugin cache.
 
-The raw Claude Remember hooks stay unregistered. `Invoke-RememberAdapter.py`
-translates Codex transcripts into the narrow Claude transcript shape expected by
-Remember and contains Git Bash in a Windows Job Object.
+This projection registers no Remember hooks. Codex loads them from the
+`remember@remember-dev` plugin's own `hooks/hooks.codex.json`, which runs the
+upstream Bash scripts directly (Git Bash must be on the user PATH).
 
 ## Plugin choice and automatic reconciliation
 
@@ -110,8 +99,8 @@ Re-run it after source changes; do not rely on a Codex restart to refresh a loca
 plugin cache. Use `-Force` when an explicit remove-and-reinstall is wanted.
 The local choice is pinned to `D:\DevHome\state\codex`; it does not follow an
 alternate `CODEX_HOME` into AppData or another user-state root. That guarantee
-currently covers marketplace configuration, plugin cache, and the six Codex runtime
-files; it does not yet cover adapter-generated state noted above.
+currently covers marketplace configuration, plugin cache, and the three Codex
+runtime files.
 
 The command does not acquire source changes: update this checkout separately,
 then run synchronization. It never pulls, resets, or cleans Git. Codex owns the
@@ -119,13 +108,13 @@ plugin's enabled state and hook-trust records; synchronization proves catalog
 and payload convergence, not activation.
 
 The trusted plugin `SessionStart` hook runs its cached bootstrap with the
-canonical Ai-Skills source path. The bootstrap therefore checks the six-file
+canonical Ai-Skills source path. The bootstrap therefore checks the three-file
 runtime projection against current repository source, not against a possibly
 stale cache, and invokes the verified-machine installer only when drift exists.
 
 Plugin hooks are not trusted automatically. Review the reconciliation hook in
 `/hooks` after first installation or after its command definition changes. The
-existing behavior hooks remain the only registrations for safety and Remember,
+existing behavior hooks remain the only registrations for safety and Handoff Relay,
 so enabling the plugin does not double-submit lifecycle events.
 
 Until that SessionStart definition is explicitly trusted, the plugin can be
@@ -192,15 +181,5 @@ Invoke-Pester -Path @(
 ) -Output Detailed
 ```
 
-The Remember adapter suite is a separate host-dependent integration check; one
-test invokes the currently installed Claude Remember plugin. It is intentionally
-not hidden behind the source-only release gate, and any failure blocks live
-lifecycle acceptance. The current acceptance result is recorded in the
-repository's
-[`docs/reviews/review-2026-08-16-devhome-lifecycle-feature.md`](../../../docs/reviews/review-2026-08-16-devhome-lifecycle-feature.md):
-
-```powershell
-python -B -m unittest .\codex-skills\local-hooks\devhome-lifecycle\tests\test_remember_adapter.py
-```
-
-Generated `__pycache__` and adapter runtime state are not source artifacts.
+Live Remember capture for Codex is accepted separately against the
+`remember@remember-dev` plugin; these tests do not exercise it.

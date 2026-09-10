@@ -2069,6 +2069,7 @@ Next gate
             @{ Case = 'claude-sdk-transcript'; Provider = 'Claude'; Expected = 'sdk' }
             @{ Case = 'codex-exec'; Provider = 'Codex'; Expected = 'exec' }
             @{ Case = 'codex-subagent'; Provider = 'Codex'; Expected = 'subagent' }
+            @{ Case = 'codex-subagent-root-id-only'; Provider = 'Codex'; Expected = 'subagent' }
         ) {
             $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
             $null = New-Item -ItemType Directory -Path $projectRoot -Force
@@ -2094,7 +2095,7 @@ Next gate
                     }
                     'codex-exec' {
                         $transcript = Write-HandoffRelayTranscript -FileName "rollout-2026-09-10T12-00-00-$rolloutId.jsonl" -Records @(
-                            @{ type = 'session_meta'; payload = @{ id = $rolloutId; source = 'exec'; originator = 'codex_exec'; cwd = 'D:\Development\AI-related' } },
+                            @{ type = 'session_meta'; payload = @{ id = $rolloutId; session_id = $rolloutId; source = 'exec'; originator = 'codex_exec'; cwd = 'D:\Development\AI-related' } },
                             @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'exec-turn' } },
                             @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Change the parser.' }) } },
                             @{ type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; input = 'edit' } }
@@ -2102,7 +2103,16 @@ Next gate
                     }
                     'codex-subagent' {
                         $transcript = Write-HandoffRelayTranscript -FileName "rollout-2026-09-10T12-00-00-$rolloutId.jsonl" -Records @(
-                            @{ type = 'session_meta'; payload = @{ id = $parentId; source = 'cli'; originator = 'codex-tui'; cwd = 'D:\Development\AI-related' } },
+                            @{ type = 'session_meta'; payload = @{ id = $rolloutId; session_id = $parentId; source = @{ subagent = @{ thread_spawn = @{ parent_thread_id = $parentId; depth = 1; agent_role = 'explorer' } } }; originator = 'codex-tui'; cwd = 'D:\Development\AI-related' } },
+                            @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'worker-turn' } },
+                            @{ type = 'response_item'; payload = @{ type = 'message'; role = 'developer'; content = @(@{ type = 'input_text'; text = 'You are an agent in a team of agents.' }) } },
+                            @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Change the parser.' }) } },
+                            @{ type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; input = 'edit' } }
+                        )
+                    }
+                    'codex-subagent-root-id-only' {
+                        $transcript = Write-HandoffRelayTranscript -FileName "rollout-2026-09-10T12-00-00-$rolloutId.jsonl" -Records @(
+                            @{ type = 'session_meta'; payload = @{ id = $rolloutId; session_id = $parentId; source = 'cli'; originator = 'codex-tui'; cwd = 'D:\Development\AI-related' } },
                             @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'worker-turn' } },
                             @{ type = 'response_item'; payload = @{ type = 'message'; role = 'developer'; content = @(@{ type = 'input_text'; text = 'You are an agent in a team of agents.' }) } },
                             @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Change the parser.' }) } },
@@ -2139,7 +2149,7 @@ Next gate
             $rolloutId = '01a08c53-e3bc-7ff3-ba3a-e762ecf4ab8e'
             $transcript = if ($Provider -eq 'Codex') {
                 Write-HandoffRelayTranscript -FileName "rollout-2026-09-10T12-00-00-$rolloutId.jsonl" -Records @(
-                    @{ type = 'session_meta'; payload = @{ id = $rolloutId; source = 'cli'; originator = 'codex-tui'; cwd = 'D:\Development\AI-related' } },
+                    @{ type = 'session_meta'; payload = @{ id = $rolloutId; session_id = $rolloutId; source = 'cli'; originator = 'codex-tui'; cwd = 'D:\Development\AI-related' } },
                     @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'root-turn' } },
                     @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Change the parser.' }) } },
                     @{ type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; input = 'edit' } }

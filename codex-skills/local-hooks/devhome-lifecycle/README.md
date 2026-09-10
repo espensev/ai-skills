@@ -74,8 +74,9 @@ the session and records a neutral `SKIPPED` health result with code
 `non-interactive-sdk` (Claude: `CLAUDE_CODE_ENTRYPOINT` starts with `sdk`, or
 the transcript's records carry an `sdk*` entrypoint), `non-interactive-exec`
 (Codex: `session_meta` source `exec` or originator `codex_exec`), or
-`non-interactive-subagent` (Codex: the rollout filename UUID differs from the
-`session_meta` id, which is how spawned workers share their parent's session).
+`non-interactive-subagent` (Codex: `session_meta.source` carries a `subagent`
+object, or `session_meta.session_id` names a root thread other than the
+rollout's own `id`; a spawned worker writes its own rollout under its own id).
 Those sessions get no draft, no continuation prompt, and no canonical write;
 an unreadable or unrecognized transcript stays on the interactive path.
 

@@ -71,6 +71,21 @@ authoritative retirement registry, including each replacement route, is
 [`scripts/retired-skills.json`](scripts/retired-skills.json); both the installer
 and root comparator consume it directly.
 
+### Measure hook cost
+
+Measure hook outcomes, Stop-continuation duration/tokens, injected-context
+size, and skill/Agent usage from local Claude Code and Codex CLI transcripts:
+
+```powershell
+python scripts/measure_hook_cost.py --days 30
+```
+
+Add `--provider claude|codex`, `--claude-root`/`--codex-root` to point at a
+non-default transcript root, and `--json` for machine-readable output. See
+[`scripts/measure_hook_cost.py`](scripts/measure_hook_cost.py) for the exact
+metrics and format assumptions; tests live in
+[`scripts/tests/test_measure_hook_cost.py`](scripts/tests/test_measure_hook_cost.py).
+
 ## What's Inside
 
 ### Core campaign skills (shared across packages)

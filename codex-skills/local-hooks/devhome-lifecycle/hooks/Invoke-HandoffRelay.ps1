@@ -445,8 +445,9 @@ function Get-SessionKind {
     param([Parameter(Mandatory)][object] $Payload)
 
     # Classifies the hook's session as interactive, sdk (Claude Agent SDK),
-    # exec (codex exec) or subagent (a Codex team thread whose rollout id is
-    # not the session id). Only interactive sessions own a next-session
+    # exec (codex exec) or subagent (a Codex team thread: session_meta.source
+    # carries a subagent object, or session_meta.session_id names a root thread
+    # other than the rollout's own id). Only interactive sessions own a next-session
     # handoff. Unknown or unreadable shapes stay interactive so recovery keeps
     # working for transcript formats this relay has not seen.
     $transcriptPath = [string] $Payload.transcript_path
@@ -501,23 +502,35 @@ function Get-SessionKind {
             if ([string] $record.type -cne 'session_meta') { continue }
             $meta = $record.payload
             if ($null -eq $meta) { return 'interactive' }
-            if ([string] $meta.source -ceq 'exec' -or [string] $meta.originator -ceq 'codex_exec') {
-                return 'exec'
+            # A spawned thread writes its own rollout (payload.id equals the
+            # filename UUID) but keeps the root thread in payload.session_id and
+            # describes the spawn under payload.source.subagent. The root thread
+            # has id and session_id equal and a string source such as 'cli'.
+            $ownId = [string] $meta.id
+            $rootId = [string] $meta.session_id
+            $sourceValue = $meta.source
+            $sourceIsObject = $null -ne $sourceValue -and $sourceValue -isnot [string]
+            if ($sourceIsObject -and $null -ne $sourceValue.PSObject.Properties['subagent']) {
+                return 'subagent'
             }
-            $sessionId = [string] $meta.id
-            if ([string]::IsNullOrWhiteSpace($sessionId)) {
-                $sessionId = [string] $meta.session_id
-            }
-            $fileId = [regex]::Match(
-                [System.IO.Path]::GetFileNameWithoutExtension($transcriptPath),
-                '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
-            )
             if (
-                $fileId.Success -and
-                -not [string]::IsNullOrWhiteSpace($sessionId) -and
-                $fileId.Value -ine $sessionId
+                -not [string]::IsNullOrWhiteSpace($rootId) -and
+                -not [string]::IsNullOrWhiteSpace($ownId) -and
+                $rootId -ine $ownId
             ) {
                 return 'subagent'
+            }
+            if ([string]::IsNullOrWhiteSpace($ownId) -and -not [string]::IsNullOrWhiteSpace($rootId)) {
+                $fileId = [regex]::Match(
+                    [System.IO.Path]::GetFileNameWithoutExtension($transcriptPath),
+                    '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+                )
+                if ($fileId.Success -and $fileId.Value -ine $rootId) {
+                    return 'subagent'
+                }
+            }
+            if (-not $sourceIsObject -and ([string] $sourceValue -ceq 'exec' -or [string] $meta.originator -ceq 'codex_exec')) {
+                return 'exec'
             }
             return 'interactive'
         }
@@ -1489,7 +1502,7 @@ Complete all requested work and verification first. Immediately before your fina
 
 If more work or user steering arrives after drafting, finish that work; Stop will request a fresh draft. For a short tool-free Q&A ending in a question mark, with question and reply each at most 500 characters and no handoff request, skip drafting. Background work retains the existing bypass. Missing instructions or an uncertain draft retain Stop recovery.
 
-Use these exact headings in order: ## Summary, ## Outcome, ## Verified state, ## Changed surfaces, ## Verification, ## Open risks, ## Next gate. Use bullets only, [verified] ... Evidence: ... for verified facts, and [risk] ... Basis: ... or None. for risks. Current verified state outranks old notes. Include no speculation, process narration, code fences or unsupported claims.
+Use these exact headings in order: ## Summary, ## Outcome, ## Verified state, ## Changed surfaces, ## Verification, ## Open risks, ## Next gate. Use bullets only, [verified] ... Evidence: ... for verified facts, and [risk] ... Basis: ... or None. for risks. Each [verified] bullet names a checkable token in backticks: a commit sha, branch, path, or test name; anything you cannot check belongs under Open risks with its basis. Current verified state outranks old notes. Include no speculation, process narration, code fences or unsupported claims.
 
 $budgetInstruction
 "@.Trim()
@@ -1511,7 +1524,7 @@ After the draft write succeeds, finish with 1-2 useful, self-contained sentences
 
 Before the file edit, keep any commentary to a single line: use exactly ``Preparing handoff.`` Do not describe the proposed handoff contents, verification, or outcome in commentary.
 
-Use these exact Markdown headings in this order: `## Summary`, `## Outcome`, `## Verified state`, `## Changed surfaces`, `## Verification`, `## Open risks`, `## Next gate`. Use bullets only. Verified-state bullets use `[verified] ... Evidence: ...`. Risk bullets use `[risk] ... Basis: ...`, or `None.`. Do not include guesses, speculation, unsupported claims, process narration, code fences, or extra prose. Current verified state outranks the old handoff.
+Use these exact Markdown headings in this order: `## Summary`, `## Outcome`, `## Verified state`, `## Changed surfaces`, `## Verification`, `## Open risks`, `## Next gate`. Use bullets only. Verified-state bullets use `[verified] ... Evidence: ...` and each names a checkable token in backticks: a commit sha, branch, path, or test name; anything you cannot check belongs under Open risks with its basis. Risk bullets use `[risk] ... Basis: ...`, or `None.`. Do not include guesses, speculation, unsupported claims, process narration, code fences, or extra prose. Current verified state outranks the old handoff.
 
 $budgetInstruction
 "@.Trim()

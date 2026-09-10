@@ -171,6 +171,8 @@ or merge as that gate.
 
 ## Writing the next handoff
 
-Every state claim names its check in backticks (a sha, a branch, a path, or a
-`X.Tests` name) so the verifier can prove it. A claim with no possible check
-carries `[unverified]` at the end of its line.
+Every `[verified]` bullet names its check in backticks (a sha, a branch, a
+path, or a `X.Tests` name) so the verifier can prove it. A claim with no
+possible check goes under Open risks with its basis, never under Verified
+state: the relay drops bullets tagged unverified, and the verifier reports
+tokenless verified bullets as uncheckable.

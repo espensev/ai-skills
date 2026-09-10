@@ -257,7 +257,7 @@ Set-Content -LiteralPath `$env:FAKE_IDENTITY_MARKER -Value 'VERIFIED' -Encoding 
         $result.Status | Should -BeExactly 'CURRENT'
         $result.Action | Should -BeExactly 'REGISTERED_AND_INSTALLED'
         $result.Changed | Should -BeTrue
-        $result.Files | Should -Be 13
+        $result.Files | Should -Be 10
         @($result.Drift) | Should -HaveCount 0
         @($state.mutations) | Should -Be @('marketplace-add', 'plugin-add')
         Test-Path -LiteralPath $result.Cache -PathType Container | Should -BeTrue
@@ -378,7 +378,7 @@ Set-Content -LiteralPath `$env:FAKE_IDENTITY_MARKER -Value 'VERIFIED' -Encoding 
         }
 
         $result.Cache | Should -BeExactly (
-            Join-Path $script:PhysicalCodexHome 'plugins\cache\ai-skills\devhome-lifecycle\0.3.0'
+            Join-Path $script:PhysicalCodexHome 'plugins\cache\ai-skills\devhome-lifecycle\0.3.1'
         )
         $observedHomes = @((Get-FakeState).codexHomes | Select-Object -Unique)
         $observedHomes | Should -HaveCount 1

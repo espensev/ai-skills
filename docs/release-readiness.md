@@ -133,17 +133,6 @@ DevHome runtime projection:
 .\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeCodexHooks.ps1 -Check
 ```
 
-The full Remember adapter suite is host-dependent because one test invokes the
-installed Claude Remember plugin. Run it separately and treat any failure as a
-live lifecycle blocker even when `Test-ReleaseReadiness.ps1` is green:
-
-```powershell
-python -B -m unittest .\codex-skills\local-hooks\devhome-lifecycle\tests\test_remember_adapter.py
-```
-
-Current host acceptance findings are tracked in
-[`docs/reviews/review-2026-08-16-devhome-lifecycle-feature.md`](reviews/review-2026-08-16-devhome-lifecycle-feature.md).
-
 Finally restart Codex, confirm `devhome-lifecycle@ai-skills` is enabled, review
 and trust the current SessionStart command in `/hooks`, and perform one attended
 new-session smoke. Source acquisition is outside all of these checks; none of

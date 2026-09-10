@@ -79,6 +79,11 @@ function Write-NeutralHookResult {
 function Write-HandoffFailureResult {
     param([Parameter(Mandatory)][string] $Code)
 
+    if ($Code -eq 'draft-budget-exceeded') {
+        Write-NeutralHookResult -SystemMessage (
+            'Handoff Relay: draft exceeds the stated limits; previous context kept. Use a shorter draft next turn.'
+        )
+    }
     Write-NeutralHookResult -SystemMessage (
         'Handoff Relay: automatic context refresh needs another try.'
     )
@@ -436,6 +441,188 @@ function Get-DeveloperDeclaredTarget {
     return [pscustomobject] $result
 }
 
+function Get-SessionKind {
+    param([Parameter(Mandatory)][object] $Payload)
+
+    # Classifies the hook's session as interactive, sdk (Claude Agent SDK),
+    # exec (codex exec) or subagent (a Codex team thread whose rollout id is
+    # not the session id). Only interactive sessions own a next-session
+    # handoff. Unknown or unreadable shapes stay interactive so recovery keeps
+    # working for transcript formats this relay has not seen.
+    $transcriptPath = [string] $Payload.transcript_path
+    if ($Provider -ceq 'Claude') {
+        $entrypoint = [string] [Environment]::GetEnvironmentVariable('CLAUDE_CODE_ENTRYPOINT')
+        if ($entrypoint.StartsWith('sdk', [System.StringComparison]::OrdinalIgnoreCase)) {
+            return 'sdk'
+        }
+    }
+    if (
+        [string]::IsNullOrWhiteSpace($transcriptPath) -or
+        -not (Test-Path -LiteralPath $transcriptPath -PathType Leaf)
+    ) {
+        return 'interactive'
+    }
+
+    $stream = $null
+    $reader = $null
+    try {
+        $stream = [System.IO.FileStream]::new(
+            $transcriptPath,
+            [System.IO.FileMode]::Open,
+            [System.IO.FileAccess]::Read,
+            [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+        )
+        $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::UTF8, $true)
+        $inspected = 0
+        while ($inspected -lt 32 -and $null -ne ($line = $reader.ReadLine())) {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            $inspected++
+            try {
+                $record = $line | ConvertFrom-Json -Depth 100 -ErrorAction Stop
+            }
+            catch {
+                continue
+            }
+            if ($null -eq $record) { continue }
+
+            if ($Provider -ceq 'Claude') {
+                # Claude Code stamps every user/assistant record with the
+                # launching entrypoint: cli, claude-desktop, sdk-cli, sdk-py...
+                $property = $record.PSObject.Properties['entrypoint']
+                if ($null -eq $property -or [string]::IsNullOrWhiteSpace([string] $property.Value)) {
+                    continue
+                }
+                if (([string] $property.Value).StartsWith('sdk', [System.StringComparison]::OrdinalIgnoreCase)) {
+                    return 'sdk'
+                }
+                return 'interactive'
+            }
+
+            if ([string] $record.type -cne 'session_meta') { continue }
+            $meta = $record.payload
+            if ($null -eq $meta) { return 'interactive' }
+            if ([string] $meta.source -ceq 'exec' -or [string] $meta.originator -ceq 'codex_exec') {
+                return 'exec'
+            }
+            $sessionId = [string] $meta.id
+            if ([string]::IsNullOrWhiteSpace($sessionId)) {
+                $sessionId = [string] $meta.session_id
+            }
+            $fileId = [regex]::Match(
+                [System.IO.Path]::GetFileNameWithoutExtension($transcriptPath),
+                '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+            )
+            if (
+                $fileId.Success -and
+                -not [string]::IsNullOrWhiteSpace($sessionId) -and
+                $fileId.Value -ine $sessionId
+            ) {
+                return 'subagent'
+            }
+            return 'interactive'
+        }
+    }
+    catch {
+        return 'interactive'
+    }
+    finally {
+        if ($null -ne $reader) {
+            $reader.Dispose()
+        }
+        elseif ($null -ne $stream) {
+            $stream.Dispose()
+        }
+    }
+
+    return 'interactive'
+}
+
+function Test-ToolFreeQuestion {
+    param([Parameter(Mandatory)][object] $Payload)
+
+    # Only suppress a continuation when the transcript positively identifies a
+    # current user turn without tools. Missing/unknown formats keep recovery.
+    if ([string]::IsNullOrWhiteSpace([string] $Payload.transcript_path)) {
+        return $false
+    }
+    $reader = $null
+    $stream = $null
+    $knownTurn = $false
+    $hasTools = $false
+    $handoffMentioned = $false
+    $hasCodexTurnBoundary = $false
+    $userText = ''
+    $assistantCharacters = 0
+    try {
+        $stream = [System.IO.FileStream]::new(
+            [string] $Payload.transcript_path,
+            [System.IO.FileMode]::Open,
+            [System.IO.FileAccess]::Read,
+            [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+        )
+        $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::UTF8, $true)
+        while ($null -ne ($line = $reader.ReadLine())) {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            $record = $line | ConvertFrom-Json -Depth 100 -ErrorAction Stop
+            if ($record.isSidechain -eq $true) { continue }
+            if ($record.type -ceq 'event_msg' -and $record.payload.type -ceq 'task_started') {
+                $hasCodexTurnBoundary = $true
+                $knownTurn = $false
+                $hasTools = $false
+                $handoffMentioned = $false
+                $userText = ''
+                $assistantCharacters = 0
+                continue
+            }
+            $isCodexMessage = $record.type -ceq 'response_item' -and $record.payload.type -ceq 'message'
+            $isClaudeUser = $record.type -ceq 'user' -and $record.message.role -ceq 'user'
+            $isUser = ($isCodexMessage -and $record.payload.role -ceq 'user') -or $isClaudeUser
+            $messageText = if ($isUser) { Get-RecordMessageText -Record $record } else { '' }
+            # Claude tool_result records also have role=user; they are not prompts.
+            if ($isUser -and -not [string]::IsNullOrWhiteSpace($messageText)) {
+                if (-not $hasCodexTurnBoundary) {
+                    $hasTools = $false
+                    $handoffMentioned = $false
+                }
+                $knownTurn = $true
+                $userText = $messageText.Trim()
+                $assistantCharacters = 0
+                # Preserve recovery for varied handoff phrasing instead of
+                # trying to infer authorization from a narrow command grammar.
+                $handoffMentioned = $handoffMentioned -or $messageText -match '(?i)\bhandoff\b'
+            }
+            if ($record.type -ceq 'response_item' -and $record.payload.type -match '_call(?:_output)?$') {
+                $hasTools = $true
+            }
+            if (($isCodexMessage -and $record.payload.role -ceq 'assistant') -or (
+                $record.type -ceq 'assistant' -and $record.message.role -ceq 'assistant'
+            )) {
+                $reply = Get-RecordMessageText -Record $record
+                if (-not [string]::IsNullOrWhiteSpace($reply)) {
+                    $assistantCharacters = [Math]::Min(501, $assistantCharacters + $reply.Length)
+                }
+            }
+            if ($record.type -ceq 'assistant' -and $record.message.role -ceq 'assistant') {
+                foreach ($part in @($record.message.content)) {
+                    if ($part.type -ceq 'tool_use') { $hasTools = $true }
+                }
+            }
+        }
+        # Bound this optimization to short Q&A. A tool-free plan or other
+        # substantial written deliverable can still deserve a checkpoint.
+        return $knownTurn -and -not $hasTools -and -not $handoffMentioned -and
+            $userText.EndsWith('?') -and $userText.Length -le 500 -and
+            $assistantCharacters -gt 0 -and $assistantCharacters -le 500
+    }
+    catch {
+        return $false
+    }
+    finally {
+        if ($null -ne $reader) { $reader.Dispose() }
+        elseif ($null -ne $stream) { $stream.Dispose() }
+    }
+}
+
 function ConvertTo-RememberProjectSlug {
     param([Parameter(Mandatory)][string] $WorkingDirectory)
 
@@ -591,16 +778,8 @@ function Resolve-HandoffContext {
         if ($null -ne $ancestor -and (Test-SamePath -Left $ancestor.Target -Right $target)) {
             $workspace = $ancestor.Workspace
         }
-        elseif (-not [string]::IsNullOrWhiteSpace([string] $Payload.cwd)) {
-            try {
-                $workspace = Resolve-NormalizedPath -Path ([string] $Payload.cwd)
-            }
-            catch {
-                $workspace = '<unknown>'
-            }
-        }
         else {
-            $workspace = '<unknown>'
+            return [pscustomobject]@{ Found = $false; Code = 'declared-target-workspace-mismatch' }
         }
 
         return [pscustomobject]@{
@@ -659,6 +838,7 @@ function Get-AttemptPathSet {
         State = Join-Path $attemptRoot "$SessionKey.state.json"
         Draft = Join-Path $attemptRoot "$SessionKey.draft.md"
         Lock = Join-Path $attemptRoot 'publish.lock'
+        Receipt = Join-Path $attemptRoot 'completed.json'
     }
 }
 
@@ -678,7 +858,7 @@ function Test-HandoffPathSetIsSafe {
         return $false
     }
 
-    foreach ($path in @($Paths.Root, $Paths.State, $Paths.Draft, $Paths.Lock)) {
+    foreach ($path in @($Paths.Root, $Paths.State, $Paths.Draft, $Paths.Lock, $Paths.Receipt)) {
         if (-not (Test-PathTraversalIsReparseFree -Path ([string] $path))) {
             return $false
         }
@@ -789,73 +969,6 @@ function Get-WordCount {
     return [regex]::Matches($Text, '\S+').Count
 }
 
-function Limit-WordCount {
-    param(
-        [Parameter(Mandatory)][string] $Text,
-        [Parameter(Mandatory)][int] $Maximum
-    )
-
-    $words = @([regex]::Matches($Text, '\S+') | ForEach-Object { $_.Value })
-    if ($words.Count -le $Maximum) {
-        return [pscustomobject]@{ Text = $Text; Truncated = $false }
-    }
-
-    return [pscustomobject]@{
-        Text = (($words[0..($Maximum - 1)] -join ' ') + ' ...')
-        Truncated = $true
-    }
-}
-
-function Limit-TextExtent {
-    param(
-        [Parameter(Mandatory)][string] $Text,
-        [Parameter(Mandatory)][int] $MaximumCharacters,
-        [Parameter(Mandatory)][int] $MaximumUtf8Bytes
-    )
-
-    $elementOffsets = [System.Globalization.StringInfo]::ParseCombiningCharacters($Text)
-    $utf8Bytes = $script:Utf8NoBom.GetByteCount($Text)
-    if (
-        $elementOffsets.Count -le $MaximumCharacters -and
-        $utf8Bytes -le $MaximumUtf8Bytes
-    ) {
-        return [pscustomobject]@{ Text = $Text; Truncated = $false }
-    }
-
-    $suffix = ' ...'
-    $suffixCharacters = [System.Globalization.StringInfo]::ParseCombiningCharacters($suffix).Count
-    $maximumBodyCharacters = $MaximumCharacters - $suffixCharacters
-    $maximumBodyBytes = $MaximumUtf8Bytes - $script:Utf8NoBom.GetByteCount($suffix)
-    $builder = [System.Text.StringBuilder]::new()
-    $bodyBytes = 0
-    for ($index = 0; $index -lt $elementOffsets.Count; $index++) {
-        if ($index -ge $maximumBodyCharacters) {
-            break
-        }
-
-        $offset = $elementOffsets[$index]
-        $length = if ($index + 1 -lt $elementOffsets.Count) {
-            $elementOffsets[$index + 1] - $offset
-        }
-        else {
-            $Text.Length - $offset
-        }
-        $element = $Text.Substring($offset, $length)
-        $elementBytes = $script:Utf8NoBom.GetByteCount($element)
-        if ($bodyBytes + $elementBytes -gt $maximumBodyBytes) {
-            break
-        }
-
-        $null = $builder.Append($element)
-        $bodyBytes += $elementBytes
-    }
-
-    return [pscustomobject]@{
-        Text = $builder.ToString().TrimEnd() + $suffix
-        Truncated = $true
-    }
-}
-
 function Test-SpeculativeFact {
     param([Parameter(Mandatory)][string] $Text)
 
@@ -896,10 +1009,8 @@ function Test-SectionItemContract {
     return $true
 }
 
-function ConvertTo-CleanHandoff {
-    param([Parameter(Mandatory)][string] $Draft)
-
-    $specs = [ordered]@{
+function Get-HandoffSectionSpecs {
+    return [ordered]@{
         'Summary' = @{ MaxItems = 2; MaxWords = 45; MaxItemWords = 26; FilterFacts = $true }
         'Outcome' = @{ MaxItems = 3; MaxWords = 60; MaxItemWords = 26; FilterFacts = $true }
         'Verified state' = @{ MaxItems = 4; MaxWords = 100; MaxItemWords = 34; FilterFacts = $true }
@@ -908,17 +1019,36 @@ function ConvertTo-CleanHandoff {
         'Open risks' = @{ MaxItems = 3; MaxWords = 55; MaxItemWords = 26; FilterFacts = $false }
         'Next gate' = @{ MaxItems = 2; MaxWords = 40; MaxItemWords = 24; FilterFacts = $false }
     }
+}
+
+function Get-HandoffBudgetInstruction {
+    $specs = Get-HandoffSectionSpecs
+    $lines = @('Maximums, including labels and evidence (words are separated by whitespace):')
+    foreach ($section in $specs.Keys) {
+        $spec = $specs[$section]
+        $lines += "- ${section}: $($spec.MaxItems) bullets, $($spec.MaxWords) words total, $($spec.MaxItemWords) words per bullet."
+    }
+    $lines += "Body: $MaxPublishedWords words total. Each bullet: $MaxItemCharacters Unicode text elements and $MaxItemUtf8Bytes UTF-8 bytes. Over-budget drafts are retained as failures; no facts are clipped to fit. Put the current priority first in Next gate and link a separate note for deferred work."
+    return $lines -join "`n"
+}
+
+function ConvertTo-CleanHandoff {
+    param([Parameter(Mandatory)][string] $Draft)
+
+    $specs = Get-HandoffSectionSpecs
     $items = [ordered]@{}
     $seen = @{}
+    $sectionWords = @{}
     foreach ($section in $specs.Keys) {
         $items[$section] = [System.Collections.Generic.List[string]]::new()
+        $sectionWords[$section] = 0
         $seen[$section] = [System.Collections.Generic.HashSet[string]]::new(
             [System.StringComparer]::OrdinalIgnoreCase
         )
     }
 
     $droppedItems = 0
-    $truncatedItems = 0
+    $budgetExceeded = $false
     $ignoredLines = 0
     $currentSection = $null
     $inFence = $false
@@ -969,48 +1099,24 @@ function ConvertTo-CleanHandoff {
             $droppedItems++
             continue
         }
-        if ($items[$currentSection].Count -ge [int] $spec.MaxItems) {
-            $droppedItems++
-            continue
-        }
-
-        $limitedWords = Limit-WordCount -Text $text -Maximum ([int] $spec.MaxItemWords)
-        $limitedExtent = Limit-TextExtent `
-            -Text $limitedWords.Text `
-            -MaximumCharacters $MaxItemCharacters `
-            -MaximumUtf8Bytes $MaxItemUtf8Bytes
-        $text = $limitedExtent.Text
-        if ($limitedWords.Truncated -or $limitedExtent.Truncated) {
-            $truncatedItems++
-        }
-        if (-not (Test-SectionItemContract -Section $currentSection -Text $text)) {
-            $droppedItems++
-            continue
-        }
-        $sectionWords = @($items[$currentSection] | ForEach-Object { Get-WordCount -Text $_ } |
-            Measure-Object -Sum).Sum
-        if ($null -eq $sectionWords) {
-            $sectionWords = 0
-        }
-        $remainingWords = [int] $spec.MaxWords - [int] $sectionWords
-        if ($remainingWords -lt 5) {
-            $droppedItems++
-            continue
-        }
-        if ((Get-WordCount -Text $text) -gt $remainingWords) {
-            $limited = Limit-WordCount -Text $text -Maximum $remainingWords
-            $text = $limited.Text
-            $truncatedItems++
-            if (-not (Test-SectionItemContract -Section $currentSection -Text $text)) {
-                $droppedItems++
-                continue
-            }
-        }
         if (-not $seen[$currentSection].Add($text)) {
             $droppedItems++
             continue
         }
+
+        $wordCount = Get-WordCount -Text $text
+        if (
+            $items[$currentSection].Count -ge [int] $spec.MaxItems -or
+            $wordCount -gt [int] $spec.MaxItemWords -or
+            $sectionWords[$currentSection] + $wordCount -gt [int] $spec.MaxWords -or
+            [System.Globalization.StringInfo]::ParseCombiningCharacters($text).Count -gt $MaxItemCharacters -or
+            $script:Utf8NoBom.GetByteCount($text) -gt $MaxItemUtf8Bytes
+        ) {
+            $budgetExceeded = $true
+            continue
+        }
         $items[$currentSection].Add($text)
+        $sectionWords[$currentSection] += $wordCount
     }
 
     $missingSections = @($specs.Keys | Where-Object { $items[$_].Count -eq 0 })
@@ -1021,28 +1127,17 @@ function ConvertTo-CleanHandoff {
         }
     }
     if ($publishedWords -gt $MaxPublishedWords) {
-        return [pscustomobject]@{
-            Valid = $false
-            Code = 'word-limit-exceeded'
-            MissingSections = $missingSections
-            Items = $items
-            Cleaning = [pscustomobject]@{
-                droppedItems = $droppedItems
-                truncatedItems = $truncatedItems
-                ignoredLines = $ignoredLines
-                publishedWords = $publishedWords
-            }
-        }
+        $budgetExceeded = $true
     }
 
     return [pscustomobject]@{
-        Valid = $missingSections.Count -eq 0
-        Code = if ($missingSections.Count -eq 0) { 'clean' } else { 'required-section-empty' }
+        Valid = -not $budgetExceeded -and $missingSections.Count -eq 0
+        Code = if ($budgetExceeded) { 'draft-budget-exceeded' } elseif ($missingSections.Count -eq 0) { 'clean' } else { 'required-section-empty' }
         MissingSections = $missingSections
         Items = $items
         Cleaning = [pscustomobject]@{
             droppedItems = $droppedItems
-            truncatedItems = $truncatedItems
+            truncatedItems = 0
             ignoredLines = $ignoredLines
             publishedWords = $publishedWords
         }
@@ -1121,10 +1216,188 @@ function Write-ContinuationResult {
     exit 0
 }
 
+function Get-CompletedAttempts {
+    param([Parameter(Mandatory)][object] $Paths)
+
+    # This cache can suppress duplicate work but cannot authorize publication.
+    # Losing it must retain capture; a later success rebuilds the bounded cache.
+    try {
+        if (-not (Test-Path -LiteralPath $Paths.Receipt -PathType Leaf)) { return @() }
+        if ((Get-Item -LiteralPath $Paths.Receipt).Length -gt 32768) { return @() }
+        $receipt = Read-SharedText -Path $Paths.Receipt | ConvertFrom-Json -ErrorAction Stop
+        if ($receipt.schema -cne 'handoff-relay-completed.v1' -or @($receipt.attempts).Count -gt 32) {
+            return @()
+        }
+        foreach ($attempt in @($receipt.attempts)) {
+            if ([string] $attempt.key -cnotmatch '^[a-f0-9]{32}$' -or
+                [string]::IsNullOrWhiteSpace([string] $attempt.transcript) -or
+                ($attempt.offset -isnot [long] -and $attempt.offset -isnot [int]) -or
+                [long] $attempt.offset -lt 0) { return @() }
+        }
+        return @($receipt.attempts)
+    }
+    catch { return @() }
+}
+
+function Test-AttemptCompleted {
+    param([object] $Paths, [object] $Payload)
+
+    $attempt = @(Get-CompletedAttempts -Paths $Paths | Where-Object { $_.key -ceq $script:SessionKey } | Select-Object -Last 1)
+    if ($attempt.Count -ne 1 -or $null -eq $Payload -or
+        [string]::IsNullOrWhiteSpace([string] $Payload.transcript_path)) { return $false }
+    $stream = $null
+    $reader = $null
+    try {
+        if (-not (Test-SamePath -Left $attempt[0].transcript -Right $Payload.transcript_path)) { return $false }
+        $stream = [System.IO.FileStream]::new($Payload.transcript_path, 'Open', 'Read',
+            [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete)
+        if ($stream.Length -lt $attempt[0].offset) { return $false }
+        $null = $stream.Seek($attempt[0].offset, [System.IO.SeekOrigin]::Begin)
+        $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::UTF8, $true)
+        while ($null -ne ($line = $reader.ReadLine())) {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            $record = $line | ConvertFrom-Json -Depth 100 -ErrorAction Stop
+            if ($record.type -ceq 'token_usage_record') { continue }
+            if ($record.type -ceq 'event_msg' -and $record.payload.type -in @('token_count', 'task_complete')) { continue }
+            # Any subsequent message, tool, steering or compaction needs capture.
+            # This receipt only suppresses an actual repeated Stop with no work.
+            return $false
+        }
+        return $true
+    }
+    catch { return $false }
+    finally {
+        if ($null -ne $reader) { $reader.Dispose() }
+        elseif ($null -ne $stream) { $stream.Dispose() }
+    }
+}
+
+function Save-CompletedAttempt {
+    param([Parameter(Mandatory)][object] $Paths, [Parameter(Mandatory)][object] $Payload, [long] $TranscriptOffset)
+
+    # Called only under the project lock, after publication or an explicit Q&A skip.
+    # One bounded receipt avoids a persistent success-state file for every turn.
+    $attempts = @(@(Get-CompletedAttempts -Paths $Paths) | Where-Object { $_.key -cne $script:SessionKey })
+    $attempts += @{ key = $script:SessionKey; transcript = [string] $Payload.transcript_path; offset = $TranscriptOffset }
+    $receipt = @{
+        schema = 'handoff-relay-completed.v1'; attempts = @($attempts | Select-Object -Last 32)
+    }
+    if ($script:Utf8NoBom.GetByteCount(($receipt | ConvertTo-Json -Depth 10)) -gt 32768) { throw 'Receipt exceeds its bound.' }
+    Write-AtomicJson -Path $Paths.Receipt -Value $receipt
+}
+
+function Test-HandoffState {
+    param([object] $State, [object] $Context, [object] $Paths)
+
+    return $null -ne $State -and
+        [string] $State.schema -ceq 'handoff-relay-state.v1' -and
+        [string] $State.phase -ceq 'awaiting-draft' -and
+        [string] $State.provider -ceq $Provider.ToLowerInvariant() -and
+        [string] $State.sessionKey -ceq $script:SessionKey -and
+        -not [string]::IsNullOrWhiteSpace([string] $State.target) -and
+        -not [string]::IsNullOrWhiteSpace([string] $State.draft) -and
+        -not [string]::IsNullOrWhiteSpace([string] $State.workspace) -and
+        (Test-SamePath -Left $State.target -Right $Context.Target) -and
+        (Test-SamePath -Left $State.draft -Right $Paths.Draft) -and
+        (Test-SamePath -Left $State.workspace -Right $Context.Workspace) -and
+        [string] $State.project -ceq [string] $Context.ProjectSlug -and
+        [string] $State.baselineHash -match '^(?:<absent>|[A-F0-9]{64})$'
+}
+
+function Test-DedicatedDraftCall {
+    param([object] $Call, [string] $DraftPath)
+
+    $patch = ''
+    if ($Call.type -ceq 'custom_tool_call' -and $Call.name -ceq 'apply_patch') {
+        $patch = [string] $Call.input
+    }
+    elseif ($Call.type -ceq 'custom_tool_call' -and $Call.name -ceq 'exec') {
+        # Support the observed code-mode wrapper without executing or loosely
+        # searching JavaScript. Mixed/nested batches retain the recovery path.
+        $match = [regex]::Match([string] $Call.input,
+            '^\s*text\(await tools\.apply_patch\((?<json>"(?:[^"\\]|\\.)*")\)\);?\s*$')
+        if (-not $match.Success) { return $false }
+        $patch = $match.Groups['json'].Value | ConvertFrom-Json -ErrorAction Stop
+    }
+    else { return $false }
+    $files = @([regex]::Matches($patch, '(?m)^\*\*\* (?:Add|Update|Delete) File: (?<path>[^\r\n]+)'))
+    return $files.Count -eq 1 -and
+        (Test-SamePath -Left $files[0].Groups['path'].Value -Right $DraftPath)
+}
+
+function Test-PreparedDraftFresh {
+    param([object] $State, [object] $Payload, [object] $Paths)
+
+    $stream = $null
+    $reader = $null
+    try {
+        if ([string] $State.sessionId -cne [string] $Payload.session_id -or
+            [string] $State.turnId -cne [string] $Payload.turn_id -or
+            -not (Test-SamePath -Left $State.transcript -Right $Payload.transcript_path)) { return $false }
+        $stream = [System.IO.FileStream]::new($State.transcript, 'Open', 'Read',
+            [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete)
+        $offset = [long] $State.transcriptOffset
+        if ($offset -lt 0 -or $offset -gt $stream.Length) { return $false }
+        $null = $stream.Seek($offset, [System.IO.SeekOrigin]::Begin)
+        $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::UTF8, $true)
+        $pending = @{}
+        $fresh = $false
+        $draftContent = $null
+        while ($null -ne ($line = $reader.ReadLine())) {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            $record = $line | ConvertFrom-Json -Depth 100 -ErrorAction Stop
+            $entry = $record.payload
+            if ($record.type -ceq 'response_item') {
+                if ($entry.type -match '_call$') {
+                    $fresh = $false
+                    $pending[[string] $entry.call_id] = Test-DedicatedDraftCall -Call $entry -DraftPath $Paths.Draft
+                }
+                elseif ($entry.type -match '_call_output$') {
+                    if (-not $pending.ContainsKey([string] $entry.call_id)) { $fresh = $false }
+                    $pending.Remove([string] $entry.call_id)
+                }
+                elseif ($entry.type -ceq 'message' -and $entry.role -ceq 'assistant') { }
+                elseif ($entry.type -ceq 'reasoning') { }
+                else { $fresh = $false }
+            }
+            elseif ($record.type -ceq 'event_msg') {
+                if ($entry.type -ceq 'item_completed') {
+                    $item = $entry.item
+                    if ($item.type -ceq 'FileChange') {
+                        $fresh = $false
+                        $changes = @($item.changes.PSObject.Properties)
+                        if ($entry.thread_id -ceq $State.sessionId -and $entry.turn_id -ceq $State.turnId -and
+                            $item.status -ceq 'completed' -and $pending.Count -eq 1 -and
+                            @($pending.Values)[0] -eq $true -and $changes.Count -eq 1 -and
+                            (Test-SamePath -Left $changes[0].Name -Right $Paths.Draft) -and
+                            $changes[0].Value.type -ceq 'add') {
+                            $draftContent = [string] $changes[0].Value.content
+                            $fresh = $true
+                        }
+                    }
+                    elseif ($item.type -notin @('AgentMessage', 'Reasoning')) { $fresh = $false }
+                }
+                elseif ($entry.type -notin @('token_count')) { $fresh = $false }
+            }
+            elseif ($record.type -cne 'token_usage_record') { $fresh = $false }
+        }
+        $script:ValidatedTranscriptLength = $stream.Position
+        return $fresh -and $pending.Count -eq 0 -and $null -ne $draftContent -and
+            $draftContent.Replace("`r`n", "`n") -ceq (Read-SharedText -Path $Paths.Draft).Replace("`r`n", "`n")
+    }
+    catch { return $false }
+    finally {
+        if ($null -ne $reader) { $reader.Dispose() }
+        elseif ($null -ne $stream) { $stream.Dispose() }
+    }
+}
+
 function Initialize-HandoffDraft {
     param(
         [Parameter(Mandatory)][object] $Context,
-        [Parameter(Mandatory)][object] $Paths
+        [Parameter(Mandatory)][object] $Paths,
+        [object] $Payload,
+        [switch] $BeforeModel
     )
 
     if (-not (Test-HandoffPathSetIsSafe -Target $Context.Target -Paths $Paths)) {
@@ -1141,6 +1414,21 @@ function Initialize-HandoffDraft {
     try {
         if (-not (Test-HandoffPathSetIsSafe -Target $Context.Target -Paths $Paths)) {
             Write-HealthRecord -Status FAILED -Code 'unsafe-reparse-traversal'
+            Write-NeutralHookResult
+        }
+        if (Test-AttemptCompleted -Paths $Paths -Payload $Payload) {
+            Write-NeutralHookResult
+        }
+        if ($BeforeModel -and (Test-Path -LiteralPath $Paths.State -PathType Leaf)) {
+            if ((Get-Item -LiteralPath $Paths.State).Length -gt 8192) { throw 'State exceeds its bound.' }
+            $existing = Read-SharedText -Path $Paths.State | ConvertFrom-Json -Depth 20 -ErrorAction Stop
+            if (-not (Test-HandoffState -State $existing -Context $Context -Paths $Paths)) {
+                Write-NeutralHookResult
+            }
+            # Never reset a baseline or a Stop recovery on prompt retries/steering.
+            if ($existing.preparation -ceq 'prompt') {
+                Write-DraftInstruction -Context $Context -Paths $Paths -BeforeModel
+            }
             Write-NeutralHookResult
         }
         $quarantinedDrafts = Move-LooseDraftsToArchive -Paths $Paths
@@ -1163,6 +1451,13 @@ function Initialize-HandoffDraft {
             baselineHash = Get-SharedFileHash -Path $Context.Target
             createdUtc = [DateTime]::UtcNow.ToString('o')
         }
+        if ($BeforeModel) {
+            $state.preparation = 'prompt'
+            $state.sessionId = [string] $Payload.session_id
+            $state.turnId = [string] $Payload.turn_id
+            $state.transcript = Resolve-NormalizedPath -Path $Payload.transcript_path
+            $state.transcriptOffset = (Get-Item -LiteralPath $Payload.transcript_path).Length
+        }
         Write-AtomicJson -Path $Paths.State -Value $state
     }
     finally {
@@ -1173,6 +1468,36 @@ function Initialize-HandoffDraft {
         -Code 'awaiting-draft' `
         -Details @{ quarantinedDrafts = $quarantinedDrafts }
 
+    Write-DraftInstruction -Context $Context -Paths $Paths -BeforeModel:$BeforeModel -QuarantinedDrafts $quarantinedDrafts
+}
+
+function Write-DraftInstruction {
+    param([object] $Context, [object] $Paths, [switch] $BeforeModel, [int] $QuarantinedDrafts = 0)
+
+    $budgetInstruction = Get-HandoffBudgetInstruction
+    if ($BeforeModel) {
+        $instruction = @"
+Handoff Relay: an active draft transaction is ready for this turn.
+
+Canonical: $($Context.Target)
+Workspace: $($Context.Workspace)
+Draft: $($Paths.Draft)
+
+This turn's handoff destination is Draft. The canonical declaration remains routing information; do not also write canonical. This is bounded Remember project state, not Codex native memory.
+
+Complete all requested work and verification first. Immediately before your final answer, write the current handoff using a dedicated apply_patch call that adds only Draft. In code mode use only text(await tools.apply_patch(...)); in that call. Then give the normal useful final answer, including any required Run closeout. Do not shorten the requested deliverable or claim publication: Stop validates, hash-checks and atomically publishes afterward. No preparation tool call is needed.
+
+If more work or user steering arrives after drafting, finish that work; Stop will request a fresh draft. For a short tool-free Q&A ending in a question mark, with question and reply each at most 500 characters and no handoff request, skip drafting. Background work retains the existing bypass. Missing instructions or an uncertain draft retain Stop recovery.
+
+Use these exact headings in order: ## Summary, ## Outcome, ## Verified state, ## Changed surfaces, ## Verification, ## Open risks, ## Next gate. Use bullets only, [verified] ... Evidence: ... for verified facts, and [risk] ... Basis: ... or None. for risks. Current verified state outranks old notes. Include no speculation, process narration, code fences or unsupported claims.
+
+$budgetInstruction
+"@.Trim()
+        @{ hookSpecificOutput = @{ hookEventName = 'UserPromptSubmit'; additionalContext = $instruction } } |
+            ConvertTo-Json -Depth 10 -Compress | Write-Output
+        exit 0
+    }
+
     $instruction = @"
 Handoff Relay: prepare the concise next-session handoff before finishing.
 
@@ -1182,11 +1507,13 @@ Draft: $($Paths.Draft)
 
 Write the handoff to the file at Draft with a file-editing tool; do not edit the canonical file. The relay will clean, validate, hash-check, lock, and atomically publish it on the next Stop pass. This is bounded Remember project state, not Codex native memory.
 
-Do not answer with only the draft path. After the draft write succeeds, repeat the substantive user-facing closeout you had already provided and add one final sentence: `Handoff prepared for automatic publication.` Do not claim publication from the draft write; the relay will surface the publication result separately.
+After the draft write succeeds, finish with 1-2 useful, self-contained sentences: summarize the task's concrete outcome or finding, then give the most relevant suggested next action or unresolved blocker. If the task is complete and no follow-up is needed, say so without inventing work. Never end with only a handoff status or a generic acknowledgement. Condense the earlier answer instead of repeating it in full; do not repeat its Run closeout. Do not claim publication from the draft write; the relay will surface the publication result separately.
 
 Before the file edit, keep any commentary to a single line: use exactly ``Preparing handoff.`` Do not describe the proposed handoff contents, verification, or outcome in commentary.
 
-Use these exact Markdown headings in this order: `## Summary`, `## Outcome`, `## Verified state`, `## Changed surfaces`, `## Verification`, `## Open risks`, `## Next gate`. Use bullets only. Summary has at most 2 bullets. Verified-state bullets use `[verified] ... Evidence: ...`. Risk bullets use `[risk] ... Basis: ...`, or `None.`. Do not include guesses, speculation, unsupported claims, process narration, code fences, or extra prose. Keep each bullet under 30 words where practical. Current verified state outranks the old handoff.
+Use these exact Markdown headings in this order: `## Summary`, `## Outcome`, `## Verified state`, `## Changed surfaces`, `## Verification`, `## Open risks`, `## Next gate`. Use bullets only. Verified-state bullets use `[verified] ... Evidence: ...`. Risk bullets use `[risk] ... Basis: ...`, or `None.`. Do not include guesses, speculation, unsupported claims, process narration, code fences, or extra prose. Current verified state outranks the old handoff.
+
+$budgetInstruction
 "@.Trim()
     $preparationMessage = 'Preparing handoff.'
     if ($quarantinedDrafts -gt 0) {
@@ -1201,8 +1528,16 @@ Use these exact Markdown headings in this order: `## Summary`, `## Outcome`, `##
 function Complete-HandoffDraft {
     param(
         [Parameter(Mandatory)][object] $Context,
-        [Parameter(Mandatory)][object] $Paths
+        [Parameter(Mandatory)][object] $Paths,
+        [object] $Payload,
+        [switch] $InitialStop
     )
+
+    $script:ValidatedTranscriptLength = if ($null -ne $Payload -and
+        -not [string]::IsNullOrWhiteSpace([string] $Payload.transcript_path) -and
+        (Test-Path -LiteralPath $Payload.transcript_path -PathType Leaf)) {
+        (Get-Item -LiteralPath $Payload.transcript_path).Length
+    } else { 0 }
 
     if (-not (Test-HandoffPathSetIsSafe -Target $Context.Target -Paths $Paths)) {
         Write-HealthRecord -Status FAILED -Code 'unsafe-reparse-traversal'
@@ -1233,6 +1568,7 @@ function Complete-HandoffDraft {
     }
 
     try {
+        if ((Get-Item -LiteralPath $Paths.State).Length -gt 8192) { throw 'State exceeds its bound.' }
         $state = Read-SharedText -Path $Paths.State |
             ConvertFrom-Json -Depth 20 -ErrorAction Stop
     }
@@ -1242,31 +1578,54 @@ function Complete-HandoffDraft {
         Write-HandoffFailureResult -Code 'state-invalid'
     }
 
-    $expectedDraft = Resolve-NormalizedPath -Path $Paths.Draft
-    $stateTarget = [string] $state.target
-    $stateDraft = [string] $state.draft
-    $stateWorkspace = [string] $state.workspace
-    $stateIsValid =
-        [string] $state.schema -ceq 'handoff-relay-state.v1' -and
-        [string] $state.phase -ceq 'awaiting-draft' -and
-        [string] $state.provider -ceq $Provider.ToLowerInvariant() -and
-        [string] $state.sessionKey -ceq $script:SessionKey -and
-        -not [string]::IsNullOrWhiteSpace($stateTarget) -and
-        -not [string]::IsNullOrWhiteSpace($stateDraft) -and
-        -not [string]::IsNullOrWhiteSpace($stateWorkspace) -and
-        (Test-SamePath -Left $stateTarget -Right $Context.Target) -and
-        (Test-SamePath -Left $stateDraft -Right $expectedDraft) -and
-        [string]::Equals(
-            $stateWorkspace,
-            [string] $Context.Workspace,
-            [System.StringComparison]::OrdinalIgnoreCase
-        ) -and
-        [string] $state.project -ceq [string] $Context.ProjectSlug -and
-        [string] $state.baselineHash -match '^(?:<absent>|[A-F0-9]{64})$'
+    $stateIsValid = Test-HandoffState -State $state -Context $Context -Paths $Paths
     if (-not $stateIsValid) {
         Move-AttemptToArchive -Paths $Paths -Kind failed
         Write-HealthRecord -Status FAILED -Code 'state-contract-mismatch'
         Write-HandoffFailureResult -Code 'state-contract-mismatch'
+    }
+
+    if ($InitialStop) {
+        if ($state.preparation -ceq 'recovery') {
+            Write-NeutralHookResult
+        }
+        if ($state.preparation -cne 'prompt') { return }
+    }
+    if ($state.preparation -ceq 'prompt') {
+        if ($null -eq $Payload -or
+            [string] $state.sessionId -cne [string] $Payload.session_id -or
+            [string] $state.turnId -cne [string] $Payload.turn_id -or
+            [string]::IsNullOrWhiteSpace([string] $state.transcript) -or
+            -not (Test-SamePath -Left $state.transcript -Right $Payload.transcript_path)) {
+            Move-AttemptToArchive -Paths $Paths -Kind failed
+            Write-HealthRecord -Status FAILED -Code 'prepared-ownership-mismatch'
+            Write-HandoffFailureResult -Code 'prepared-ownership-mismatch'
+        }
+        if ($InitialStop -and (Test-ToolFreeQuestion -Payload $Payload)) {
+            Save-CompletedAttempt -Paths $Paths -Payload $Payload -TranscriptOffset $script:ValidatedTranscriptLength
+            if (Test-Path -LiteralPath $Paths.Draft -PathType Leaf) {
+                Move-AttemptToArchive -Paths $Paths -Kind orphaned
+            }
+            else { Remove-Item -LiteralPath $Paths.State -Force }
+            Write-HealthRecord -Status SKIPPED -Code 'tool-free-turn'
+            Write-NeutralHookResult
+        }
+        $hasBoundedDraft = (Test-Path -LiteralPath $Paths.Draft -PathType Leaf) -and
+            (Get-Item -LiteralPath $Paths.Draft).Length -le $MaxDraftBytes
+        if (-not $hasBoundedDraft -or -not (Test-PreparedDraftFresh -State $state -Payload $Payload -Paths $Paths)) {
+            if (-not $InitialStop) {
+                Move-AttemptToArchive -Paths $Paths -Kind failed
+                Write-HealthRecord -Status FAILED -Code 'prepared-draft-stale'
+                Write-HandoffFailureResult -Code 'prepared-draft-stale'
+            }
+            # Keep the original hash. In particular, do not rebaseline after a
+            # concurrent publisher when recovering a missing or stale draft.
+            Move-AttemptToArchive -Paths $Paths -Kind orphaned
+            $state.preparation = 'recovery'
+            Write-AtomicJson -Path $Paths.State -Value $state
+            Write-HealthRecord -Status PREPARED -Code 'prepared-draft-recovery'
+            Write-DraftInstruction -Context $Context -Paths $Paths
+        }
     }
 
     if (-not (Test-Path -LiteralPath $Paths.Draft -PathType Leaf)) {
@@ -1285,13 +1644,14 @@ function Complete-HandoffDraft {
 
     $cleaned = ConvertTo-CleanHandoff -Draft (Read-SharedText -Path $Paths.Draft)
     if (-not $cleaned.Valid) {
+        $failureCode = if ($cleaned.Code -eq 'draft-budget-exceeded') { $cleaned.Code } else { 'draft-invalid' }
         Move-AttemptToArchive -Paths $Paths -Kind failed
         Write-HealthRecord `
             -Status FAILED `
-            -Code 'draft-invalid' `
+            -Code $failureCode `
             -Cleaning $cleaned.Cleaning `
             -Details @{ missingSections = ($cleaned.MissingSections -join ',') }
-        Write-HandoffFailureResult -Code 'draft-invalid'
+        Write-HandoffFailureResult -Code $failureCode
     }
 
     $document = ConvertTo-HandoffDocument -Cleaned $cleaned -State $state
@@ -1323,10 +1683,16 @@ function Complete-HandoffDraft {
         }
 
         Write-AtomicText -Path $Context.Target -Content $document
+        $receiptSaved = $true
+        if ($state.preparation -in @('prompt', 'recovery')) {
+            try { Save-CompletedAttempt -Paths $Paths -Payload $Payload -TranscriptOffset $script:ValidatedTranscriptLength }
+            catch { $receiptSaved = $false }
+        }
         Remove-Item -LiteralPath $Paths.State,$Paths.Draft -Force -ErrorAction SilentlyContinue
         Write-HealthRecord `
             -Status PUBLISHED `
             -Code 'published' `
+            -Details @{ completionReceiptSaved = $receiptSaved } `
             -Cleaning $cleaned.Cleaning
     }
     finally {
@@ -1356,9 +1722,16 @@ try {
     $rawInput = [Console]::In.ReadToEnd()
     $payload = $rawInput | ConvertFrom-Json -Depth 100 -ErrorAction Stop
 
-    if ([string] $payload.hook_event_name -cne 'Stop') {
+    $beforeModel = $Provider -ceq 'Codex' -and [string] $payload.hook_event_name -ceq 'UserPromptSubmit'
+    if (-not $beforeModel -and [string] $payload.hook_event_name -cne 'Stop') {
         Write-NeutralHookResult
     }
+    if ($beforeModel -and (
+        [string]::IsNullOrWhiteSpace([string] $payload.session_id) -or
+        [string]::IsNullOrWhiteSpace([string] $payload.turn_id) -or
+        [string]::IsNullOrWhiteSpace([string] $payload.transcript_path) -or
+        -not (Test-Path -LiteralPath ([string] $payload.transcript_path) -PathType Leaf)
+    )) { Write-NeutralHookResult }
 
     $hasBackgroundTasks = $null -ne $payload.PSObject.Properties['background_tasks'] -and
         $null -ne $payload.background_tasks -and
@@ -1382,17 +1755,38 @@ try {
     }
     $script:ProjectSlug = [string] $context.ProjectSlug
 
+    $script:Stage = 'classify-session'
+    $sessionKind = Get-SessionKind -Payload $payload
+    if ($sessionKind -cne 'interactive') {
+        Write-HealthRecord -Status SKIPPED -Code "non-interactive-$sessionKind"
+        Write-NeutralHookResult
+    }
+
     $projectRoot = Split-Path -Parent $context.Target
     $paths = Get-AttemptPathSet -ProjectRoot $projectRoot -SessionKey $script:SessionKey
+    if ($beforeModel) {
+        $script:Stage = 'prepare'
+        Initialize-HandoffDraft -Context $context -Paths $paths -Payload $payload -BeforeModel
+    }
     $stopHookActive = $payload.stop_hook_active -eq $true -or
         [string] $payload.stop_hook_active -eq 'true'
     if ($stopHookActive) {
         $script:Stage = 'complete'
-        Complete-HandoffDraft -Context $context -Paths $paths
+        Complete-HandoffDraft -Context $context -Paths $paths -Payload $payload
+    }
+
+    if ($Provider -ceq 'Codex' -and (Test-Path -LiteralPath $paths.State -PathType Leaf)) {
+        $script:Stage = 'complete'
+        Complete-HandoffDraft -Context $context -Paths $paths -Payload $payload -InitialStop
+    }
+
+    if (Test-ToolFreeQuestion -Payload $payload) {
+        Write-HealthRecord -Status SKIPPED -Code 'tool-free-turn'
+        Write-NeutralHookResult
     }
 
     $script:Stage = 'prepare'
-    Initialize-HandoffDraft -Context $context -Paths $paths
+    Initialize-HandoffDraft -Context $context -Paths $paths -Payload $payload
 }
 catch {
     Write-HealthRecord `

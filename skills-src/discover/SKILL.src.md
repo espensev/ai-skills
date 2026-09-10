@@ -1,13 +1,13 @@
 ---
 name: discover
 {{#claude}}
-description: Use when a bounded codebase question must be answered before planning or editing: dependencies, feasibility, constraints, patterns, or optimization opportunities. Produces findings for /planner. Do not use for implementation, current web research, findings-first diff review, or a multi-pass runtime-efficiency audit.
+description: Use when a bounded codebase question must be answered before planning or editing: dependencies, feasibility, constraints, patterns, or optimization opportunities. Produces findings that decide the next step: a direct change, a plan, or an explicit campaign. Do not use for implementation, current web research, findings-first diff review, or a multi-pass runtime-efficiency audit.
 argument-hint: "<goal or question> — what you need to know before planning"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Write, Edit
 user-invocable: true
 {{/claude}}
 {{#codex}}
-description: Use when a bounded codebase question must be answered before planning or editing: dependencies, feasibility, constraints, patterns, or optimization opportunities. Produces findings for $planner. Do not use for implementation, current web research, findings-first diff review, or a multi-pass runtime-efficiency audit.
+description: Use when a bounded codebase question must be answered before planning or editing: dependencies, feasibility, constraints, patterns, or optimization opportunities. Produces findings that decide the next step: a direct change, a plan, or an explicit campaign. Do not use for implementation, current web research, findings-first diff review, or a multi-pass runtime-efficiency audit.
 {{/codex}}
 ---
 
@@ -15,13 +15,15 @@ description: Use when a bounded codebase question must be answered before planni
 
 You are a codebase researcher. You answer specific questions about a codebase
 by reading, searching, and analyzing — then produce a structured findings
-document that downstream planners can consume.
+document that the next step can consume: a direct change, human review, or
+an explicitly requested campaign.
 
 **You do NOT plan campaigns, design agents, or write implementation code.**
 **You produce knowledge, not plans.**
 
 **Output:** `docs/discovery-{name}.md` — structured findings document
-**Consumers:** `{{cmd}}planner`, `{{cmd}}planner --mode refactor`, or human review
+**Consumers:** the user, a direct implementation in the same session, or
+`{{cmd}}manager plan` for an explicitly requested multi-agent campaign
 
 ---
 
@@ -45,10 +47,11 @@ Examples:
 
 ## Pipeline Position
 
-Discovery sits before planning. It produces the input that planners need.
+Discovery sits before a decision. It produces the input the next step needs.
 
 ```
-{{cmd}}discover  →  findings document  →  {{cmd}}planner  →  plan  →  {{cmd}}manager run
+{{cmd}}discover  →  findings document  →  direct change
+                                    →  {{cmd}}manager plan  →  {{cmd}}manager run   (explicit campaign only)
 ```
 
 A discovery can also stand alone — the user may just want answers without
@@ -128,15 +131,11 @@ Then produce cross-cutting analysis:
 
 Based on the findings, state the recommended next step:
 
-{{#claude}}
-- **Ready to plan:** "Findings support proceeding. Run `/planner <goal>`
-  (or `/planner --mode refactor <goal>` for architectural refactors)
-  with this document as input."
-{{/claude}}
-{{#codex}}
-- **Ready to plan:** "Findings support proceeding. Run `$planner <goal>`
-  (or `$planner --mode refactor <goal>` for refactors) with this document as input."
-{{/codex}}
+- **Ready to proceed:** "Findings support proceeding." Then continue in this
+  session with the change the findings describe, citing this document. Name
+  `{{cmd}}manager plan <goal>` only when the user explicitly asked for a
+  multi-agent campaign; do not route to a planning skill that is not enabled
+  in the current provider.
 - **Needs more discovery:** "Questions X and Y remain open. Run
   `{{cmd}}discover <narrower question>` next."
 - **Not feasible:** "Findings indicate X is not viable because [reason].
@@ -281,23 +280,24 @@ Discovery without bounds is unbounded research. Enforce these limits:
 
 ---
 
-## Consumption by Planners
+## Consumption downstream
 
-When a planner reads a discovery document, it should use:
+When a plan or campaign is designed from a discovery document (by
+`{{cmd}}manager plan`, or by a planning skill where one is enabled), it should
+use:
 
-| Findings Section | Planner Use |
+| Findings Section | Downstream Use |
 |-----------------|-------------|
 | Constraints | Hard inputs to decomposition — things that limit agent scope |
 | Risks | Feeds directly into plan element #11 (Risk Assessment) |
 | Dependency/impact data | Informs file ownership map and conflict zone analysis |
 | Open questions | May trigger another `{{cmd}}discover` before planning proceeds |
-| Recommendation | Determines which planner to invoke and with what framing |
+| Recommendation | Determines whether the next step is a direct change, a review, or a campaign |
 
-The findings document path should be passed to the planner as context:
+Pass the findings document path as context to whatever consumes it:
 
 ```
-{{cmd}}planner Add WebSocket push (see docs/discovery-websocket-feasibility.md)
-{{cmd}}planner --mode refactor Extract storage layer (see docs/discovery-collector-deps.md)
+{{cmd}}manager plan Add WebSocket push (see docs/discovery-websocket-feasibility.md)
 ```
 
 ---

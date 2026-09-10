@@ -48,6 +48,18 @@ agent skill roots:
 .\scripts\Install-AgentSkills.ps1 -Provider Both -Force
 ```
 
+To update selected skills in an existing provider installation:
+
+```powershell
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -SkillNames handoff -CodexTargets 'D:\DevHome\state\codex\skills' -Force
+```
+
+`-SkillNames` requires one provider, validates every selected name before
+writing, and copies only those skill directories. It preserves other skills,
+retired entries, shared contracts and runtime files. Use a full package install
+when shared dependencies also need updating. Synchronize local plugins in a
+separate invocation. `-DryRun` previews either mode without writing.
+
 Compare the installed Codex and Claude roots against the manifests:
 
 ```powershell

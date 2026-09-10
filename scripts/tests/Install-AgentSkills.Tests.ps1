@@ -7,6 +7,47 @@ BeforeAll {
     $script:RetiredNames = @($script:Registry.retired_skills | ForEach-Object { [string]$_.name })
 }
 
+Describe "selective skill installation" -Tag 'SelectiveSkills' {
+    It "updates only the requested skill and preserves unrelated skills, support files and retired entries" {
+        $target = Join-Path $TestDrive 'selective-codex'
+        foreach ($name in @('handoff', 'qa', 'agent-report')) {
+            New-Item -ItemType Directory -Path (Join-Path $target $name) -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $target "$name\SKILL.md") -Value "existing $name"
+        }
+        Set-Content -LiteralPath (Join-Path $target 'planning-contract.md') -Value 'existing contract'
+        $preserved = @('qa\SKILL.md', 'agent-report\SKILL.md', 'planning-contract.md')
+        $hashes = @{}
+        foreach ($path in $preserved) { $hashes[$path] = (Get-FileHash -LiteralPath (Join-Path $target $path)).Hash }
+        & $script:Installer -Provider Codex -CodexTargets $target -SkillNames handoff -Force | Out-Null
+        (Get-FileHash -LiteralPath (Join-Path $target 'handoff\SKILL.md')).Hash |
+            Should -BeExactly (Get-FileHash -LiteralPath (Join-Path $script:RepoRoot 'codex-skills\skills\handoff\SKILL.md')).Hash
+        foreach ($path in $preserved) { (Get-FileHash -LiteralPath (Join-Path $target $path)).Hash | Should -BeExactly $hashes[$path] }
+        @(Get-ChildItem -LiteralPath $target -Force) | Should -HaveCount 4
+    }
+
+    It "validates the entire selection before creating any target" {
+        $target = Join-Path $TestDrive 'invalid-selection'
+        { & $script:Installer -Provider Codex -CodexTargets $target -SkillNames @('handoff', '../outside') -Force } |
+            Should -Throw '*Invalid selected skill*'
+        Test-Path -LiteralPath $target | Should -BeFalse
+        { & $script:Installer -Provider Codex -CodexTargets $target -SkillNames @('handoff', 'missing-skill') -Force } |
+            Should -Throw '*Invalid selected skill*'
+        Test-Path -LiteralPath $target | Should -BeFalse
+    }
+
+    It "requires a single provider and excludes plugin synchronization when selecting skills" {
+        { & $script:Installer -SkillNames handoff } | Should -Throw '*single provider*'
+        { & $script:Installer -Provider Codex -SkillNames handoff -CodexLocalPlugin DevHomeLifecycle } |
+            Should -Throw '*separate invocation*'
+    }
+
+    It "honors selective dry-run without creating the target" {
+        $target = Join-Path $TestDrive 'selective-dry-run'
+        & $script:Installer -Provider Codex -CodexTargets $target -SkillNames handoff -Force -DryRun | Out-Null
+        Test-Path -LiteralPath $target | Should -BeFalse
+    }
+}
+
 Describe "retired skill installation contract" {
     It "keeps the complete retirement set in one registry" {
         $script:Registry.schema | Should -Be "ai-skills/retired-skills/v1"

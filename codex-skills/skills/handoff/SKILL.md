@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "Use when the session opens by pointing back at earlier work instead of describing new work: resume, continue, take over, follow up, pick this up, read the handoff, or a path to a handoff/state/plan file. Reconstructs the prior state from the memory store and the repo, verifies every checkable claim in it, and states what to do next before touching anything. Do not use for a fresh task with no prior state, or to perform the resumed work itself - it routes, it does not build."
+description: "Use when the session opens by pointing back at earlier work instead of describing new work: resume, continue, take over, follow up, pick this up, read the handoff, or a path to a handoff/state/plan file. Reconciles the latest user direction with the prior state, verifies the claims the next action relies on, and continues through the workflow that owns the work. Do not use for a fresh task with no prior state, or for handoff authoring."
 ---
 
 # Handoff - Resume Intake
@@ -10,10 +10,11 @@ not a description of a task. It is a pointer to state you do not have. Load
 that state and check it before acting - never guess the task from the
 opener alone.
 
-**Output:** a short spoken summary - where things stand, what is stale,
-what to do next. No file, no edit.
+**Output:** a brief status - where things stand, which claims are stale,
+and the next authorized action. Intake is read-only; the work continues
+through the workflow that owns it.
 **Default command:** `$handoff`
-**Source edits:** none
+**Source edits:** none during intake
 
 ---
 
@@ -21,24 +22,38 @@ what to do next. No file, no edit.
 
 **A handoff note is a claim, not a fact.** It was written before the last
 things happened. Notes routinely say work is blocked when it landed, name a
-branch that merged, or point at a file that moved.
+branch that merged, or point at a file that moved. Its next step also does
+not override later user direction.
 
-Verify every checkable claim against the repo before you repeat it. Repeating
-a stale note as current state is the failure this skill exists to prevent.
+Verify every claim you rely on or report as current before you repeat it.
+Repeating a stale note as current state is the failure this skill exists to
+prevent.
 
 ---
 
-## Phase 1: Find the state
+## 1. Establish the current scope
 
-Work outward. Stop at the first layer that answers the question, but always do
-Phase 2 on whatever you find.
+- Read the latest user direction first. Explicit priorities, exclusions,
+  existing authorization, and cancellation decisions come before the old plan.
+- Identify the requested outcome and the prior claims needed to act on it. Do
+  not revive deferred work just because an old `Next gate` lists it first.
+- When the user asks to park other findings, route a concise durable note into
+  the requested documentation work - evidence, ownership boundaries,
+  remaining questions, and the next gate. Keep it out of the active task.
 
-1. **An explicit path.** If the user named a file, read that first.
-2. **The memory store.** The remember-style layout is
-   `<store>/projects/<project-slug>/` holding `now.md` (live buffer),
-   `today-*.md` (daily), `recent.md` (7 days), `archive*.md` (older). Read
-   newest first. Older archives are usually not preloaded - grep them
-   only when a question reaches past what you already have.
+---
+
+## 2. Find the authoritative state
+
+Start with an explicit path or the injected current handoff. Prefer the current
+project tracker over an older recap. Search outward only as far as needed, and
+always run step 3 on whatever you find.
+
+1. **The named handoff, state, or plan file.**
+2. **The bounded Remember project store** at
+   `<store>/projects/<project-slug>/`: `remember.md` (current handoff),
+   `now.md` (live buffer), then relevant `today-*.md` or `recent.md`. Search
+   older `archive*.md` only when the request reaches beyond current context.
 3. **Handoff files in the repo.** `HANDOFF.md`, `docs/handoffs/`,
    `docs/plans/`, `*handoff*.md`, `*-state.md`.
 4. **The repo itself.** Recent commits, branch list, worktrees, dirty files:
@@ -50,65 +65,105 @@ git branch -a --sort=-committerdate | head -10
 git worktree list
 ```
 
-If nothing turns up in any layer, say so plainly and ask what to resume. Do
-not invent a continuation.
+Use provider-native memory only under its supplied read policy. Do not
+recursively read all stores, transcripts, skills, or historical audit
+artifacts by default.
+
+If no usable state exists in any layer, say so plainly and ask one concise
+question about what to resume, while continuing any independent work the
+current request makes clear. Do not invent a continuation.
 
 ---
 
-## Phase 2: Verify before you repeat
+## 3. Verify the claims the next action relies on
 
-For every concrete claim in the state you loaded, check it:
+Check current scope and ownership before editing. Classify each relied-on
+claim as **confirmed**, **stale**, or **unverifiable**. Unverifiable is its own
+class - say what could not be checked and why, rather than passing it
+through as fact.
 
 | Claim shape | Check |
 |---|---|
-| "landed at `<sha>`" / "committed" | `git show --stat <sha>` - exists, and on which branch |
-| "blocked on X" / "gate failing" | re-run the gate, or read the commit that supposedly failed |
+| "landed at `<sha>`" / "committed" / "merged" | `git show --stat <sha>`; current branch ancestry |
 | "branch `<name>` is in flight" | `git branch -a`, `git log --oneline <name> -5` - merged? abandoned? |
-| "file `<path>` has Y" | read the file - it may have moved or changed |
-| "next step is Z" | is Z already done in a later commit? |
+| "file `<path>` has Y" | read the file, or compare its recorded hash - it may have moved |
+| "installed behavior matches source" | the actual runtime, selected configuration, and source/runtime hashes |
+| "blocked on X" / "gate failing" | does the blocking condition still apply to the current request? re-run the gate if so |
+| "gate passed" | reuse a receipt whose inputs and environment still match; rerun when inputs changed |
+| "next step is Z" | the latest tracker and later commits - is Z already done? |
 
-Label each claim **confirmed**, **stale**, or **unverifiable**. Unverifiable is
-its own class - say what could not be checked and why, rather than
-passing it through as fact.
 
-If the store is wrong, say so and correct it. A stale note that stays uncorrected
-will mislead the next session too.
+Refresh volatile runtime, machine identity, trust, authentication, and branch
+facts before actions that depend on them. A source test or administrative
+probe does not prove interactive runtime adoption. Preserve unrelated dirty
+work.
+
+Keep verification proportional: verify every claim you rely on or report as
+current, without rerunning historical campaigns unrelated to the next action.
+Name any practical verification limit instead of silently promoting old
+results.
+
+If the store is wrong, say so. A stale note that stays uncorrected will
+mislead the next session too; correct it within the authorized follow-on task.
 
 ---
 
-## Phase 3: Reconcile and route
+## 4. Reconcile and continue
 
-Report in this order:
+Report in this order, briefly:
 
-1. **Where things actually stand** - the verified picture, not the note's
-   picture.
+1. **Where things actually stand** - the verified picture, not the
+   note's picture.
 2. **What changed since the note was written** - the stale claims,
    named.
 3. **The open decision, if there is one** - if the prior session stopped
    on a question the user never answered, that question is the top of the
    report, not a footnote.
-4. **What to do next**, routed to the skill that owns it:
+4. **What to do next**, routed to the workflow that owns it:
 
 | Next step | Route |
 |---|---|
 | Read and critique a plan, doc, or the handoff itself | `$review --doc <path>` |
 | Audit a branch or diff | `$review` |
-| Land finished work | `$ship` |
+| Land validated work | `$ship` |
 | Run tests | `$qa` |
 | Answer a bounded codebase question | `$discover` |
 | Reproduce and fix one bug | `$diagnosing-bugs` |
-| Fan out parallel lanes | `$manager` |
+| An explicitly requested multi-agent campaign | `$manager` - never for ordinary resumed work |
 | Correct or prune the state store | `$memory-management` |
 
-Then do the work, or ask if the open decision blocks it.
+Carry existing user authorization forward; do not ask for it again just
+because a session resumed. Honor an explicit prior stop or cancellation unless
+later direction supersedes it.
+
+Then do the work in this same session. Intake alone is not completion, and
+naming the next gate is not an outcome - stop only when an unanswered
+decision genuinely blocks the work, and never treat an ordinary commit, push,
+or merge as that gate.
 
 ---
 
-## Boundaries
+## State and publication boundaries
 
-- Do not start the resumed work inside this skill. Route to the owning skill,
-  or hand back a clear next action.
-- Do not merge, push, delete, or reset while reconstructing state. Phase 1 and
-  2 are read-only.
+- Steps 1-3 are read-only. Do not merge, push, delete, or reset during
+  intake; delivery follows the resumed task's authorization and ownership
+  checks.
 - Do not treat an interrupted campaign as authorization to resume it. If the
   prior session was stopped by the user, surface that and ask.
+- A bounded Remember handoff and provider-native memory are separate. Native
+  memory updates require an explicit user request and the prescribed update
+  route; `$memory-management` governs that route.
+- An active relay draft instruction selects the handoff destination. Its
+  canonical path is routing information, not a second write target. Follow
+  the supplied authoring limits and draft-write ordering; never claim that a
+  successful draft write proves publication.
+- Reserve the handoff's next gate for the current priority. Link deferred work
+  rather than compressing unrelated campaigns into it.
+
+---
+
+## Writing the next handoff
+
+Every state claim names its check in backticks (a sha, a branch, a path, or a
+`X.Tests` name) so the verifier can prove it. A claim with no possible check
+carries `[unverified]` at the end of its line.

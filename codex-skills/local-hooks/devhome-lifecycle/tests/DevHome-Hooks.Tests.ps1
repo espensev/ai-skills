@@ -49,6 +49,7 @@ Add-Content -LiteralPath $env:FAKE_RUNTIME_TARGET_MARKER -Value $TargetRoot
             $Payload | ConvertTo-Json -Depth 12 -Compress | Set-Content -LiteralPath $inputPath -Encoding utf8NoBOM
 
             $process = Start-Process -FilePath (Get-Command pwsh).Source `
+                -WindowStyle Hidden `
                 -ArgumentList @('-NoProfile', '-File', $script:HookScript, '-Event', $Event) `
                 -RedirectStandardInput $inputPath `
                 -RedirectStandardOutput $outputPath `
@@ -126,6 +127,7 @@ Add-Content -LiteralPath $env:FAKE_RUNTIME_TARGET_MARKER -Value $TargetRoot
             }
 
             $process = Start-Process -FilePath (Get-Command pwsh).Source `
+                -WindowStyle Hidden `
                 -ArgumentList $argumentList `
                 -RedirectStandardInput $inputPath `
                 -RedirectStandardOutput $outputPath `
@@ -153,10 +155,16 @@ Add-Content -LiteralPath $env:FAKE_RUNTIME_TARGET_MARKER -Value $TargetRoot
         function Write-HandoffRelayTranscript {
             param(
                 [Parameter(Mandatory)]
-                [object[]] $Records
+                [object[]] $Records,
+
+                [Parameter(Mandatory = $false)]
+                [string] $FileName
             )
 
-            $path = Join-Path $TestDrive ("handoff-transcript-{0}.jsonl" -f [guid]::NewGuid().ToString('N'))
+            if ([string]::IsNullOrWhiteSpace($FileName)) {
+                $FileName = "handoff-transcript-{0}.jsonl" -f [guid]::NewGuid().ToString('N')
+            }
+            $path = Join-Path $TestDrive $FileName
             $Records |
                 ForEach-Object { $_ | ConvertTo-Json -Depth 20 -Compress } |
                 Set-Content -LiteralPath $path -Encoding utf8NoBOM
@@ -219,7 +227,7 @@ $noise## Summary
 ## Outcome
 
 - Added deterministic draft validation and publication.
-- This deliberately overlong outcome bullet contains many unnecessary words so the deterministic cleaner must shorten it automatically while retaining a bounded useful prefix instead of allowing verbose filler to expand the final handoff document without limit.
+- The cleaner preserves complete facts within the advertised limits.
 
 This paragraph is intentionally ignored.
 
@@ -371,6 +379,7 @@ This paragraph is intentionally ignored.
             }
 
             $process = Start-Process -FilePath $filePath `
+                -WindowStyle Hidden `
                 -ArgumentList $arguments `
                 -Environment @{ CODEX_HOME = $codexHome } `
                 -RedirectStandardInput $inputPath `
@@ -492,6 +501,240 @@ This paragraph is intentionally ignored.
             $null = New-Item -ItemType Directory -Path $script:RememberProjectsRoot -Force
         }
 
+        Context 'Prepared Codex handoff' -Tag 'PreparedHandoff' {
+            BeforeEach {
+                $script:PreparedProject = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+                $null = New-Item -ItemType Directory -Path $script:PreparedProject -Force
+                $script:PreparedTarget = Join-Path $script:PreparedProject 'remember.md'
+                '# baseline' | Set-Content -LiteralPath $script:PreparedTarget -Encoding utf8NoBOM
+                $script:PreparedTranscript = Write-HandoffRelayTranscript -Records @(
+                    @{ type = 'session_meta'; payload = @{ id = 'prepared-session' } }
+                )
+                $script:PreparedPayload = @{
+                    hook_event_name = 'UserPromptSubmit'; session_id = 'prepared-session'
+                    turn_id = 'prepared-turn'; cwd = 'D:\Development\AI-related'
+                    transcript_path = $script:PreparedTranscript; prompt = 'Implement the requested fix.'
+                    stop_hook_active = $false
+                }
+            }
+
+            BeforeAll {
+            function Add-PreparedRecords {
+                param([object[]] $Records)
+                $Records | ForEach-Object { $_ | ConvertTo-Json -Depth 30 -Compress } |
+                    Add-Content -LiteralPath $script:PreparedTranscript -Encoding utf8NoBOM
+            }
+
+            function Write-PreparedDraft {
+                param([string] $DraftPath, [switch] $MixedWork, [switch] $PendingWork)
+                $draft = Get-ContractHandoffDraft -SummaryItems @('Prepared fixture completed.')
+                Set-Content -LiteralPath $DraftPath -Value $draft -Encoding utf8NoBOM -NoNewline
+                $patch = "*** Begin Patch`n*** Add File: $($DraftPath.Replace('\','/'))`n" +
+                    (($draft -split '\r?\n' | ForEach-Object { '+' + $_ }) -join "`n") + "`n*** End Patch"
+                $code = 'text(await tools.apply_patch(' + (ConvertTo-Json -InputObject $patch -Compress) + '));'
+                if ($MixedWork) { $code += 'text(await tools.exec_command({cmd:"later work"}));' }
+                if ($PendingWork) {
+                    Add-PreparedRecords @(@{ type='response_item'; payload=@{ type='function_call'; name='exec_command'; call_id='pending'; arguments='{}' } })
+                }
+                Add-PreparedRecords @(
+                    @{ type='response_item'; payload=@{ type='custom_tool_call'; name='exec'; call_id='draft-call'; input=$code } }
+                    @{ type='event_msg'; payload=@{ type='item_completed'; thread_id='prepared-session'; turn_id='prepared-turn'; item=@{
+                        type='FileChange'; status='completed'; changes=@{ $DraftPath=@{ type='add'; content=$draft } }
+                    } } }
+                    @{ type='response_item'; payload=@{ type='custom_tool_call_output'; call_id='draft-call'; output='{}' } }
+                    @{ type='response_item'; payload=@{ type='message'; role='assistant'; phase='final_answer'; content=@(@{ type='output_text'; text='Implemented and tested.' }) } }
+                )
+            }
+
+            }
+
+            It 'prepares developer context without a model continuation and publishes once on the first Stop' {
+                $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $out = $first.Output | ConvertFrom-Json
+                $out.hookSpecificOutput.hookEventName | Should -BeExactly 'UserPromptSubmit'
+                $out.PSObject.Properties.Name | Should -Not -Contain 'decision'
+                $out.hookSpecificOutput.additionalContext | Should -Match 'Next gate: 2 bullets, 40 words total, 24 words per bullet'
+                $draft = Get-HandoffRelayDraftPath -Output $first.Output
+                (Get-Content -Raw -LiteralPath $script:PreparedTarget).Trim() | Should -BeExactly '# baseline'
+                Test-Path -LiteralPath $draft | Should -BeFalse
+                Write-PreparedDraft -DraftPath $draft
+                $script:PreparedPayload.hook_event_name = 'Stop'
+                $stop = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($stop.Output | ConvertFrom-Json).systemMessage | Should -BeExactly 'Handoff Relay: next-session context refreshed.'
+                (Get-Content -Raw -LiteralPath $script:PreparedTarget) | Should -Match 'Prepared fixture completed'
+                Test-Path -LiteralPath $draft | Should -BeFalse
+                $hash = (Get-FileHash -LiteralPath $script:PreparedTarget).Hash
+                $repeat = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($repeat.Output | ConvertFrom-Json).PSObject.Properties.Name | Should -Not -Contain 'decision'
+                (Get-FileHash -LiteralPath $script:PreparedTarget).Hash | Should -BeExactly $hash
+            }
+
+            It 'prepares again for new work after a completed handoff in the same turn' {
+                $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $draft = Get-HandoffRelayDraftPath -Output $first.Output
+                Write-PreparedDraft -DraftPath $draft
+                $script:PreparedPayload.hook_event_name = 'Stop'
+                $null = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                Add-PreparedRecords @(@{ type='response_item'; payload=@{type='message';role='user';content=@(@{type='input_text';text='Finish the follow-up too.'})} })
+                $script:PreparedPayload.hook_event_name = 'UserPromptSubmit'
+                $followup = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                (Get-HandoffRelayDraftPath -Output $followup.Output) | Should -BeExactly $draft
+                $state = Get-Content -Raw -LiteralPath ($draft -replace '\.draft\.md$', '.state.json') | ConvertFrom-Json
+                $state.baselineHash | Should -BeExactly (Get-FileHash -LiteralPath $script:PreparedTarget).Hash
+            }
+
+            It 'preserves the original baseline across repeated prompt events and concurrent publication' {
+                $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $draft = Get-HandoffRelayDraftPath -Output $first.Output
+                $statePath = $draft -replace '\.draft\.md$', '.state.json'
+                $baseline = (Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json).baselineHash
+                '# another publisher' | Set-Content -LiteralPath $script:PreparedTarget
+                $repeat = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                (Get-HandoffRelayDraftPath -Output $repeat.Output) | Should -BeExactly $draft
+                (Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json).baselineHash | Should -BeExactly $baseline
+                Write-PreparedDraft -DraftPath $draft
+                $script:PreparedPayload.hook_event_name = 'Stop'
+                $stop = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($stop.Output | ConvertFrom-Json).systemMessage | Should -Match 'newer next-session context'
+                (Get-Content -Raw -LiteralPath $script:PreparedTarget).Trim() | Should -BeExactly '# another publisher'
+                @(Get-ChildItem -LiteralPath (Split-Path $draft) -Filter '*.conflict.*.draft.md').Count | Should -Be 1
+            }
+
+            It 'retains the baseline and requests one recovery for <Case>' -ForEach @(
+                @{ Case='missing' }, @{ Case='steering' }, @{ Case='later-tool' }, @{ Case='compaction' }
+                @{ Case='mixed-work' }, @{ Case='pending-work' }, @{ Case='changed-file' }, @{ Case='malformed-transcript' }
+            ) {
+                $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $draft = Get-HandoffRelayDraftPath -Output $first.Output
+                $statePath = $draft -replace '\.draft\.md$', '.state.json'
+                $baseline = (Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json).baselineHash
+                if ($Case -ne 'missing') {
+                    Write-PreparedDraft -DraftPath $draft -MixedWork:($Case -eq 'mixed-work') -PendingWork:($Case -eq 'pending-work')
+                }
+                switch ($Case) {
+                    'steering' { Add-PreparedRecords @(@{ type='response_item'; payload=@{ type='message'; role='user'; content=@(@{type='input_text';text='Also fix the second issue.'}) } }) }
+                    'later-tool' { Add-PreparedRecords @(@{ type='response_item'; payload=@{ type='function_call'; name='exec_command';call_id='later';arguments='{}' } }) }
+                    'compaction' { Add-PreparedRecords @(@{ type='compacted'; payload=@{} }) }
+                    'changed-file' { Add-Content -LiteralPath $draft -Value '- Changed after the recorded draft edit.' }
+                    'malformed-transcript' { Add-Content -LiteralPath $script:PreparedTranscript -Value '{invalid' }
+                }
+                $script:PreparedPayload.hook_event_name = 'Stop'
+                $stop = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($stop.Output | ConvertFrom-Json).decision | Should -BeExactly 'block'
+                (Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json).baselineHash | Should -BeExactly $baseline
+                (Get-Content -Raw -LiteralPath $script:PreparedTarget).Trim() | Should -BeExactly '# baseline'
+                $script:PreparedPayload.stop_hook_active = $true
+                $retry = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($retry.Output | ConvertFrom-Json).PSObject.Properties.Name | Should -Not -Contain 'decision'
+            }
+
+            It 'refuses corrupted prepared ownership for <Case>' -ForEach @(
+                @{Case='sessionId'}, @{Case='turnId'}, @{Case='target'}, @{Case='baselineHash'}, @{Case='oversized-state'}
+            ) {
+                $first=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $draft=Get-HandoffRelayDraftPath -Output $first.Output
+                Write-PreparedDraft -DraftPath $draft
+                $statePath=$draft -replace '\.draft\.md$', '.state.json'
+                $state=Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json
+                if ($Case -eq 'oversized-state') { ('x' * 9000) | Set-Content -LiteralPath $statePath }
+                else {
+                    $state.$Case='wrong-owner'
+                    $state | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $statePath
+                }
+                $script:PreparedPayload.hook_event_name='Stop'
+                $stop=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($stop.Output | ConvertFrom-Json).PSObject.Properties.Name | Should -Not -Contain 'decision'
+                (Get-Content -Raw -LiteralPath $script:PreparedTarget).Trim() | Should -BeExactly '# baseline'
+                @(Get-ChildItem -LiteralPath (Split-Path $draft) -Filter '*.failed.*.draft.md').Count | Should -Be 1
+            }
+
+            It 'never publishes a stale prepared draft after another Stop continuation' {
+                $first=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $draft=Get-HandoffRelayDraftPath -Output $first.Output
+                Write-PreparedDraft -DraftPath $draft
+                Add-PreparedRecords @(@{type='response_item';payload=@{type='message';role='user';content=@(@{type='input_text';text='Another hook requested more work.'})}})
+                $script:PreparedPayload.hook_event_name='Stop'
+                $script:PreparedPayload.stop_hook_active=$true
+                $stop=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($stop.Output | ConvertFrom-Json).PSObject.Properties.Name | Should -Not -Contain 'decision'
+                (Get-Content -Raw -LiteralPath $script:PreparedTarget).Trim() | Should -BeExactly '# baseline'
+            }
+
+            It 'publishes a freshly authored recovery using the original baseline' {
+                $first=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $draft=Get-HandoffRelayDraftPath -Output $first.Output
+                $script:PreparedPayload.hook_event_name='Stop'
+                $stop=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($stop.Output | ConvertFrom-Json).decision | Should -BeExactly 'block'
+                Write-PreparedDraft -DraftPath $draft
+                $script:PreparedPayload.stop_hook_active=$true
+                $recovery=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($recovery.Output | ConvertFrom-Json).systemMessage | Should -BeExactly 'Handoff Relay: next-session context refreshed.'
+            }
+
+            It 'keeps completion receipts bounded and treats later work as eligible' {
+                $first=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $draft=Get-HandoffRelayDraftPath -Output $first.Output
+                $receipt=Join-Path (Split-Path $draft) 'completed.json'
+                $entries=@(1..32 | ForEach-Object { @{key=$_.ToString('x32');transcript=$script:PreparedTranscript;offset=0} })
+                @{schema='handoff-relay-completed.v1';attempts=$entries} | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $receipt
+                Write-PreparedDraft -DraftPath $draft
+                $script:PreparedPayload.hook_event_name='Stop'
+                $null=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $saved=Get-Content -Raw -LiteralPath $receipt | ConvertFrom-Json
+                @($saved.attempts).Count | Should -Be 32
+                $saved.attempts.key | Should -Not -Contain ((1).ToString('x32'))
+                (Get-Item -LiteralPath $receipt).Length | Should -BeLessOrEqual 32768
+            }
+
+            It 'retains handoff capture when the optional receipt is <Case>' -ForEach @(
+                @{Case='invalid-json';Text='{broken'}, @{Case='oversized';Text=('x' * 32769)}, @{Case='unknown-schema';Text='{"schema":"other"}'}
+            ) {
+                $relayRoot=Join-Path $script:PreparedProject 'tmp\handoff-relay'
+                $null=New-Item -ItemType Directory -Path $relayRoot -Force
+                Set-Content -LiteralPath (Join-Path $relayRoot 'completed.json') -Value $Text
+                $first=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $draft=Get-HandoffRelayDraftPath -Output $first.Output
+                Write-PreparedDraft -DraftPath $draft
+                $script:PreparedPayload.hook_event_name='Stop'
+                $stop=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($stop.Output | ConvertFrom-Json).systemMessage | Should -BeExactly 'Handoff Relay: next-session context refreshed.'
+                (Get-Item -LiteralPath (Join-Path $relayRoot 'completed.json')).Length | Should -BeLessOrEqual 32768
+            }
+
+            It 'does not prepare for <Case>' -ForEach @(
+                @{ Case='missing-turn' }, @{ Case='missing-session' }, @{ Case='missing-transcript' }
+                @{ Case='background' }, @{ Case='Claude' }
+            ) {
+                $provider = 'Codex'
+                switch ($Case) {
+                    'missing-turn' { $script:PreparedPayload.Remove('turn_id') }
+                    'missing-session' { $script:PreparedPayload.Remove('session_id') }
+                    'missing-transcript' { $script:PreparedPayload.Remove('transcript_path') }
+                    'background' { $script:PreparedPayload.background_tasks = @('work') }
+                    'Claude' { $provider = 'Claude' }
+                }
+                $result = Invoke-HandoffRelayProcess -Provider $provider -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $result.Output.Trim() | Should -BeExactly '{}'
+                Test-Path -LiteralPath (Join-Path $script:PreparedProject 'tmp\handoff-relay') | Should -BeFalse
+            }
+
+            It 'keeps short tool-free Q&A free of draft writes and continuation' {
+                $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                $draft = Get-HandoffRelayDraftPath -Output $first.Output
+                Add-PreparedRecords @(
+                    @{type='event_msg';payload=@{type='task_started';turn_id='prepared-turn'}}
+                    @{type='response_item';payload=@{type='message';role='user';content=@(@{type='input_text';text='Is it ready?'})}}
+                    @{type='response_item';payload=@{type='message';role='assistant';content=@(@{type='output_text';text='Yes.'})}}
+                )
+                $script:PreparedPayload.hook_event_name='Stop'
+                $stop=Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
+                ($stop.Output | ConvertFrom-Json).PSObject.Properties.Name | Should -Not -Contain 'decision'
+                Test-Path -LiteralPath $draft | Should -BeFalse
+                Test-Path -LiteralPath ($draft -replace '\.draft\.md$', '.state.json') | Should -BeFalse
+            }
+        }
+
         It 'uses the latest developer-declared handoff target and ignores a user spoof' {
             $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
             $null = New-Item -ItemType Directory -Path $projectRoot -Force
@@ -536,8 +779,8 @@ This paragraph is intentionally ignored.
             $output.reason | Should -Match ([regex]::Escape($target))
             $output.reason | Should -Match 'not Codex native memory'
             $output.reason | Should -Match 'Write the handoff to the file at Draft'
-            $output.reason | Should -Match 'Do not answer with only the draft path'
-            $output.reason | Should -Match 'repeat the substantive user-facing closeout'
+            $output.reason | Should -Match 'finish with 1-2 useful, self-contained sentences'
+            $output.reason | Should -Not -Match 'respond only with'
             $output.reason | Should -Match 'use exactly `Preparing handoff\.`'
             $output.reason | Should -Match 'Do not describe the proposed handoff contents'
             $output.systemMessage | Should -BeExactly 'Preparing handoff.'
@@ -583,6 +826,162 @@ This paragraph is intentionally ignored.
 
             ($result.Output | ConvertFrom-Json).decision | Should -BeExactly 'block'
             ($result.Output | ConvertFrom-Json).reason | Should -Match ([regex]::Escape($target))
+        }
+
+        It 'keeps a useful task ending in the continuation for <Provider>' -Tag 'FinishRegression' -ForEach @(
+            @{ Provider = 'Codex' }, @{ Provider = 'Claude' }
+        ) {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $result = Invoke-HandoffRelayProcess -Provider $Provider -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; cwd = 'D:\Development\AI-related'; stop_hook_active = $false
+            }
+            $result.ExitCode | Should -Be 0
+            $instruction = Get-HandoffRelayInstruction -Output $result.Output
+            $instruction | Should -Match 'finish with 1-2 useful, self-contained sentences'
+            $instruction | Should -Match "summarize the task's concrete outcome or finding"
+            $instruction | Should -Match 'suggested next action or unresolved blocker'
+            $instruction | Should -Match 'no follow-up is needed.*without inventing work'
+            $instruction | Should -Match 'Never end with only a handoff status or a generic acknowledgement'
+            $instruction | Should -Match 'Do not claim publication from the draft write'
+            $instruction | Should -Not -Match 'respond only with|Handoff prepared for automatic publication'
+        }
+
+        It 'finishes a tool-free question without a draft or continuation for <Provider>' -Tag 'FinishRegression' -ForEach @(
+            @{ Provider = 'Codex' }, @{ Provider = 'Claude' }
+        ) {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $records = if ($Provider -eq 'Codex') {
+                @(
+                    @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'previous-turn' } },
+                    @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Change the parser.' }) } },
+                    @{ type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; input = 'previous turn edit' } },
+                    @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'question-turn' } },
+                    @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'What does that word mean?' }) } },
+                    @{ type = 'response_item'; payload = @{ type = 'message'; role = 'assistant'; content = @(@{ type = 'output_text'; text = 'A short answer.' }) } }
+                )
+            }
+            else {
+                @(
+                    @{ type = 'user'; message = @{ role = 'user'; content = 'Change the parser.' } },
+                    @{ type = 'assistant'; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; name = 'Edit' }) } },
+                    @{ type = 'user'; message = @{ role = 'user'; content = 'What does that word mean?' } },
+                    @{ type = 'assistant'; message = @{ role = 'assistant'; content = @(@{ type = 'text'; text = 'A short answer.' }) } }
+                )
+            }
+            $transcript = Write-HandoffRelayTranscript -Records $records
+            $result = Invoke-HandoffRelayProcess -Provider $Provider -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; cwd = 'D:\Development\AI-related'; transcript_path = $transcript; stop_hook_active = $false
+            }
+            $result.ExitCode | Should -Be 0
+            $result.Output.Trim() | Should -BeExactly '{}'
+            Test-Path (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeFalse
+        }
+
+        It 'preserves handoff request <Request> without requiring tool work first' -Tag 'FinishRegression' -ForEach @(
+            @{ Request = 'Please prepare the handoff.' },
+            @{ Request = 'Can you write a handoff before finishing?' }
+        ) {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $transcript = Write-HandoffRelayTranscript -Records @(
+                @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = $Request }) } }
+            )
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; cwd = 'D:\Development\AI-related'; transcript_path = $transcript; stop_hook_active = $false
+            }
+            ($result.Output | ConvertFrom-Json).decision | Should -BeExactly 'block'
+        }
+
+        It 'keeps Claude tool results in the current working turn' -Tag 'FinishRegression' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $transcript = Write-HandoffRelayTranscript -Records @(
+                @{ type = 'user'; message = @{ role = 'user'; content = 'Change the parser.' } },
+                @{ type = 'assistant'; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; name = 'Edit' }) } },
+                @{ type = 'user'; message = @{ role = 'user'; content = @(@{ type = 'tool_result'; tool_use_id = 'edit-1'; content = 'done' }) } }
+            )
+            $result = Invoke-HandoffRelayProcess -Provider Claude -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; cwd = 'D:\Development\AI-related'; transcript_path = $transcript; stop_hook_active = $false
+            }
+            (Get-HandoffRelayInstruction -Output $result.Output) | Should -Match 'Draft:'
+        }
+
+        It 'rejects a declared handoff destination from a different workspace' -Tag 'FinishRegression' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            $transcript = Write-HandoffRelayTranscript -Records @(
+                @{ type = 'response_item'; payload = @{ role = 'developer'; content = @(@{ type = 'input_text'; text = "Write next handoff to: $target" }) } }
+            )
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; cwd = 'C:\Windows'; transcript_path = $transcript; stop_hook_active = $false
+            }
+            $result.Output.Trim() | Should -BeExactly '{}'
+            Test-Path (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeFalse
+        }
+
+        It 'retains <ToolType> work before a steering question inside one Codex task' -Tag 'FinishRegression' -ForEach @(
+            @{ ToolType = 'custom_tool_call' }, @{ ToolType = 'web_search_call' }, @{ ToolType = 'local_shell_call' }
+        ) {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $transcript = Write-HandoffRelayTranscript -Records @(
+                @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'working-turn' } },
+                @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Fix the parser.' }) } },
+                @{ type = 'response_item'; payload = @{ type = $ToolType; name = 'fixture_tool'; input = 'fixture' } },
+                @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'How is it going?' }) } },
+                @{ type = 'response_item'; payload = @{ type = 'message'; role = 'assistant'; content = @(@{ type = 'output_text'; text = 'The change is complete.' }) } }
+            )
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; cwd = 'D:\Development\AI-related'; transcript_path = $transcript; stop_hook_active = $false
+            }
+            ($result.Output | ConvertFrom-Json).decision | Should -BeExactly 'block'
+        }
+
+        It 'retains substantial tool-free written work' -Tag 'FinishRegression' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $transcript = Write-HandoffRelayTranscript -Records @(
+                @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'How should we implement the migration?' }) } },
+                @{ type = 'response_item'; payload = @{ type = 'message'; role = 'assistant'; content = @(@{ type = 'output_text'; text = ('A detailed migration step. ' * 30) }) } }
+            )
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; cwd = 'D:\Development\AI-related'; transcript_path = $transcript; stop_hook_active = $false
+            }
+            ($result.Output | ConvertFrom-Json).decision | Should -BeExactly 'block'
+        }
+
+        It 'preserves recovery when the transcript has an unreadable record' -Tag 'FinishRegression' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $transcript = Write-HandoffRelayTranscript -Records @(
+                @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'What changed?' }) } }
+            )
+            Add-Content -LiteralPath $transcript -Value '{truncated tool record'
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; cwd = 'D:\Development\AI-related'; transcript_path = $transcript; stop_hook_active = $false
+            }
+            ($result.Output | ConvertFrom-Json).decision | Should -BeExactly 'block'
+        }
+
+        It 'completes a pending draft before applying the tool-free gate' -Tag 'FinishRegression' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $payload = @{
+                hook_event_name = 'Stop'; cwd = 'D:\Development\AI-related'; session_id = 'pending-draft'; turn_id = 'turn-1'; stop_hook_active = $false
+            }
+            $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload
+            $draft = Get-HandoffRelayDraftPath -Output $first.Output
+            New-TestHandoffDraft -Marker 'PENDING-PUBLISHED' | Set-Content -LiteralPath $draft -Encoding utf8NoBOM
+            $payload.transcript_path = Write-HandoffRelayTranscript -Records @(
+                @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'What changed?' }) } }
+            )
+            $payload.stop_hook_active = $true
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload
+            ($result.Output | ConvertFrom-Json).systemMessage | Should -BeExactly 'Handoff Relay: next-session context refreshed.'
+            Get-Content -Raw (Join-Path $projectRoot 'remember.md') | Should -Match 'PENDING-PUBLISHED'
         }
 
         It 'derives the existing Remember project from cwd when no declaration is present' {
@@ -758,6 +1157,7 @@ This paragraph is intentionally ignored.
                     } | ConvertTo-Json -Depth 20 -Compress |
                         Set-Content -LiteralPath $inputPath -Encoding utf8NoBOM -NoNewline
                     $process = Start-Process `
+                        -WindowStyle Hidden `
                         -FilePath (Get-Command pwsh).Source `
                         -ArgumentList @(
                             '-NoLogo',
@@ -1024,6 +1424,77 @@ This paragraph is intentionally ignored.
                 Should -BeExactly '# stable handoff'
         }
 
+        It 'rejects over-budget <Case> without replacing the previous context for <Provider>' -Tag 'HandoffBudget' -ForEach @(
+            @{ Case = 'bullet-count'; Provider = 'Codex' }
+            @{ Case = 'bullet-count'; Provider = 'Claude' }
+            @{ Case = 'bullet-words'; Provider = 'Codex' }
+            @{ Case = 'section-words'; Provider = 'Codex' }
+            @{ Case = 'characters'; Provider = 'Codex' }
+            @{ Case = 'utf8'; Provider = 'Codex' }
+        ) {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            '# preserved complete context' | Set-Content -LiteralPath $target -Encoding utf8NoBOM
+            $before = (Get-FileHash -LiteralPath $target).Hash
+            $payload = @{
+                hook_event_name = 'Stop'; session_id = "budget-$Case-$Provider"
+                turn_id = 'budget-turn'; cwd = 'D:\Development\AI-related'; stop_hook_active = $false
+            }
+            $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload -Provider $Provider
+            $instruction = Get-HandoffRelayInstruction -Output $first.Output
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            $draftParameters = @{ SummaryItems = @('Completed the bounded Codex change.') }
+            switch ($Case) {
+                'bullet-count' { $draftParameters.NextGateItems = @('Resume Codex work.', 'Read the deferred note.', 'Preserve this third gate.') }
+                'bullet-words' { $draftParameters.SummaryItems = @(('fact ' * 27).Trim()) }
+                'section-words' { $draftParameters.SummaryItems = @(('first ' * 26).Trim(), ('second ' * 20).Trim()) }
+                'characters' { $draftParameters.SummaryItems = @('A' * 513) }
+                'utf8' { $draftParameters.SummaryItems = @([char]::ConvertFromUtf32(0x1F600) * 300) }
+            }
+            Get-ContractHandoffDraft @draftParameters | Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+            $draftHash = (Get-FileHash -LiteralPath $draftPath).Hash
+            $payload.stop_hook_active = $true
+            $second = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload -Provider $Provider
+            $second.ExitCode | Should -Be 0
+            $result = $second.Output | ConvertFrom-Json
+            $result.PSObject.Properties.Name | Should -Not -Contain 'decision'
+            (Get-FileHash -LiteralPath $target).Hash | Should -BeExactly $before
+            $result.systemMessage | Should -Match 'draft exceeds the stated limits; previous context kept'
+            $archive = @(Get-ChildItem -LiteralPath (Split-Path -Parent $draftPath) -Filter '*.failed.*.draft.md')
+            $archive | Should -HaveCount 1
+            (Get-FileHash -LiteralPath $archive[0].FullName).Hash | Should -BeExactly $draftHash
+            $healthPath = Join-Path (Split-Path -Parent $script:RememberProjectsRoot) 'handoff-relay\latest-status.json'
+            $health = Get-Content -Raw -LiteralPath $healthPath | ConvertFrom-Json
+            $health.status | Should -BeExactly 'FAILED'
+            $health.code | Should -BeExactly 'draft-budget-exceeded'
+            $instruction | Should -Match 'Next gate: 2 bullets, 40 words total, 24 words per bullet'
+            $instruction | Should -Match 'including labels and evidence'
+        }
+
+        It 'publishes exact word limits intact and ignores duplicates after the bullet limit' -Tag 'HandoffBudget' {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            $payload = @{
+                hook_event_name = 'Stop'; session_id = 'exact-budget'; turn_id = 'exact-turn'
+                cwd = 'D:\Development\AI-related'; stop_hook_active = $false
+            }
+            $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            $summary = @(('first ' * 26).Trim(), ('second ' * 19).Trim())
+            $gates = @(('primary ' * 24).Trim(), ('secondary ' * 16).Trim())
+            Get-ContractHandoffDraft -SummaryItems $summary -NextGateItems @($gates[0], $gates[1], $gates[0].ToUpperInvariant()) |
+                Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+            $payload.stop_hook_active = $true
+            $second = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload
+            ($second.Output | ConvertFrom-Json).systemMessage | Should -BeExactly 'Handoff Relay: next-session context refreshed.'
+            $lines = @(Get-Content -LiteralPath $target)
+            foreach ($item in @($summary) + @($gates)) { $lines | Should -Contain "- $item" }
+            @($lines | Where-Object { $_ -ceq "- $($gates[0].ToUpperInvariant())" }) | Should -HaveCount 0
+            (Get-Content -Raw -LiteralPath $target) | Should -Match 'truncated=0'
+        }
+
         It 'cleans a noisy draft and atomically publishes the compact fixed schema on the second Stop' {
             $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
             $null = New-Item -ItemType Directory -Path $projectRoot -Force
@@ -1072,7 +1543,7 @@ This paragraph is intentionally ignored.
             $health.status | Should -BeExactly 'PUBLISHED'
             $health.code | Should -BeExactly 'published'
             $health.cleaning.droppedItems | Should -BeGreaterThan 0
-            $health.cleaning.truncatedItems | Should -BeGreaterThan 0
+            $health.cleaning.truncatedItems | Should -Be 0
             $health.cleaning.ignoredLines | Should -BeGreaterThan 0
         }
 
@@ -1237,7 +1708,7 @@ Next gate
             }
         }
 
-        It 'enforces inclusive per-item character and UTF-8 boundaries on giant tokens' {
+        It 'accepts inclusive per-item character and UTF-8 boundaries without clipping giant tokens' {
             $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
             $null = New-Item -ItemType Directory -Path $projectRoot -Force
             $target = Join-Path $projectRoot 'remember.md'
@@ -1255,13 +1726,12 @@ Next gate
                 MaxItemUtf8Bytes = 128
             }
             $characterLimit = 'A' * 64
-            $characterOver = 'B' * 65
             $first = Invoke-HandoffRelayProcess `
                 -RememberProjectsRoot $script:RememberProjectsRoot `
                 -Payload $characterPayload `
                 -HookParameters $characterParameters
             $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
-            Get-ContractHandoffDraft -SummaryItems @($characterLimit, $characterOver) |
+            Get-ContractHandoffDraft -SummaryItems @($characterLimit) -VerifiedItems @('[verified] Marker exists. Evidence: fixture.') |
                 Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
             $characterPayload.stop_hook_active = $true
             Invoke-HandoffRelayProcess `
@@ -1272,8 +1742,7 @@ Next gate
 
             $characterLines = @(Get-Content -LiteralPath $target)
             $characterLines | Should -Contain "- $characterLimit"
-            $characterLines | Should -Contain ("- {0} ..." -f ('B' * 60))
-            $characterLines | Should -Not -Contain "- $characterOver"
+            (Get-Content -Raw -LiteralPath $target) | Should -Match 'truncated=0'
 
             $utf8Payload = @{
                 hook_event_name = 'Stop'
@@ -1287,13 +1756,12 @@ Next gate
                 MaxItemUtf8Bytes = 128
             }
             $utf8Limit = ([string] [char] 0x00E9) * 64
-            $utf8Over = ([string] [char] 0x00F8) * 65
             $first = Invoke-HandoffRelayProcess `
                 -RememberProjectsRoot $script:RememberProjectsRoot `
                 -Payload $utf8Payload `
                 -HookParameters $utf8Parameters
             $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
-            Get-ContractHandoffDraft -SummaryItems @($utf8Limit, $utf8Over) |
+            Get-ContractHandoffDraft -SummaryItems @($utf8Limit) |
                 Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
             $utf8Payload.stop_hook_active = $true
             Invoke-HandoffRelayProcess `
@@ -1304,8 +1772,7 @@ Next gate
 
             $utf8Lines = @(Get-Content -LiteralPath $target)
             $utf8Lines | Should -Contain "- $utf8Limit"
-            $utf8Lines | Should -Contain ("- {0} ..." -f (([string] [char] 0x00F8) * 62))
-            $utf8Lines | Should -Not -Contain "- $utf8Over"
+            (Get-Content -Raw -LiteralPath $target) | Should -Match 'truncated=0'
         }
 
         It 'accepts an exact final-document UTF-8 cap and rejects one byte below it' {
@@ -1597,6 +2064,109 @@ Next gate
             $result.Output.Trim() | Should -BeExactly '{}'
         }
 
+        It 'skips a <Case> session without a draft, continuation, or canonical write' -Tag 'SessionKind' -ForEach @(
+            @{ Case = 'claude-sdk-env'; Provider = 'Claude'; Expected = 'sdk' }
+            @{ Case = 'claude-sdk-transcript'; Provider = 'Claude'; Expected = 'sdk' }
+            @{ Case = 'codex-exec'; Provider = 'Codex'; Expected = 'exec' }
+            @{ Case = 'codex-subagent'; Provider = 'Codex'; Expected = 'subagent' }
+        ) {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $rolloutId = '01a08b72-4b02-7451-932a-a8c232c3de8a'
+            $parentId = '01a08b5c-5218-7821-b0d0-7865158e9cfd'
+            $savedEntrypoint = [Environment]::GetEnvironmentVariable('CLAUDE_CODE_ENTRYPOINT')
+            try {
+                switch ($Case) {
+                    'claude-sdk-env' {
+                        [Environment]::SetEnvironmentVariable('CLAUDE_CODE_ENTRYPOINT', 'sdk-cli')
+                        $transcript = Write-HandoffRelayTranscript -Records @(
+                            @{ type = 'user'; entrypoint = 'cli'; message = @{ role = 'user'; content = 'usage' } },
+                            @{ type = 'assistant'; entrypoint = 'cli'; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; name = 'Bash' }) } }
+                        )
+                    }
+                    'claude-sdk-transcript' {
+                        [Environment]::SetEnvironmentVariable('CLAUDE_CODE_ENTRYPOINT', $null)
+                        $transcript = Write-HandoffRelayTranscript -Records @(
+                            @{ type = 'last-prompt'; lastPrompt = 'usage' },
+                            @{ type = 'user'; entrypoint = 'sdk-py'; message = @{ role = 'user'; content = 'usage' } },
+                            @{ type = 'assistant'; entrypoint = 'sdk-py'; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; name = 'Bash' }) } }
+                        )
+                    }
+                    'codex-exec' {
+                        $transcript = Write-HandoffRelayTranscript -FileName "rollout-2026-09-10T12-00-00-$rolloutId.jsonl" -Records @(
+                            @{ type = 'session_meta'; payload = @{ id = $rolloutId; source = 'exec'; originator = 'codex_exec'; cwd = 'D:\Development\AI-related' } },
+                            @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'exec-turn' } },
+                            @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Change the parser.' }) } },
+                            @{ type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; input = 'edit' } }
+                        )
+                    }
+                    'codex-subagent' {
+                        $transcript = Write-HandoffRelayTranscript -FileName "rollout-2026-09-10T12-00-00-$rolloutId.jsonl" -Records @(
+                            @{ type = 'session_meta'; payload = @{ id = $parentId; source = 'cli'; originator = 'codex-tui'; cwd = 'D:\Development\AI-related' } },
+                            @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'worker-turn' } },
+                            @{ type = 'response_item'; payload = @{ type = 'message'; role = 'developer'; content = @(@{ type = 'input_text'; text = 'You are an agent in a team of agents.' }) } },
+                            @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Change the parser.' }) } },
+                            @{ type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; input = 'edit' } }
+                        )
+                    }
+                }
+                $result = Invoke-HandoffRelayProcess -Provider $Provider -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                    hook_event_name = 'Stop'; session_id = $rolloutId; turn_id = 'any-turn'
+                    cwd = 'D:\Development\AI-related'; transcript_path = $transcript; stop_hook_active = $false
+                }
+            }
+            finally {
+                [Environment]::SetEnvironmentVariable('CLAUDE_CODE_ENTRYPOINT', $savedEntrypoint)
+            }
+            $result.ExitCode | Should -Be 0
+            $result.Output.Trim() | Should -BeExactly '{}'
+            Test-Path (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeFalse
+            Test-Path (Join-Path $projectRoot 'remember.md') | Should -BeFalse
+            $health = Get-Content -Raw -LiteralPath (
+                Join-Path (Split-Path -Parent $script:RememberProjectsRoot) 'handoff-relay\latest-status.json'
+            ) | ConvertFrom-Json
+            $health.status | Should -BeExactly 'SKIPPED'
+            $health.code | Should -BeExactly "non-interactive-$Expected"
+            $health.project | Should -BeExactly 'd--Development-AI-related'
+        }
+
+        It 'keeps the normal path for an interactive <Case> session' -Tag 'SessionKind' -ForEach @(
+            @{ Case = 'codex-root-thread'; Provider = 'Codex' }
+            @{ Case = 'claude-cli'; Provider = 'Claude' }
+        ) {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $rolloutId = '01a08c53-e3bc-7ff3-ba3a-e762ecf4ab8e'
+            $transcript = if ($Provider -eq 'Codex') {
+                Write-HandoffRelayTranscript -FileName "rollout-2026-09-10T12-00-00-$rolloutId.jsonl" -Records @(
+                    @{ type = 'session_meta'; payload = @{ id = $rolloutId; source = 'cli'; originator = 'codex-tui'; cwd = 'D:\Development\AI-related' } },
+                    @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'root-turn' } },
+                    @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Change the parser.' }) } },
+                    @{ type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; input = 'edit' } }
+                )
+            }
+            else {
+                Write-HandoffRelayTranscript -Records @(
+                    @{ type = 'last-prompt'; lastPrompt = 'Change the parser.' },
+                    @{ type = 'user'; entrypoint = 'cli'; message = @{ role = 'user'; content = 'Change the parser.' } },
+                    @{ type = 'assistant'; entrypoint = 'cli'; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; name = 'Edit' }) } }
+                )
+            }
+            $result = Invoke-HandoffRelayProcess -Provider $Provider -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; session_id = $rolloutId; turn_id = 'root-turn'
+                cwd = 'D:\Development\AI-related'; transcript_path = $transcript; stop_hook_active = $false
+            }
+            $output = $result.Output | ConvertFrom-Json -Depth 20
+            if ($Provider -eq 'Codex') {
+                $output.decision | Should -BeExactly 'block'
+                $output.reason | Should -Match 'Draft:'
+            }
+            else {
+                $output.hookSpecificOutput.additionalContext | Should -Match 'Draft:'
+            }
+            Test-Path (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeTrue
+        }
+
         It 'does nothing when Remember has not enrolled the cwd project' {
             $result = Invoke-HandoffRelayProcess `
                 -RememberProjectsRoot $script:RememberProjectsRoot `
@@ -1663,9 +2233,9 @@ Next gate
     }
 
     Context 'Codex hook configuration' {
-        It 'runs the registered SessionStart command through PowerShell and cmd' {
+        It 'runs the registered UserPromptSubmit command through PowerShell and cmd' {
             $config = Get-Content -Raw -LiteralPath $script:HooksConfig | ConvertFrom-Json
-            $command = $config.hooks.SessionStart[0].hooks[0].command
+            $command = $config.hooks.UserPromptSubmit[0].hooks[0].command
 
             $results = foreach ($shell in @('PowerShell', 'Cmd')) {
                 [pscustomobject]@{
@@ -1681,17 +2251,19 @@ Next gate
             }
         }
 
-        It 'registers the approved Windows-native safety and Remember adapter hooks' {
+        It 'registers the approved Windows-native safety and Handoff Relay hooks' {
             $config = Get-Content -Raw -LiteralPath $script:HooksConfig | ConvertFrom-Json
 
             $eventNames = @($config.hooks.PSObject.Properties.Name)
             $eventNames | Should -Contain 'PreToolUse'
-            $eventNames | Should -Contain 'SessionStart'
             $eventNames | Should -Contain 'UserPromptSubmit'
-            $eventNames | Should -Contain 'PostToolUse'
             $eventNames | Should -Contain 'Stop'
+            $eventNames | Should -Not -Contain 'SessionStart' -Because 'Remember context now arrives through the remember@remember-dev plugin hooks, not this projection'
+            $eventNames | Should -Not -Contain 'PostToolUse' -Because 'the retired Remember adapter was the only PostToolUse registration'
             $config.hooks.PreToolUse[0].matcher | Should -Be '^(?:Bash|apply_patch|Edit|Write)$'
-            @($config.hooks.UserPromptSubmit).Count | Should -Be 1 -Because 'prompt blockers and prompt consumers run concurrently, so Remember must consume only the accepted transcript'
+            @($config.hooks.UserPromptSubmit).Count | Should -Be 2 -Because 'the existing secret blocker and one relay preparation hook have separate registrations'
+            @($config.hooks.UserPromptSubmit[1].hooks).Count | Should -Be 1
+            $config.hooks.UserPromptSubmit[1].hooks[0].timeout | Should -Be 5
             $registrations = @(
                 @{
                     Hook = $config.hooks.PreToolUse[0].hooks[0]
@@ -1702,19 +2274,11 @@ Next gate
                     Command = 'pwsh -NoProfile -File "D:\DevHome\state\codex\hooks\Invoke-DevHomeHook.ps1" -Event UserPromptSubmit'
                 },
                 @{
-                    Hook = $config.hooks.SessionStart[0].hooks[0]
-                    Command = 'D:\DevHome\state\codex\hooks\Invoke-RememberAdapter.cmd --event SessionStart'
-                },
-                @{
-                    Hook = $config.hooks.PostToolUse[0].hooks[0]
-                    Command = 'D:\DevHome\state\codex\hooks\Invoke-RememberAdapter.cmd --event PostToolUse'
+                    Hook = $config.hooks.UserPromptSubmit[1].hooks[0]
+                    Command = 'pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "D:\DevHome\state\codex\hooks\Invoke-HandoffRelay.ps1" -Provider Codex'
                 },
                 @{
                     Hook = $config.hooks.Stop[0].hooks[0]
-                    Command = 'D:\DevHome\state\codex\hooks\Invoke-RememberAdapter.cmd --event Stop'
-                },
-                @{
-                    Hook = $config.hooks.Stop[0].hooks[1]
                     Command = 'pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "D:\DevHome\state\codex\hooks\Invoke-HandoffRelay.ps1" -Provider Codex'
                 }
             )
@@ -1722,20 +2286,14 @@ Next gate
                 $registration.Hook.command | Should -BeExactly $registration.Command
                 $registration.Hook.commandWindows | Should -BeExactly $registration.Command
             }
-            $config.hooks.SessionStart[0].hooks[0].timeout | Should -Be 20
-            $config.hooks.SessionStart[0].hooks[0].statusMessage | Should -Be 'Loading Remember context through Codex adapter'
-            $config.hooks.PostToolUse[0].hooks[0].timeout | Should -Be 5
-            $config.hooks.PostToolUse[0].hooks[0].async | Should -BeTrue -Because 'Remember capture is informational and must not add Git Bash latency to every tool call'
-            $config.hooks.PostToolUse[0].hooks[0].statusMessage | Should -Be 'Capturing Codex session for Remember'
             @($config.hooks.Stop).Count | Should -Be 1
             $config.hooks.Stop[0].PSObject.Properties.Name | Should -Not -Contain 'matcher'
-            @($config.hooks.Stop[0].hooks).Count | Should -Be 2
+            @($config.hooks.Stop[0].hooks).Count | Should -Be 1 -Because 'Handoff Relay is the only Stop registration once the Remember adapter is retired'
             $config.hooks.Stop[0].hooks[0].timeout | Should -Be 5
-            $config.hooks.Stop[0].hooks[0].statusMessage | Should -Be 'Finalizing Remember transcript capture'
-            $config.hooks.Stop[0].hooks[1].timeout | Should -Be 5
-            $config.hooks.Stop[0].hooks[1].statusMessage | Should -Be 'Handoff Relay: preparing next-session context'
+            $config.hooks.Stop[0].hooks[0].statusMessage | Should -Be 'Handoff Relay: preparing next-session context'
             ($config | ConvertTo-Json -Depth 20) | Should -Not -Match 'bash \\"'
             ($config | ConvertTo-Json -Depth 20) | Should -Not -Match 'remember\\[0-9]+\.[0-9]+\.[0-9]+'
+            ($config | ConvertTo-Json -Depth 20) | Should -Not -Match 'Invoke-RememberAdapter|Invoke-RememberClaude'
         }
 
         It 'does not register the raw Remember plugin hooks' {
@@ -1912,9 +2470,6 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
             $expectedFiles = @(
                 'hooks.json',
                 'hooks\Invoke-DevHomeHook.ps1',
-                'hooks\Invoke-RememberAdapter.cmd',
-                'hooks\Invoke-RememberAdapter.py',
-                'hooks\Invoke-RememberClaude.cmd',
                 'hooks\Invoke-HandoffRelay.ps1'
             )
             foreach ($relativePath in $expectedFiles) {

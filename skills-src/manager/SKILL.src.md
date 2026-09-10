@@ -1,13 +1,13 @@
 ---
 name: manager
 {{#claude}}
-description: "Use when the user explicitly wants a multi-agent campaign executed or managed: parallel worktrees, agent launches, dependency-aware progress, merges, verification, or campaign status. Do not use for plan-only design (use /planner), bounded codebase research, or one tight local change."
+description: "Use when the user explicitly wants a multi-agent campaign executed or managed: parallel worktrees, agent launches, dependency-aware progress, merges, verification, or campaign status. Do not use for plan-only design without execution, bounded codebase research, or one tight local change."
 argument-hint: "<command> [args] — go | plan | run | merge | verify | status | analyze | review"
 allowed-tools: Read, Glob, Grep, Bash, Agent, Edit, Write
 user-invocable: true
 {{/claude}}
 {{#codex}}
-description: "Use when the user explicitly wants a multi-agent campaign executed or managed: parallel worktrees, agent launches, dependency-aware progress, merges, verification, or campaign status. Do not use for plan-only design (use $planner), bounded codebase research, or one tight local change."
+description: "Use when the user explicitly wants a multi-agent campaign executed or managed: parallel worktrees, agent launches, dependency-aware progress, merges, verification, or campaign status. Do not use for plan-only design without execution, bounded codebase research, or one tight local change."
 {{/codex}}
 ---
 
@@ -21,7 +21,8 @@ task manager backend for state management, and the Agent tool for launching para
 **Architecture:** manager is the execution-facing orchestrator. `go` may compose
 planning plus execution, but planning policy remains planner-owned and should
 follow `.{{provider-lc}}/skills/planner/SKILL.md` plus the shared planning contract.
-Use planners when you want to review a plan before executing. Use `go` when you
+Use `plan` when you want to review a plan before executing (the standalone
+planner skill is optional and may be disabled in a provider). Use `go` when you
 want end-to-end autonomous execution.
 
 **Config:** `.{{provider-lc}}/skills/project.toml` — project-specific paths, commands, modules

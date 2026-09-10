@@ -31,10 +31,7 @@ $SourceConfigPath = Join-Path $PackageRoot 'hooks.json'
 $DefaultRuntimeRoot = 'D:\DevHome\state\codex'
 $OwnedHookFiles = @(
     'Invoke-DevHomeHook.ps1',
-    'Invoke-HandoffRelay.ps1',
-    'Invoke-RememberAdapter.cmd',
-    'Invoke-RememberAdapter.py',
-    'Invoke-RememberClaude.cmd'
+    'Invoke-HandoffRelay.ps1'
 )
 
 function ConvertTo-JsonPathText {

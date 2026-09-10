@@ -10,6 +10,10 @@ param (
     [string[]]$ClaudeTargets,
 
     [Parameter(Mandatory=$false)]
+    [ValidateNotNullOrEmpty()]
+    [string[]]$SkillNames,
+
+    [Parameter(Mandatory=$false)]
     [ValidateSet("None", "DevHomeLifecycle")]
     [string]$CodexLocalPlugin = "None",
 
@@ -21,6 +25,13 @@ param (
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($SkillNames -and $Provider -eq "Both") {
+    throw "SkillNames requires a single provider: Codex or Claude"
+}
+if ($SkillNames -and $CodexLocalPlugin -ne "None") {
+    throw "Synchronize the local plugin in a separate invocation from selected skills"
+}
 
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptRoot
@@ -335,6 +346,19 @@ function Sync-ProviderPackage {
     $Skills = @($Manifest.default_skills) + @($Manifest.optional_skills)
     $SupportFiles = @($Manifest.contract_files) + @($Manifest.optional_contract_files) + @($Manifest.runtime_files)
     $SupportDirectories = @($Manifest.runtime_directories)
+    if ($SkillNames) {
+        foreach ($Name in $SkillNames) {
+            if ($Name -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$' -or $Name -notin $Skills) {
+                throw "Invalid selected skill '$Name' for $ProviderName"
+            }
+            if (-not (Test-Path -LiteralPath (Join-Path $PackageRoot "skills\$Name\SKILL.md") -PathType Leaf)) {
+                throw "Invalid selected skill '$Name': source SKILL.md missing"
+            }
+        }
+        $Skills = @($SkillNames | Select-Object -Unique)
+        $SupportFiles = @()
+        $SupportDirectories = @()
+    }
     $Targets = Get-UniquePaths $TargetRoots
 
     if ($Targets.Count -eq 0) {
@@ -355,10 +379,12 @@ function Sync-ProviderPackage {
         $SkillsCopied = 0
         $SkillsSkipped = 0
         $RetiredSkillsPruned = @(
-            Remove-RetiredSkillDirectories `
-                -ProviderName $ProviderName `
-                -TargetRoot $TargetRoot `
-                -RetiredSkills $RetiredSkillRecords
+            if (-not $SkillNames) {
+                Remove-RetiredSkillDirectories `
+                    -ProviderName $ProviderName `
+                    -TargetRoot $TargetRoot `
+                    -RetiredSkills $RetiredSkillRecords
+            }
         )
 
         foreach ($File in $SupportFiles) {

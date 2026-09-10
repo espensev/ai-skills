@@ -1,6 +1,6 @@
 ---
 name: devhome-lifecycle
-description: Check, synchronize, or diagnose the machine-local DevHome Codex safety and Remember lifecycle hooks plus the shared Claude/Codex Handoff Relay on enrolled snd-desk. Use when asked about hook drift, lifecycle plugin status, automatic handoffs, or updating either DevHome hook projection.
+description: Check, synchronize, or diagnose the machine-local DevHome Codex safety lifecycle hooks plus the shared Claude/Codex Handoff Relay on enrolled snd-desk. Use when asked about hook drift, lifecycle plugin status, automatic handoffs, or updating either DevHome hook projection.
 ---
 
 # DevHome lifecycle
@@ -13,41 +13,73 @@ trust state by hand.
 
 - Source authority:
   `D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle`
-- Codex projection: `D:\DevHome\state\codex\hooks.json` and the five owned
+- Codex projection: `D:\DevHome\state\codex\hooks.json` and the two owned
   scripts under `D:\DevHome\state\codex\hooks`
 - Claude projection: `D:\DevHome\state\claude\settings.json` plus
   `D:\DevHome\state\claude\hooks\Invoke-HandoffRelay.ps1`
 - Plugin cache:
   `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle`; never
   develop there or relocate it through `CODEX_HOME`
-- Known blocker: adapter-generated mirrors, locks, checkpoints, and logs still
-  derive from ambient `CODEX_HOME`; do not claim full no-AppData placement until
-  the production adapter pins those paths to physical DevHome.
-- Known blocker: the installed Remember PostToolUse integration currently
-  exceeds the adapter's three-second bound and fails open. It can touch liveness
-  markers before timing out; a green cache/runtime check or marker alone does
-  not prove end-to-end Remember capture.
+- Remember: Codex capture runs through the upstream `remember@remember-dev`
+  plugin (pinned checkout `D:\DevHome\state\remember\artifacts\remember-current`),
+  not through this package; the former Windows adapter was retired in 0.3.1.
 
 The package remains outside the portable provider manifests. The
 `devhome-lifecycle@ai-skills` plugin contributes this skill and one startup
-reconciler; the five Codex event groups remain registered only through the
+reconciler; the three Codex event groups remain registered only through the
 installed DevHome projection so they do not execute twice. Handoff Relay is the
 shared Stop implementation installed into both agents.
 
-Handoff Relay uses a verified two-pass draft protocol. It resolves the nearest
-enrolled ancestor for nested working directories, writes agent output to
+When Codex supplies a supported `UserPromptSubmit` payload, the hook prepares a
+verified turn-bound draft transaction and supplies its exact destination as
+developer context. Confirm that context in the actual session; an enabled
+administrative definition alone does not prove host adoption. Complete material work
+and verification, add only that draft with a dedicated `apply_patch` call, then
+give the normal final answer and required Run closeout. In code mode use only
+`text(await tools.apply_patch(...));` in the call. First Stop publishes when the
+observed native transcript proves a completed single-file Add with matching
+content and no later work. Mixed calls, shell writes, pending tools, steering,
+post-draft compaction or unknown transcript shapes retain bounded recovery.
+Repeated prompt events and recovery preserve the original canonical baseline.
+The active draft instruction governs authoring; keep the canonical startup
+declaration for routing. A bounded completion receipt suppresses repeated Stops
+only while no later transcript work exists. Review the new prompt relay entry
+in `/hooks` after source synchronization; do not edit Codex trust state.
+
+Claude and unprepared Codex turns retain the verified two-pass draft protocol.
+It skips SDK-driven Claude sessions, `codex exec` runs, and Codex subagent
+rollouts entirely (health code `non-interactive-sdk|exec|subagent`), and it
+skips short tool-free
+Q&A identified in supported transcripts, except handoff-related requests. The
+question must end in `?`, and question/reply must each fit 500 characters;
+substantial written work and missing replies retain recovery. Other
+unknown or unreadable transcripts retain recovery. Tool use remains a
+conservative checkpoint signal, including read-only calls. This does not replace
+the separate startup write instruction or establish explicit project opt-in.
+It resolves the nearest enrolled ancestor for nested working directories,
+rejects declared targets belonging to another workspace, and writes agent output to
 session-scoped temporary state, structurally cleans the seven-section handoff,
 then hash-checks and atomically publishes under a project lock. Exact section
-names are accepted with or without Markdown heading prefixes. Preparation and
+names are accepted with or without Markdown heading prefixes. Stop preparation and
 the final outcome surface as bounded plain-language UI messages; internal error
-codes stay in health records. A bare draft path is not a completion result. Read
+codes stay in health records. After a Stop recovery prompt, end with 1-2 self-contained
+sentences summarizing the task outcome and a useful next action or blocker;
+state when no follow-up is needed without inventing work. Never end with only
+handoff status or a generic acknowledgement, repeat the full substantive answer
+or Run closeout, or claim publication from a draft write. Read
 the global most-recent redacted
 result at `D:\DevHome\state\remember\handoff-relay\latest-status.json`; it can
 be overwritten by a later project. Do not edit or promote draft/conflict files
 by hand. State-less raw drafts are quarantined as orphaned on the next attempt
 for that project. The cleaner removes unsupported forms and explicit
-speculation, bounds each bullet to 512 text elements and 1,024 UTF-8 bytes, and
-caps publication at 32 KiB. It does not semantically prove a claim.
+speculation. Both prompts state the exact section budgets from the validator's
+shared definition, including labels and evidence. Follow those budgets and put
+the current user priority first; link deferred work separately. Over-budget
+content fails the whole draft with `draft-budget-exceeded`, retaining the old
+canonical context and the original draft, without another continuation. Exact
+duplicates can be removed, but facts and gates are never clipped to fit.
+Each bullet is bounded to 512 text elements and 1,024 UTF-8 bytes, with publication
+capped at 32 KiB. The cleaner does not semantically prove a claim.
 
 ## Refresh the plugin choice
 
@@ -98,11 +130,10 @@ capture. For a visible `PreToolUse:<tool>` or `PostToolUse:<tool>` error:
    owning source or supported provider setting, restart the affected provider,
    and repeat that same call.
 
-Treat `.remember\tmp\capture-alive`, `post-tool-ran`, and hook log pings as
-liveness breadcrumbs, not durable capture output. Check whether the adapter
-checkpoint/mirror and the event's expected Remember artifact advance, and
-compare `D:\DevHome\state\codex\remember-adapter\logs\adapter-errors.log`
-before and after the exact event. Do not patch an installed plugin cache, and do
+Treat hook log pings as liveness breadcrumbs, not durable capture output. For
+Remember, check whether the store checkpoint (`tmp\last-save.json`) and the
+event's expected artifact under `D:\DevHome\state\remember\projects\<slug>`
+advance before and after the exact event. Do not patch an installed plugin cache, and do
 not disable or rewrite a foreign hook without user authorization. A successful
 DevHome lifecycle `-Check` does not clear a foreign hook failure.
 

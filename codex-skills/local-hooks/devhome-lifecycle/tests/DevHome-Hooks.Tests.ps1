@@ -2079,10 +2079,10 @@ Next gate
             @(Get-ChildItem -LiteralPath (Split-Path -Parent $draftPath) -Filter '*.state.json') | Should -HaveCount 0
         }
 
-        It 'publishes three full-length risk bullets' -Tag 'HandoffBudget' {
+        It 'publishes three 25-word risk bullets at the 75-word section total' -Tag 'HandoffBudget' {
             # Measured on 168 archived failures: 137 of 201 budget breaches were the Open risks
-            # section total, median four words over. Three bullets at the per-bullet allowance
-            # (3 x 26) never fit the old 55-word total, so the section refused its own contract.
+            # section total (then 55), median four words over. 75 is what the 450-word body
+            # leaves; three bullets at the full 26-word allowance (78) still do not fit.
             $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
             $null = New-Item -ItemType Directory -Path $projectRoot -Force
             $target = Join-Path $projectRoot 'remember.md'

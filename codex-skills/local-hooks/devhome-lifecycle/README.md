@@ -149,9 +149,10 @@ Both authoring prompts render the same section limits consumed by validation:
 | Next gate | 2 | 40 | 24 |
 
 The section totals add up to the 450-word body limit. Open risks allows 75
-words because three bullets at the per-bullet allowance did not fit the earlier
-55: of 168 archived failures measured on 2026-09-20, 137 of 201 breaches were
-that one total, by a median of four words.
+words, raised from 55: of 168 archived failures measured on 2026-09-20, 137 of
+201 breaches were that one total, by a median of four words. 75 is what the body
+limit leaves. Three bullets at the full 26-word allowance (78) still do not fit,
+and no archived draft needed the difference: 75 and 78 publish the same 113.
 
 Word counts include labels and evidence. An over-budget unique fact or gate
 fails the entire draft with `draft-budget-exceeded`; it is never clipped or

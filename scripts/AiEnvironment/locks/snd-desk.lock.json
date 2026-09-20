@@ -2,10 +2,10 @@
   "schema": "ai-skills/ai-environment-lock/v1",
   "profileId": "snd-desk",
   "state": "candidate",
-  "capturedAtUtc": "2026-09-20T11:56:07Z",
+  "capturedAtUtc": "2026-09-20T17:09:19Z",
   "source": {
     "repository": "https://github.com/espensev/ai-skills.git",
-    "commit": "7b92fbff660c64e1d9a27057c3b0a50a25a333d5",
+    "commit": "c957acf4f676b41b3e19c6a5e5e334b7ddf70139",
     "requireCleanWorktree": true
   },
   "providers": {
@@ -19,19 +19,19 @@
   "resources": [
     {
       "id": "plugin:devhome-lifecycle",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "trustHash": "sha256:f86feafe2924b9e0d9f22aaa54056a12a389e5ef69d41e07d5533eef178344ba",
       "payload": [
-        { "path": ".codex-plugin/plugin.json", "sha256": "95F3C29BAA4EED422D84ABAA510011BC0116851FEF3CFF9D12B4796EEE71FECB" },
+        { "path": ".codex-plugin/plugin.json", "sha256": "EF1200B9905D5F73391DB6D1C6AEFB8C1484C4A38DCC6689567A5EA612EB0AE2" },
         { "path": "hooks/hooks.json", "sha256": "07984C3908DB6766F62B02B2D3E59DC648E7613407DD1F032B3BF0ACE6A3F6A3" },
-        { "path": "Sync-DevHomeLifecyclePlugin.ps1", "sha256": "45D1D66A223EC8480517675F2BE94E3511567B55FADB7F5177825667B73B6D03" },
+        { "path": "Sync-DevHomeLifecyclePlugin.ps1", "sha256": "5060C0CF9C1CE50D55B2B2A2A313F32ACCDD6772469A1308372E891910501335" },
         { "path": "Sync-DevHomeCodexHooks.ps1", "sha256": "95C363AD376CC8E616F1234C297D10B821CABC598A43B36EE6A7AC3B707A31A5" },
         { "path": "Install-DevHomeCodexHooks.ps1", "sha256": "279B496B980E0D16F2B16F4CCD841274CFE85D679D6DF58F6A0B147C16A7E850" },
         { "path": "Install-DevHomeClaudeHandoffRelay.ps1", "sha256": "662C93A78BCE313E514AEDDE0AB33166A0A641800602DA2236F0FA0D492AB871" },
         { "path": "hooks.json", "sha256": "6A26247DB0A27B0F99AB58308134FE6F3C077134F63E7DA79E4DA86575A9F9E0" },
         { "path": "hooks/Invoke-DevHomeHook.ps1", "sha256": "94E22CD4084D6AB85957219F4FF83430E7935A145AFE745A2788D6BB09DF0484" },
         { "path": "hooks/Invoke-HandoffRelay.ps1", "sha256": "7BB7AC1E191276BFE5073123D3560579D945B0BBFDC72B81D449516885DD9DD2" },
-        { "path": "skills/devhome-lifecycle/SKILL.md", "sha256": "3025A6BAEBB4562FA5AD1C185BA1FCFD30983C1EAA9A8A224582E9FC8A55FA16" }
+        { "path": "skills/devhome-lifecycle/SKILL.md", "sha256": "5E47DF2791855D3C79AA4E0E87FC4DA591B2F8D7DD63EDC59E5D293A7006E786" }
       ]
     },
     {

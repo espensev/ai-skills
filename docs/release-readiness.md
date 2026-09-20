@@ -133,6 +133,10 @@ DevHome runtime projection:
 .\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeCodexHooks.ps1 -Check
 ```
 
+The two checks report differently. The plugin check passes only with
+`Status = CURRENT` and exit code `0`; it prints `STALE` or `MISSING` and exits
+`1` without throwing. The runtime check throws on drift.
+
 Finally restart Codex, confirm `devhome-lifecycle@ai-skills` is enabled, review
 and trust the current SessionStart command in `/hooks`, and perform one attended
 new-session smoke. Source acquisition is outside all of these checks; none of

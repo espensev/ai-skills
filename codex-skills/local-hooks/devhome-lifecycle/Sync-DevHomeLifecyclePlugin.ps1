@@ -1,3 +1,4 @@
+#Requires -Version 7.0
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
 param(
     [Parameter(Mandatory = $false)]
@@ -49,6 +50,19 @@ $CorePayloadFiles = @(
     'hooks/Invoke-DevHomeHook.ps1',
     'hooks/Invoke-HandoffRelay.ps1'
 )
+# What Codex itself loads or runs from the cache, together with skills/**. The
+# SessionStart hook delegates to the source checkout through -SourcePackageRoot,
+# so every other payload file is an inert copy there.
+$LoadedPayloadFiles = @(
+    '.codex-plugin/plugin.json',
+    'hooks/hooks.json',
+    'Sync-DevHomeCodexHooks.ps1',
+    '.mcp.json'
+)
+$ConvergeCommand = '.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle'
+$InstalledVerifierPath = Join-Path `
+    ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) `
+    'common_dev\v2\Test-LocalMachineIdentity.ps1'
 
 function Resolve-NormalizedPath {
     param([Parameter(Mandatory)][string] $Path)
@@ -108,6 +122,25 @@ function Test-GeneratedCapabilityPath {
     }
 
     return [System.IO.Path]::GetExtension($fileName) -in @('.pyc', '.pyo', '.pyd')
+}
+
+function ConvertTo-DriftEntry {
+    param(
+        [Parameter(Mandatory)][string] $Text,
+        [string] $RelativePath
+    )
+
+    $loaded = $true
+    if (-not [string]::IsNullOrEmpty($RelativePath)) {
+        $normalized = $RelativePath.Replace('\', '/')
+        $loaded = $normalized -in $LoadedPayloadFiles -or
+            $normalized.StartsWith('skills/', [System.StringComparison]::OrdinalIgnoreCase)
+    }
+
+    [pscustomobject]@{
+        Text = $Text
+        Loaded = $loaded
+    }
 }
 
 function Get-SkillCapabilityFiles {
@@ -268,17 +301,33 @@ foreach ($variant in $commandVariants.GetEnumerator()) {
     }
 }
 
-function Invoke-CodexJson {
+function Resolve-CodexExecutable {
+    # An application or script file only, so the printed path is what runs; a
+    # same-named alias or function never stands in for Codex.
+    $candidates = @(
+        Get-Command -Name $CodexCommand -CommandType Application, ExternalScript -ErrorAction SilentlyContinue
+    )
+    if ($candidates.Count -eq 0) {
+        throw "Codex command was not found as an application or script: $CodexCommand"
+    }
+
+    return [string]$candidates[0].Source
+}
+
+function Invoke-Codex {
     param([Parameter(Mandatory)][string[]] $Arguments)
 
-    $commandText = "$CodexCommand $($Arguments -join ' ')"
+    $commandText = "$CodexExecutable $($Arguments -join ' ')"
+    # The exit code is read below; a session-wide preference must not turn it
+    # into an exception that reads as "could not start".
+    $PSNativeCommandUseErrorActionPreference = $false
     $hadCodexHome = Test-Path Env:CODEX_HOME
     $previousCodexHome = $env:CODEX_HOME
     try {
         $env:CODEX_HOME = $ResolvedCodexHome
         $global:LASTEXITCODE = 0
         try {
-            $output = @(& $CodexCommand @Arguments 2>&1)
+            $output = @(& $CodexExecutable @Arguments 2>&1)
             $exitCode = $global:LASTEXITCODE
         }
         catch {
@@ -294,16 +343,51 @@ function Invoke-CodexJson {
         }
     }
 
-    $outputText = ($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
-    if ($exitCode -ne 0) {
-        throw "Codex command failed with exit code ${exitCode}: $commandText. Output: $outputText"
+    # Under 2>&1 stderr arrives as error records and stdout as strings. Only
+    # stdout is a JSON document; stderr is kept for failure messages.
+    $standardError = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
+    $standardOutput = @($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] })
+
+    [pscustomobject]@{
+        CommandText = $commandText
+        ExitCode = $exitCode
+        StandardOutput = ($standardOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+        StandardError = ($standardError | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+    }
+}
+
+function Invoke-CodexJson {
+    param([Parameter(Mandatory)][string[]] $Arguments)
+
+    $result = Invoke-Codex -Arguments $Arguments
+    $outputText = (
+        @($result.StandardOutput, $result.StandardError) |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    ) -join [Environment]::NewLine
+    if ($result.ExitCode -ne 0) {
+        throw "Codex command failed with exit code $($result.ExitCode): $($result.CommandText). Output: $outputText"
     }
     try {
-        return $outputText | ConvertFrom-Json -ErrorAction Stop
+        return $result.StandardOutput | ConvertFrom-Json -ErrorAction Stop
     }
     catch {
-        throw "Codex command returned invalid JSON: $commandText. Output: $outputText"
+        throw "Codex command returned invalid JSON: $($result.CommandText). Output: $outputText"
     }
+}
+
+function Get-CodexVersion {
+    # Informational only: a Codex that cannot report its version still converges.
+    try {
+        $result = Invoke-Codex -Arguments @('--version')
+    }
+    catch {
+        return $null
+    }
+    if ($result.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($result.StandardOutput)) {
+        return $null
+    }
+
+    return $result.StandardOutput.Trim()
 }
 
 function Get-MarketplaceRegistration {
@@ -312,41 +396,40 @@ function Get-MarketplaceRegistration {
         throw 'Codex marketplace list JSON did not contain a marketplaces collection.'
     }
 
-    $matches = @($result.marketplaces | Where-Object { $_.name -ceq $MarketplaceName })
-    if ($matches.Count -gt 1) {
+    $registrations = @($result.marketplaces | Where-Object { $_.name -ceq $MarketplaceName })
+    if ($registrations.Count -gt 1) {
         throw "Codex reported multiple '$MarketplaceName' marketplace registrations."
     }
-    if ($matches.Count -eq 0) {
+    if ($registrations.Count -eq 0) {
         return $null
     }
 
-    return $matches[0]
+    return $registrations[0]
 }
 
 function Get-InstalledPlugin {
-    $result = Invoke-CodexJson -Arguments @('plugin', 'list', '--json', '--available')
-    if (
-        $result.PSObject.Properties.Name -notcontains 'installed' -or
-        $result.PSObject.Properties.Name -notcontains 'available'
-    ) {
-        throw 'Codex plugin list JSON did not contain installed and available collections.'
+    # No --available: that adds the whole remote catalog (about 1.9 MB on Codex
+    # 0.155.1) to read one installed record.
+    $result = Invoke-CodexJson -Arguments @('plugin', 'list', '--json')
+    if ($result.PSObject.Properties.Name -notcontains 'installed') {
+        throw 'Codex plugin list JSON did not contain an installed collection.'
     }
 
-    $matches = @($result.installed | Where-Object { $_.pluginId -ceq $PluginId })
-    if ($matches.Count -gt 1) {
+    $installedRecords = @($result.installed | Where-Object { $_.pluginId -ceq $PluginId })
+    if ($installedRecords.Count -gt 1) {
         throw "Codex reported multiple installed '$PluginId' plugins."
     }
-    if ($matches.Count -eq 0) {
+    if ($installedRecords.Count -eq 0) {
         return $null
     }
 
-    return $matches[0]
+    return $installedRecords[0]
 }
 
 function Get-PayloadDrift {
-    $drift = [System.Collections.Generic.List[string]]::new()
+    $drift = [System.Collections.Generic.List[object]]::new()
     if (-not (Test-Path -LiteralPath $CachePath -PathType Container)) {
-        $drift.Add('plugin cache missing')
+        $drift.Add((ConvertTo-DriftEntry -Text 'plugin cache missing'))
         return @($drift)
     }
 
@@ -355,14 +438,14 @@ function Get-PayloadDrift {
         $cachedPath = Join-Path $CachePath $relativePath
         $displayPath = $relativePath.Replace('\', '/')
         if (-not (Test-Path -LiteralPath $cachedPath -PathType Leaf)) {
-            $drift.Add("$displayPath missing")
+            $drift.Add((ConvertTo-DriftEntry -Text "$displayPath missing" -RelativePath $displayPath))
             continue
         }
 
         $sourceHash = (Get-FileHash -LiteralPath $sourcePath -Algorithm SHA256).Hash
         $cachedHash = (Get-FileHash -LiteralPath $cachedPath -Algorithm SHA256).Hash
         if ($sourceHash -cne $cachedHash) {
-            $drift.Add("$displayPath differs")
+            $drift.Add((ConvertTo-DriftEntry -Text "$displayPath differs" -RelativePath $displayPath))
         }
     }
 
@@ -374,7 +457,7 @@ function Get-PayloadDrift {
     }
     foreach ($cachedSkillFile in @(Get-SkillCapabilityFiles -Root $CachePath)) {
         if (-not $sourceSkillSet.Contains($cachedSkillFile)) {
-            $drift.Add("$cachedSkillFile unexpected")
+            $drift.Add((ConvertTo-DriftEntry -Text "$cachedSkillFile unexpected" -RelativePath $cachedSkillFile))
         }
     }
 
@@ -383,7 +466,7 @@ function Get-PayloadDrift {
         -not $SourceHasMcpManifest -and
         (Test-Path -LiteralPath $cachedMcpManifestPath -PathType Leaf)
     ) {
-        $drift.Add('.mcp.json unexpected')
+        $drift.Add((ConvertTo-DriftEntry -Text '.mcp.json unexpected' -RelativePath '.mcp.json'))
     }
 
     return @($drift)
@@ -392,17 +475,17 @@ function Get-PayloadDrift {
 function Get-ConvergenceState {
     $marketplace = Get-MarketplaceRegistration
     $installedPlugin = $null
-    $drift = [System.Collections.Generic.List[string]]::new()
+    $drift = [System.Collections.Generic.List[object]]::new()
     $status = 'CURRENT'
     $marketplaceRoot = $null
 
     if ($null -eq $marketplace) {
         $status = 'MISSING'
-        $drift.Add("marketplace $MarketplaceName missing")
+        $drift.Add((ConvertTo-DriftEntry -Text "marketplace $MarketplaceName missing"))
     }
     elseif ([string]::IsNullOrWhiteSpace([string]$marketplace.root)) {
         $status = 'CONFLICT'
-        $drift.Add("marketplace $MarketplaceName has no local root")
+        $drift.Add((ConvertTo-DriftEntry -Text "marketplace $MarketplaceName has no local root"))
     }
     else {
         try {
@@ -410,11 +493,11 @@ function Get-ConvergenceState {
         }
         catch {
             $status = 'CONFLICT'
-            $drift.Add("marketplace $MarketplaceName root is invalid")
+            $drift.Add((ConvertTo-DriftEntry -Text "marketplace $MarketplaceName root is invalid"))
         }
         if ($status -ne 'CONFLICT' -and -not (Test-SamePath -Left $marketplaceRoot -Right $RepoRoot)) {
             $status = 'CONFLICT'
-            $drift.Add("marketplace $MarketplaceName points elsewhere: $marketplaceRoot")
+            $drift.Add((ConvertTo-DriftEntry -Text "marketplace $MarketplaceName points elsewhere: $marketplaceRoot"))
         }
     }
 
@@ -424,13 +507,13 @@ function Get-ConvergenceState {
             if ($status -eq 'CURRENT') {
                 $status = 'MISSING'
             }
-            $drift.Add("plugin $PluginId missing")
+            $drift.Add((ConvertTo-DriftEntry -Text "plugin $PluginId missing"))
         }
         elseif ([string]$installedPlugin.version -cne $PluginVersion) {
             if ($status -eq 'CURRENT') {
                 $status = 'STALE'
             }
-            $drift.Add("plugin version $($installedPlugin.version) differs from $PluginVersion")
+            $drift.Add((ConvertTo-DriftEntry -Text "plugin version $($installedPlugin.version) differs from $PluginVersion"))
         }
 
         if ($null -ne $installedPlugin) {
@@ -446,36 +529,86 @@ function Get-ConvergenceState {
         }
     }
 
+    # Codex owns the enabled flag; it is reported, never written. Unknown stays
+    # $null when a Codex version omits the key.
+    $enabled = $null
+    if ($null -ne $installedPlugin -and $installedPlugin.PSObject.Properties.Name -contains 'enabled') {
+        $enabled = [bool]$installedPlugin.enabled
+    }
+
     [pscustomobject][ordered]@{
         Status = $status
         Action = 'NONE'
         Changed = $false
+        NextStep = $null
         Marketplace = $MarketplaceName
         MarketplaceRoot = $marketplaceRoot
         PluginId = $PluginId
         Version = $PluginVersion
         InstalledVersion = if ($null -eq $installedPlugin) { $null } else { [string]$installedPlugin.version }
+        Enabled = $enabled
+        TrustReviewRequired = $false
         Source = $PackageRoot
         Repository = $RepoRoot
         Cache = $CachePath
+        CodexHome = $ResolvedCodexHome
+        CodexExecutable = $CodexExecutable
+        CodexVersion = $CodexVersion
         Files = $PayloadFiles.Count
-        Drift = @($drift)
+        Drift = @($drift | ForEach-Object { $_.Text })
+        LoadedDrift = @($drift | Where-Object { $_.Loaded } | ForEach-Object { $_.Text })
         MachineId = $null
         MarketplacePresent = $null -ne $marketplace
         PluginInstalled = $null -ne $installedPlugin
     }
 }
 
+function Complete-ConvergenceState {
+    param([Parameter(Mandatory)] $State)
+
+    # Trust is Codex-owned and its hash is not derivable from source, so any
+    # change to the installed plugin asks for a review rather than guessing.
+    $State.TrustReviewRequired = [bool]$State.Changed
+    $State.NextStep = if ($State.Status -eq 'CONFLICT') {
+        "Point the Codex '$MarketplaceName' marketplace at $RepoRoot, then run this again. Nothing was changed."
+    }
+    elseif ($State.Status -ne 'CURRENT') {
+        if (@($State.LoadedDrift).Count -eq 0) {
+            "Only inert cache copies drifted, so Codex behaves the same. Converge when convenient: $ConvergeCommand"
+        }
+        else {
+            "Converge now: $ConvergeCommand"
+        }
+    }
+    elseif ($State.Enabled -eq $false) {
+        "$PluginId is installed but disabled in Codex, so its SessionStart reconciler does not run. Enable it in Codex."
+    }
+    elseif ($State.Changed) {
+        'Restart Codex, confirm the plugin is enabled, and review the SessionStart reconciler in /hooks.'
+    }
+    else {
+        $null
+    }
+
+    return $State
+}
+
 function Assert-VerifiedMachine {
+    if (
+        (Test-SamePath -Left $ResolvedCodexHome -Right $PhysicalCodexHome) -and
+        -not (Test-SamePath -Left $VerifierPath -Right $InstalledVerifierPath)
+    ) {
+        throw "Refusing verifier override '$VerifierPath' for the physical DevHome CODEX_HOME; mutations there are gated by the installed verifier: $InstalledVerifierPath"
+    }
     if (-not (Test-Path -LiteralPath $VerifierPath -PathType Leaf)) {
         throw "Machine verifier is missing: $VerifierPath"
     }
 
-    $identity = & $VerifierPath
-    if ($null -eq $identity) {
-        throw 'Machine verifier returned no identity.'
+    $results = @(& $VerifierPath)
+    if ($results.Count -ne 1) {
+        throw "Machine verifier must return exactly one result; it returned $($results.Count)."
     }
-    $identity = @($identity)[-1]
+    $identity = $results[0]
     if (
         $identity.status -cne 'VERIFIED' -or
         $identity.machineId -cne $ExpectedMachineId -or
@@ -487,16 +620,25 @@ function Assert-VerifiedMachine {
     return $identity
 }
 
+$CodexExecutable = Resolve-CodexExecutable
+$CodexVersion = Get-CodexVersion
+
 $initialState = Get-ConvergenceState
 if ($Check) {
-    $initialState
-    return
+    # Read-only, and the exit code carries the verdict: 0 only when CURRENT. The
+    # state object is still emitted, so a caller that invokes this with & (the
+    # installer's -DryRun) keeps the full report and reads $LASTEXITCODE.
+    Complete-ConvergenceState -State $initialState
+    if ($initialState.Status -eq 'CURRENT') {
+        exit 0
+    }
+    exit 1
 }
 if ($initialState.Status -eq 'CONFLICT') {
     throw "The '$MarketplaceName' marketplace points elsewhere or is invalid: $($initialState.Drift -join '; ')"
 }
 if ($initialState.Status -eq 'CURRENT' -and -not $Force) {
-    $initialState
+    Complete-ConvergenceState -State $initialState
     return
 }
 
@@ -508,7 +650,7 @@ else {
 }
 if (-not $PSCmdlet.ShouldProcess($ResolvedCodexHome, $operation)) {
     $initialState.Action = 'WOULD_CONVERGE'
-    $initialState
+    Complete-ConvergenceState -State $initialState
     return
 }
 
@@ -542,9 +684,19 @@ if ($refreshInstalledPlugin) {
     )
 }
 if (-not $pluginWasInstalled -or $refreshInstalledPlugin) {
-    $null = Invoke-CodexJson -Arguments @(
-        'plugin', 'add', $PluginId, '--json'
-    )
+    try {
+        $null = Invoke-CodexJson -Arguments @(
+            'plugin', 'add', $PluginId, '--json'
+        )
+    }
+    catch {
+        if (-not $refreshInstalledPlugin) {
+            throw
+        }
+        # Codex 0.155.1 has no plugin refresh command (marketplace upgrade covers
+        # Git marketplaces only), so remove then add is not atomic.
+        throw "Codex removed $PluginId but could not add it back, so the plugin is now uninstalled. Re-run this command to reinstall it. $($_.Exception.Message)"
+    }
 }
 
 $finalState = Get-ConvergenceState
@@ -566,4 +718,4 @@ else {
 }
 $finalState.Changed = $true
 $finalState.MachineId = $identity.machineId
-$finalState
+Complete-ConvergenceState -State $finalState

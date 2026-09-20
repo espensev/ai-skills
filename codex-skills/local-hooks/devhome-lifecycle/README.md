@@ -235,6 +235,30 @@ Read-only plugin-cache convergence check:
 .\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1 -Check
 ```
 
+`-Check` never mutates and carries its verdict in the exit code: `0` only when
+`Status` is `CURRENT`, `1` for `STALE`, `MISSING`, or `CONFLICT`. It still emits
+the full state object, so the entrypoint's `-DryRun` prints the report and a
+gate reads `$LASTEXITCODE`. The two sibling checks below throw on drift instead.
+
+Every run prints what it acted on: `CodexExecutable` and `CodexVersion` (the
+resolved application or script, never a same-named alias or function),
+`CodexHome`, the plugin's `Enabled` flag as Codex reports it, and a `NextStep`
+line. `Drift` lists every difference in the closed payload. `LoadedDrift` is the
+subset Codex itself loads or runs from the cache: the plugin manifest,
+`hooks/hooks.json`, the cached `Sync-DevHomeCodexHooks.ps1`, the `skills/` tree,
+and any `.mcp.json`. The other payload files are inert copies there, because the
+SessionStart hook delegates to this checkout through `-SourcePackageRoot`. An
+empty `LoadedDrift` under `STALE` therefore means Codex behaves the same and
+convergence can wait. `TrustReviewRequired` is set whenever a run changed the
+installed plugin; the script never reads or writes hook-trust state, which the
+AI environment observer reports.
+
+A refresh is `codex plugin remove` followed by `codex plugin add`, which is not
+atomic; Codex 0.155.1 has no plugin refresh command. If the add fails, the error
+says the plugin is now uninstalled; running the command again reinstalls it. The
+identity gate takes exactly one `VERIFIED` result, and a `-VerifierPath`
+override cannot gate a mutation of the physical Codex home.
+
 ## Install or refresh Codex
 
 The installer runs the hash-bound DevMesh v2 verifier from the local machine

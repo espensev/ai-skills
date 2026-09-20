@@ -16,6 +16,8 @@ Describe 'DevHome lifecycle plugin cache synchronization' {
                 installed = $false
                 installedVersion = $null
                 installedSourceRoot = $null
+                pluginEnabled = $true
+                stderrNoise = $false
                 calls = @()
                 codexHomes = @()
                 mutations = @()
@@ -44,6 +46,15 @@ function Write-FakeStderr {
     param([string] $Text)
 
     Write-Error -Message $Text -ErrorAction Continue
+}
+
+if ($key -eq '--version') {
+    Save-State
+    'codex-cli 0.0.0-fake'
+    exit 0
+}
+if ($state.stderrNoise) {
+    Write-FakeStderr 'warning: synthetic stderr noise on a successful call'
 }
 
 if ($state.failure -eq 'marketplace-list-nonzero' -and $key -eq 'plugin marketplace list --json') {
@@ -82,7 +93,7 @@ if ($cliArgs.Count -eq 5 -and $cliArgs[0] -eq 'plugin' -and $cliArgs[1] -eq 'mar
     exit 0
 }
 
-if ($key -eq 'plugin list --json --available') {
+if ($key -eq 'plugin list --json') {
     $installed = @()
     $available = @()
     $inventoryRoot = if ($state.installed -and -not [string]::IsNullOrWhiteSpace([string]$state.installedSourceRoot)) {
@@ -102,7 +113,7 @@ if ($key -eq 'plugin list --json --available') {
                 marketplaceName = 'ai-skills'
                 version = if ($state.installed) { [string]$state.installedVersion } else { [string]$manifest.version }
                 installed = [bool]$state.installed
-                enabled = [bool]$state.installed
+                enabled = [bool]$state.installed -and [bool]$state.pluginEnabled
                 source = [ordered]@{ source = 'local'; path = $sourcePath }
             }
             if ($state.installed) {
@@ -122,6 +133,11 @@ if ($cliArgs.Count -eq 4 -and $cliArgs[0] -eq 'plugin' -and $cliArgs[1] -eq 'add
     if (-not (Test-Path -LiteralPath $env:FAKE_IDENTITY_MARKER -PathType Leaf)) {
         Write-FakeStderr 'mutation reached fake Codex before identity verification'
         exit 51
+    }
+    if ($state.failure -eq 'plugin-add-nonzero') {
+        Save-State
+        Write-FakeStderr 'synthetic plugin add failure'
+        exit 23
     }
     $sourcePath = Join-Path ([string]$state.marketplaceRoot) 'codex-skills\local-hooks\devhome-lifecycle'
     $manifest = Get-Content -Raw -LiteralPath (Join-Path $sourcePath '.codex-plugin\plugin.json') | ConvertFrom-Json
@@ -182,13 +198,53 @@ Set-Content -LiteralPath `$env:FAKE_IDENTITY_MARKER -Value 'VERIFIED' -Encoding 
 }
 "@ | Set-Content -LiteralPath $badVerifier -Encoding utf8NoBOM
 
+            $twoResultVerifier = Join-Path $root 'two-result-verifier.ps1'
+            @"
+Set-Content -LiteralPath `$env:FAKE_IDENTITY_MARKER -Value 'VERIFIED' -Encoding ascii
+foreach (`$index in 1..2) {
+    [pscustomobject]@{
+        status = 'VERIFIED'
+        machineId = 'snd-desk'
+        instanceId = '$($script:ExpectedInstallationId)'
+    }
+}
+"@ | Set-Content -LiteralPath $twoResultVerifier -Encoding utf8NoBOM
+
+            # One real executable for the native-boundary case: cmd.exe only, no
+            # PowerShell engine. It answers the three read-only queries of -Check.
+            $nativeCodexCommand = Join-Path $root 'native-codex.cmd'
+            $nativeCodexBatch = @'
+@echo off
+if "%~1"=="--version" (
+  echo codex-cli 0.0.0-native
+  exit /b 0
+)
+echo warning: synthetic native stderr 1>&2
+if "%~2"=="marketplace" (
+  echo {"marketplaces":[]}
+  exit /b 0
+)
+if "%~2"=="list" (
+  echo {"installed":[]}
+  exit /b 0
+)
+echo unsupported native fake command 1>&2
+exit /b 64
+'@
+            # cmd.exe parses batch files reliably only with CRLF line endings.
+            Set-Content -LiteralPath $nativeCodexCommand `
+                -Value ($nativeCodexBatch -replace "`r?`n", "`r`n") `
+                -Encoding ascii
+
             [pscustomobject]@{
                 Root = $root
                 StatePath = $statePath
                 CodexHome = Join-Path $root 'codex-home'
                 CodexCommand = $fakeCodexScript
+                NativeCodexCommand = $nativeCodexCommand
                 GoodVerifier = $goodVerifier
                 BadVerifier = $badVerifier
+                TwoResultVerifier = $twoResultVerifier
                 IdentityMarker = Join-Path $root 'identity-verified.txt'
             }
         }
@@ -395,9 +451,14 @@ Set-Content -LiteralPath `$env:FAKE_IDENTITY_MARKER -Value 'VERIFIED' -Encoding 
             }
         }
 
+        $sourceVersion = (
+            Get-Content -Raw -LiteralPath (Join-Path $script:PackageRoot '.codex-plugin\plugin.json') |
+                ConvertFrom-Json
+        ).version
         $result.Cache | Should -BeExactly (
-            Join-Path $script:PhysicalCodexHome 'plugins\cache\ai-skills\devhome-lifecycle\0.3.1'
+            Join-Path $script:PhysicalCodexHome "plugins\cache\ai-skills\devhome-lifecycle\$sourceVersion"
         )
+        $result.CodexHome | Should -BeExactly $script:PhysicalCodexHome
         $observedHomes = @((Get-FakeState).codexHomes | Select-Object -Unique)
         $observedHomes | Should -HaveCount 1
         $observedHomes[0] | Should -BeExactly $script:PhysicalCodexHome
@@ -476,6 +537,8 @@ description: Synthetic cache-only capability used by the convergence test.
         $check.Status | Should -BeExactly 'STALE'
         @($check.Drift) | Should -Contain 'skills/orphaned-helper/SKILL.md unexpected'
         @($check.Drift) | Should -Contain '.mcp.json unexpected'
+        @($check.LoadedDrift) | Should -Contain 'skills/orphaned-helper/SKILL.md unexpected'
+        @($check.LoadedDrift) | Should -Contain '.mcp.json unexpected'
         @((Get-FakeState).mutations) | Should -HaveCount 0
 
         $repaired = Invoke-TestSynchronizer
@@ -484,6 +547,139 @@ description: Synthetic cache-only capability used by the convergence test.
         @((Get-FakeState).mutations) | Should -Be @('plugin-remove', 'plugin-add')
         Test-Path -LiteralPath $orphanedSkill | Should -BeFalse
         Test-Path -LiteralPath (Join-Path $installed.Cache '.mcp.json') | Should -BeFalse
+    }
+
+    It 'separates drift Codex loads from inert cache copies' {
+        $installed = Invoke-TestSynchronizer
+        Add-Content -LiteralPath (Join-Path $installed.Cache 'hooks\Invoke-DevHomeHook.ps1') `
+            -Value '# synthetic inert drift'
+
+        $inert = Invoke-TestSynchronizer -Check
+        $inert.Status | Should -BeExactly 'STALE'
+        @($inert.Drift) | Should -Be @('hooks/Invoke-DevHomeHook.ps1 differs')
+        @($inert.LoadedDrift) | Should -HaveCount 0
+        $inert.NextStep | Should -BeLike '*inert*'
+
+        Add-Content -LiteralPath (Join-Path $installed.Cache 'Sync-DevHomeCodexHooks.ps1') `
+            -Value '# synthetic loaded drift'
+
+        $loaded = Invoke-TestSynchronizer -Check
+        $loaded.Status | Should -BeExactly 'STALE'
+        @($loaded.Drift) | Should -HaveCount 2
+        @($loaded.LoadedDrift) | Should -Be @('Sync-DevHomeCodexHooks.ps1 differs')
+        $loaded.NextStep | Should -Not -BeLike '*inert*'
+    }
+
+    It 'signals check-mode drift through the exit code and keeps the state object' {
+        $global:LASTEXITCODE = 0
+        $missing = Invoke-TestSynchronizer -Check
+        $checkExitCode = $LASTEXITCODE
+
+        $missing.Status | Should -BeExactly 'MISSING'
+        @($missing.LoadedDrift) | Should -Not -HaveCount 0
+        $checkExitCode | Should -Be 1
+
+        $null = Invoke-TestSynchronizer
+        $global:LASTEXITCODE = 7
+        $current = Invoke-TestSynchronizer -Check
+        $checkExitCode = $LASTEXITCODE
+
+        $current.Status | Should -BeExactly 'CURRENT'
+        $checkExitCode | Should -Be 0
+    }
+
+    It 'reports the Codex it drove, its home, and what the operator does next' {
+        $result = Invoke-TestSynchronizer
+
+        $result.CodexExecutable | Should -BeExactly $script:Fake.CodexCommand
+        $result.CodexVersion | Should -BeExactly 'codex-cli 0.0.0-fake'
+        $result.CodexHome | Should -BeExactly $script:Fake.CodexHome
+        $result.Enabled | Should -BeTrue
+        $result.TrustReviewRequired | Should -BeTrue
+        $result.NextStep | Should -BeLike '*Restart Codex*/hooks*'
+
+        $unchanged = Invoke-TestSynchronizer
+        $unchanged.Changed | Should -BeFalse
+        $unchanged.TrustReviewRequired | Should -BeFalse
+        $unchanged.NextStep | Should -BeNullOrEmpty
+    }
+
+    It 'flags a converged plugin that Codex has disabled' {
+        $null = Invoke-TestSynchronizer
+        Set-FakeState { param($state) $state.pluginEnabled = $false }
+
+        $result = Invoke-TestSynchronizer -Check
+
+        $result.Status | Should -BeExactly 'CURRENT'
+        $result.Enabled | Should -BeFalse
+        $result.NextStep | Should -BeLike '*disabled*'
+    }
+
+    It 'reads the installed record without requesting the available catalog' {
+        $null = Invoke-TestSynchronizer -Check
+
+        $calls = @((Get-FakeState).calls)
+        $calls | Should -Contain 'plugin list --json'
+        @($calls | Where-Object { $_ -like '*--available*' }) | Should -HaveCount 0
+    }
+
+    It 'parses Codex JSON when the CLI also writes to stderr' {
+        Set-FakeState { param($state) $state.stderrNoise = $true }
+
+        $result = Invoke-TestSynchronizer
+
+        $result.Status | Should -BeExactly 'CURRENT'
+        $result.Action | Should -BeExactly 'REGISTERED_AND_INSTALLED'
+    }
+
+    It 'drives a native Codex executable across the process boundary' -Tag 'NativeBoundary' {
+        $global:LASTEXITCODE = 0
+        $result = & $script:Synchronizer `
+            -CodexHome $script:Fake.CodexHome `
+            -CodexCommand $script:Fake.NativeCodexCommand `
+            -AllowTestOnlyCodexHomeOverride `
+            -Check
+        $checkExitCode = $LASTEXITCODE
+
+        $result.Status | Should -BeExactly 'MISSING'
+        $result.CodexExecutable | Should -BeExactly $script:Fake.NativeCodexCommand
+        $result.CodexVersion | Should -BeExactly 'codex-cli 0.0.0-native'
+        $checkExitCode | Should -Be 1
+    }
+
+    It 'says the plugin is uninstalled when add fails after remove' {
+        $installed = Invoke-TestSynchronizer
+        Add-Content -LiteralPath (Join-Path $installed.Cache 'hooks\hooks.json') -Value ' '
+        Set-FakeState {
+            param($state)
+            $state.mutations = @()
+            $state.failure = 'plugin-add-nonzero'
+        }
+
+        { Invoke-TestSynchronizer } |
+            Should -Throw '*now uninstalled*Re-run*synthetic plugin add failure*'
+
+        $state = Get-FakeState
+        @($state.mutations) | Should -Be @('plugin-remove')
+        $state.installed | Should -BeFalse
+    }
+
+    It 'requires exactly one verifier result before the first Codex mutation' {
+        { Invoke-TestSynchronizer -VerifierPath $script:Fake.TwoResultVerifier } |
+            Should -Throw '*exactly one*'
+
+        @((Get-FakeState).mutations) | Should -HaveCount 0
+    }
+
+    It 'refuses a verifier override for the physical Codex home before mutating' {
+        {
+            & $script:Synchronizer `
+                -CodexCommand $script:Fake.CodexCommand `
+                -VerifierPath $script:Fake.BadVerifier
+        } | Should -Throw '*verifier override*physical DevHome CODEX_HOME*'
+
+        @((Get-FakeState).mutations) | Should -HaveCount 0
+        Test-Path -LiteralPath $script:Fake.IdentityMarker | Should -BeFalse
     }
 
     It 'surfaces a nonzero Codex CLI result with command context' {

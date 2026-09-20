@@ -97,10 +97,17 @@ the canonical source synchronizer for a read-only cache check:
 & 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1' -Check
 ```
 
+The check exits `0` only when `Status` is `CURRENT` and still prints the full
+state. Read `LoadedDrift` before escalating a `STALE` result: it lists only the
+drift in files Codex loads or runs from the cache. When it is empty, the drifted
+files are inert copies, Codex behaves the same, and convergence can wait;
+`NextStep` says which case applies.
+
 The startup bootstrap receives the canonical source path, so runtime
 reconciliation still uses current repository files if the materialized plugin
 cache is old. Plugin enablement and hook trust remain Codex-managed user state;
-an installed/current cache does not prove that SessionStart is active.
+an installed/current cache does not prove that SessionStart is active. The
+check reports `Enabled` as Codex returns it and never reads hook trust.
 
 ## Check
 

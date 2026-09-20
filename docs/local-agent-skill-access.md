@@ -99,6 +99,9 @@ Read-only checks:
 .\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1 -Check
 ```
 
+The plugin check passes only with `Status = CURRENT` and exit code `0`; the
+other two throw on drift.
+
 Installation does not prove activation. Plugin enablement and hook trust are
 Codex-managed user choices; after first installation or a hook command change,
 restart Codex, confirm `devhome-lifecycle@ai-skills` is enabled, and review the

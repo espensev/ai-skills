@@ -22,9 +22,14 @@ Describe 'DevHome lifecycle plugin cache synchronization' {
                 failure = $null
             } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $statePath -Encoding utf8NoBOM
 
+            # The fake Codex runs in-process as the -CodexCommand script. A .cmd
+            # shim would start one pwsh per fake Codex call, dozens per run. Every
+            # path ends in an explicit exit so $LASTEXITCODE is never stale, and
+            # stderr is an error record, which is how native stderr arrives.
             $fakeCodexScript = Join-Path $root 'fake-codex.ps1'
             @'
 $ErrorActionPreference = 'Stop'
+$WhatIfPreference = $false
 $cliArgs = @($args)
 $state = Get-Content -Raw -LiteralPath $env:FAKE_CODEX_STATE | ConvertFrom-Json
 $key = $cliArgs -join ' '
@@ -35,9 +40,15 @@ function Save-State {
     $state | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $env:FAKE_CODEX_STATE -Encoding utf8NoBOM
 }
 
+function Write-FakeStderr {
+    param([string] $Text)
+
+    Write-Error -Message $Text -ErrorAction Continue
+}
+
 if ($state.failure -eq 'marketplace-list-nonzero' -and $key -eq 'plugin marketplace list --json') {
     Save-State
-    [Console]::Error.WriteLine('synthetic marketplace list failure')
+    Write-FakeStderr 'synthetic marketplace list failure'
     exit 19
 }
 if ($state.failure -eq 'marketplace-list-invalid-json' -and $key -eq 'plugin marketplace list --json') {
@@ -61,7 +72,7 @@ if ($key -eq 'plugin marketplace list --json') {
 
 if ($cliArgs.Count -eq 5 -and $cliArgs[0] -eq 'plugin' -and $cliArgs[1] -eq 'marketplace' -and $cliArgs[2] -eq 'add' -and $cliArgs[4] -eq '--json') {
     if (-not (Test-Path -LiteralPath $env:FAKE_IDENTITY_MARKER -PathType Leaf)) {
-        [Console]::Error.WriteLine('mutation reached fake Codex before identity verification')
+        Write-FakeStderr 'mutation reached fake Codex before identity verification'
         exit 51
     }
     $state.marketplaceRoot = [System.IO.Path]::GetFullPath($cliArgs[3])
@@ -109,7 +120,7 @@ if ($key -eq 'plugin list --json --available') {
 
 if ($cliArgs.Count -eq 4 -and $cliArgs[0] -eq 'plugin' -and $cliArgs[1] -eq 'add' -and $cliArgs[2] -eq 'devhome-lifecycle@ai-skills' -and $cliArgs[3] -eq '--json') {
     if (-not (Test-Path -LiteralPath $env:FAKE_IDENTITY_MARKER -PathType Leaf)) {
-        [Console]::Error.WriteLine('mutation reached fake Codex before identity verification')
+        Write-FakeStderr 'mutation reached fake Codex before identity verification'
         exit 51
     }
     $sourcePath = Join-Path ([string]$state.marketplaceRoot) 'codex-skills\local-hooks\devhome-lifecycle'
@@ -131,7 +142,7 @@ if ($cliArgs.Count -eq 4 -and $cliArgs[0] -eq 'plugin' -and $cliArgs[1] -eq 'add
 
 if ($cliArgs.Count -eq 4 -and $cliArgs[0] -eq 'plugin' -and $cliArgs[1] -eq 'remove' -and $cliArgs[2] -eq 'devhome-lifecycle@ai-skills' -and $cliArgs[3] -eq '--json') {
     if (-not (Test-Path -LiteralPath $env:FAKE_IDENTITY_MARKER -PathType Leaf)) {
-        [Console]::Error.WriteLine('mutation reached fake Codex before identity verification')
+        Write-FakeStderr 'mutation reached fake Codex before identity verification'
         exit 51
     }
     $cacheRoot = Join-Path $env:CODEX_HOME 'plugins\cache\ai-skills\devhome-lifecycle'
@@ -148,16 +159,9 @@ if ($cliArgs.Count -eq 4 -and $cliArgs[0] -eq 'plugin' -and $cliArgs[1] -eq 'rem
 }
 
 Save-State
-[Console]::Error.WriteLine("unsupported fake Codex command: $key")
+Write-FakeStderr "unsupported fake Codex command: $key"
 exit 64
 '@ | Set-Content -LiteralPath $fakeCodexScript -Encoding utf8NoBOM
-
-            $fakeCodexCommand = Join-Path $root 'fake-codex.cmd'
-            @'
-@echo off
-pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0fake-codex.ps1" %*
-exit /b %ERRORLEVEL%
-'@ | Set-Content -LiteralPath $fakeCodexCommand -Encoding ascii
 
             $goodVerifier = Join-Path $root 'good-verifier.ps1'
             @"
@@ -182,7 +186,7 @@ Set-Content -LiteralPath `$env:FAKE_IDENTITY_MARKER -Value 'VERIFIED' -Encoding 
                 Root = $root
                 StatePath = $statePath
                 CodexHome = Join-Path $root 'codex-home'
-                CodexCommand = $fakeCodexCommand
+                CodexCommand = $fakeCodexScript
                 GoodVerifier = $goodVerifier
                 BadVerifier = $badVerifier
                 IdentityMarker = Join-Path $root 'identity-verified.txt'
@@ -208,6 +212,7 @@ Set-Content -LiteralPath `$env:FAKE_IDENTITY_MARKER -Value 'VERIFIED' -Encoding 
             param(
                 [switch] $Check,
                 [switch] $Force,
+                [switch] $WhatIf,
                 [string] $VerifierPath = $script:Fake.GoodVerifier
             )
 
@@ -222,6 +227,9 @@ Set-Content -LiteralPath `$env:FAKE_IDENTITY_MARKER -Value 'VERIFIED' -Encoding 
             }
             if ($Force) {
                 $parameters.Force = $true
+            }
+            if ($WhatIf) {
+                $parameters.WhatIf = $true
             }
 
             & $script:Synchronizer @parameters
@@ -292,6 +300,16 @@ Set-Content -LiteralPath `$env:FAKE_IDENTITY_MARKER -Value 'VERIFIED' -Encoding 
 
         $result.Status | Should -BeExactly 'CURRENT'
         $result.Action | Should -BeExactly 'NONE'
+        $result.Changed | Should -BeFalse
+        @((Get-FakeState).mutations) | Should -HaveCount 0
+        Test-Path -LiteralPath $script:Fake.IdentityMarker | Should -BeFalse
+    }
+
+    It 'previews convergence under WhatIf without verifying identity or mutating' {
+        $result = Invoke-TestSynchronizer -WhatIf -VerifierPath $script:Fake.BadVerifier
+
+        $result.Status | Should -BeExactly 'MISSING'
+        $result.Action | Should -BeExactly 'WOULD_CONVERGE'
         $result.Changed | Should -BeFalse
         @((Get-FakeState).mutations) | Should -HaveCount 0
         Test-Path -LiteralPath $script:Fake.IdentityMarker | Should -BeFalse

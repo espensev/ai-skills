@@ -2000,6 +2000,146 @@ Next gate
             $result.Output.Trim() | Should -BeExactly '{}'
         }
 
+        It 'publishes on a camelCase second Stop instead of re-preparing (grok compat envelope)' -Tag 'CompatEnvelope' {
+            # grok runs Claude settings hooks but keeps its own camelCase envelope. Reading only
+            # stop_hook_active made every grok Stop a first pass: the relay orphaned the draft it
+            # had just requested and asked again until grok's eight-continuation cap.
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            '# old handoff' | Set-Content -LiteralPath $target -Encoding utf8NoBOM
+            $payload = @{
+                hook_event_name = 'Stop'; hookEventName = 'stop'; session_id = 'grok-compat-session'
+                cwd = 'D:\Development\AI-related'; stopHookActive = $false; reason = 'end_turn'
+            }
+
+            $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload -Provider Claude
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            New-TestHandoffDraft -Marker 'GROK-COMPAT-MARKER' | Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+            $payload.stopHookActive = $true
+            $second = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload -Provider Claude
+
+            ($second.Output | ConvertFrom-Json).systemMessage | Should -BeExactly 'Handoff Relay: next-session context refreshed.'
+            Get-Content -Raw -LiteralPath $target | Should -Match 'GROK-COMPAT-MARKER'
+            @(Get-ChildItem -LiteralPath (Split-Path -Parent $draftPath) -Filter '*.orphaned.*') | Should -HaveCount 0
+        }
+
+        It 'defers on camelCase <Field> like its snake_case twin' -Tag 'CompatEnvelope' -ForEach @(
+            @{ Field = 'backgroundTasks'; Value = @(@{ id = 'task-1'; type = 'shell' }) }
+            @{ Field = 'sessionCrons'; Value = @(@{ id = 'cron-1'; schedule = 'every 5 minutes' }) }
+        ) {
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $payload = @{ hook_event_name = 'Stop'; cwd = 'D:\Development\AI-related'; stopHookActive = $false }
+            $payload[$Field] = $Value
+
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload -Provider Claude
+
+            $result.Output.Trim() | Should -BeExactly '{}'
+            Test-Path -LiteralPath (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeFalse
+        }
+
+        It 'leaves no attempt behind for an observe-only session-end Stop (<Reason>)' -Tag 'CompatEnvelope' -ForEach @(
+            @{ Reason = 'shutdown' }
+            @{ Reason = 'channel_closed' }
+        ) {
+            # grok fires one more Stop when the session closes and ignores its decision, so a
+            # prepared state could never be completed and would sit there as an active attempt.
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Provider Claude -Payload @{
+                hook_event_name = 'Stop'; session_id = "session-end-$Reason"; cwd = 'D:\Development\AI-related'
+                stopHookActive = $false; reason = $Reason
+            }
+
+            $result.Output.Trim() | Should -BeExactly '{}'
+            Test-Path -LiteralPath (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeFalse
+        }
+
+        It 'settles a pending attempt on a session-end Stop instead of leaking it' -Tag 'CompatEnvelope' {
+            # A turn cut short after the first pass never sends its second Stop. The session-end
+            # fire is the last chance to publish the draft the model already wrote.
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            $payload = @{
+                hook_event_name = 'Stop'; session_id = 'session-end-pending'; cwd = 'D:\Development\AI-related'
+                stopHookActive = $false; reason = 'end_turn'
+            }
+            $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload -Provider Claude
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            New-TestHandoffDraft -Marker 'SESSION-END-MARKER' | Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+            $payload.reason = 'shutdown'
+
+            $second = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload -Provider Claude
+
+            ($second.Output | ConvertFrom-Json).systemMessage | Should -BeExactly 'Handoff Relay: next-session context refreshed.'
+            Get-Content -Raw -LiteralPath $target | Should -Match 'SESSION-END-MARKER'
+            @(Get-ChildItem -LiteralPath (Split-Path -Parent $draftPath) -Filter '*.state.json') | Should -HaveCount 0
+        }
+
+        It 'publishes three full-length risk bullets' -Tag 'HandoffBudget' {
+            # Measured on 168 archived failures: 137 of 201 budget breaches were the Open risks
+            # section total, median four words over. Three bullets at the per-bullet allowance
+            # (3 x 26) never fit the old 55-word total, so the section refused its own contract.
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $target = Join-Path $projectRoot 'remember.md'
+            $payload = @{
+                hook_event_name = 'Stop'; session_id = 'risk-budget'; turn_id = 'risk-turn'
+                cwd = 'D:\Development\AI-related'; stop_hook_active = $false
+            }
+            $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            $risks = @('alpha', 'beta', 'gamma' | ForEach-Object { "[risk] $(("$_ " * 22).Trim()) Basis: fixture." })
+            Get-ContractHandoffDraft -SummaryItems @('Completed the bounded relay change.') -RiskItems $risks |
+                Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+            $payload.stop_hook_active = $true
+            $second = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload
+
+            ($second.Output | ConvertFrom-Json).systemMessage | Should -BeExactly 'Handoff Relay: next-session context refreshed.'
+            $lines = @(Get-Content -LiteralPath $target)
+            foreach ($risk in $risks) { $lines | Should -Contain "- $risk" }
+            Get-HandoffRelayInstruction -Output $first.Output | Should -Match 'Open risks: 3 bullets, 75 words total, 26 words per bullet'
+        }
+
+        It 'records why an attempt was archived inside the archived state' -Tag 'HandoffBudget' {
+            # The health record is one global last-writer file, so without this the reason for a
+            # failed or orphaned attempt is gone as soon as the next hook runs.
+            $projectRoot = Join-Path $script:RememberProjectsRoot 'd--Development-AI-related'
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $payload = @{
+                hook_event_name = 'Stop'; session_id = 'archive-reason'; turn_id = 'archive-reason-turn'
+                cwd = 'D:\Development\AI-related'; stop_hook_active = $false
+            }
+            $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload
+            $draftPath = Get-HandoffRelayDraftPath -Output $first.Output
+            $relayRoot = Split-Path -Parent $draftPath
+
+            # A repeated first pass supersedes the pending attempt.
+            $null = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload
+            $orphan = @(Get-ChildItem -LiteralPath $relayRoot -Filter '*.orphaned.*.state.json')
+            $orphan | Should -HaveCount 1
+            (Get-Content -Raw -LiteralPath $orphan[0].FullName | ConvertFrom-Json).result.code | Should -BeExactly 'superseded'
+
+            $risks = @('alpha', 'beta', 'gamma' | ForEach-Object { "[risk] $(("$_ " * 23).Trim()) Basis: fixture." })
+            Get-ContractHandoffDraft -SummaryItems @('Completed the bounded relay change.') -RiskItems $risks |
+                Set-Content -LiteralPath $draftPath -Encoding utf8NoBOM
+            $payload.stop_hook_active = $true
+            $second = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $payload
+
+            ($second.Output | ConvertFrom-Json).systemMessage | Should -Match 'Over: Open risks section-words \+3\.'
+            $failed = @(Get-ChildItem -LiteralPath $relayRoot -Filter '*.failed.*.state.json')
+            $failed | Should -HaveCount 1
+            $archived = Get-Content -Raw -LiteralPath $failed[0].FullName | ConvertFrom-Json
+            $archived.schema | Should -BeExactly 'handoff-relay-state.v1'
+            $archived.result.code | Should -BeExactly 'draft-budget-exceeded'
+            $archived.result.details.budget | Should -BeExactly 'Open risks section-words +3'
+            $healthPath = Join-Path (Split-Path -Parent $script:RememberProjectsRoot) 'handoff-relay\latest-status.json'
+            (Get-Content -Raw -LiteralPath $healthPath | ConvertFrom-Json).details.budget | Should -BeExactly 'Open risks section-words +3'
+        }
+
         It 'ignores user-only target text and refuses targets outside the Remember store' {
             $transcript = Write-HandoffRelayTranscript -Records @(
                 [ordered]@{

@@ -69,6 +69,16 @@ capture. Failed/conflict attempts remain archived as before. The receipt is
 duplicate suppression, not proof of publication; a receipt-write failure after
 publication remains a PUBLISHED result with `completionReceiptSaved=false`.
 
+A harness that runs the Claude registration through a compatibility layer can
+keep its own envelope. grok sends camelCase `stopHookActive`, `sessionId`,
+`backgroundTasks`, and `sessionCrons`; the relay reads each one when its
+snake_case name is absent. Without that, every grok Stop looked like a first
+pass: the relay orphaned the draft it had just requested and asked again until
+grok's eight-continuation cap, and nothing was published. grok also fires one
+observe-only Stop as the session closes (`reason` `shutdown` or
+`channel_closed`). The relay never prepares there; it only settles an attempt
+that is already pending.
+
 Only interactive sessions relay. After project resolution the hook classifies
 the session and records a neutral `SKIPPED` health result with code
 `non-interactive-sdk` (Claude: `CLAUDE_CODE_ENTRYPOINT` starts with `sdk`, or
@@ -135,14 +145,22 @@ Both authoring prompts render the same section limits consumed by validation:
 | Verified state | 4 | 100 | 34 |
 | Changed surfaces | 4 | 60 | 24 |
 | Verification | 4 | 70 | 26 |
-| Open risks | 3 | 55 | 26 |
+| Open risks | 3 | 75 | 26 |
 | Next gate | 2 | 40 | 24 |
+
+The section totals add up to the 450-word body limit. Open risks allows 75
+words because three bullets at the per-bullet allowance did not fit the earlier
+55: of 168 archived failures measured on 2026-09-20, 137 of 201 breaches were
+that one total, by a median of four words.
 
 Word counts include labels and evidence. An over-budget unique fact or gate
 fails the entire draft with `draft-budget-exceeded`; it is never clipped or
 dropped to make a successful publication fit. The previous canonical bytes
 remain intact, the original draft is archived, and Stop returns a bounded
-message without another continuation. Exact duplicates remain safe to remove,
+message without another continuation. That message names each exceeded limit
+and the overage, for example `Over: Open risks section-words +4.`; the figures
+cover the whole section, and the health record and the archived state carry the
+same text as `details.budget`. Exact duplicates remain safe to remove,
 including duplicates encountered after a section reaches its bullet limit.
 Put the current priority first in Next gate and link deferred work separately.
 Each bullet is also bounded to 512 text elements and 1,024 UTF-8 bytes; the
@@ -154,7 +172,12 @@ most-recent record and can be replaced by a later project, so the live
 `systemMessage` uses plain outcome language while internal diagnostics retain
 stable error codes. The handoff header is the completion evidence for a specific
 turn. Raw failed or conflicting drafts remain under the enrolled
-project's bounded temporary relay directory for diagnosis. A state-less raw
+project's bounded temporary relay directory for diagnosis. Because the health
+record is replaced by every later result, each archived `*.state.json` also
+receives a `result` object (`kind`, `code`, `archivedUtc`, `details`) naming why
+the attempt was archived; orphans record `superseded`, `state-missing`,
+`tool-free-turn`, or `prepared-draft-recovery`. The stamp is best effort and
+never blocks the archive move. A state-less raw
 draft is quarantined as `*.orphaned.*.draft.md` on the next relay attempt for
 that project instead of remaining indefinitely active-looking. Shutdown remains
 fail-open after recording a bounded failure.

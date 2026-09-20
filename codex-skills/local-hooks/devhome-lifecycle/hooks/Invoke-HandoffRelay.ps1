@@ -77,12 +77,20 @@ function Write-NeutralHookResult {
 }
 
 function Write-HandoffFailureResult {
-    param([Parameter(Mandatory)][string] $Code)
+    param(
+        [Parameter(Mandatory)][string] $Code,
+        [Parameter(Mandatory = $false)][string[]] $Budget = @()
+    )
 
     if ($Code -eq 'draft-budget-exceeded') {
-        Write-NeutralHookResult -SystemMessage (
-            'Handoff Relay: draft exceeds the stated limits; previous context kept. Use a shorter draft next turn.'
-        )
+        $message = 'Handoff Relay: draft exceeds the stated limits; previous context kept. Use a shorter draft next turn.'
+        if ($Budget.Count -gt 0) {
+            # Name what was over and by how much; a refusal without a figure cannot be acted on.
+            $shown = @($Budget | Select-Object -First 3)
+            $rest = $Budget.Count - $shown.Count
+            $message += " Over: $($shown -join '; ')$(if ($rest -gt 0) { " (+$rest more)" })."
+        }
+        Write-NeutralHookResult -SystemMessage $message
     }
     Write-NeutralHookResult -SystemMessage (
         'Handoff Relay: automatic context refresh needs another try.'
@@ -824,6 +832,36 @@ function Resolve-HandoffContext {
     }
 }
 
+function Add-CompatEnvelopeAlias {
+    param([object] $Payload)
+
+    # A harness that runs these Claude settings hooks through a compatibility layer can keep
+    # its own camelCase envelope; grok documents stopHookActive, backgroundTasks and
+    # sessionCrons. A field the relay cannot see reads as false or empty, which made every
+    # grok Stop a first pass: it orphaned the draft it had just requested and asked again
+    # until grok's continuation cap. The snake_case name wins when both are present.
+    if ($Payload -isnot [pscustomobject]) {
+        return
+    }
+    $aliases = [ordered]@{
+        stopHookActive = 'stop_hook_active'
+        sessionId = 'session_id'
+        backgroundTasks = 'background_tasks'
+        sessionCrons = 'session_crons'
+    }
+    foreach ($alias in $aliases.Keys) {
+        $canonical = $aliases[$alias]
+        if ($null -ne $Payload.PSObject.Properties[$canonical]) {
+            continue
+        }
+        $source = $Payload.PSObject.Properties[$alias]
+        if ($null -eq $source) {
+            continue
+        }
+        $Payload | Add-Member -NotePropertyName $canonical -NotePropertyValue $source.Value
+    }
+}
+
 function Get-SessionKey {
     param([Parameter(Mandatory)][object] $Payload)
 
@@ -880,11 +918,50 @@ function Test-HandoffPathSetIsSafe {
     return $true
 }
 
+function Add-ArchivedAttemptResult {
+    param(
+        [Parameter(Mandatory)][string] $Path,
+        [Parameter(Mandatory)][string] $Kind,
+        [Parameter(Mandatory)][string] $Code,
+        [Parameter(Mandatory = $false)][hashtable] $Details = @{}
+    )
+
+    # The health record keeps one latest result for the whole store, so the reason an attempt
+    # was archived has to travel with the attempt. Best effort after the move: a state that
+    # cannot be read or rewritten stays exactly as it was archived.
+    try {
+        if ((Get-Item -LiteralPath $Path).Length -gt 8192) {
+            return
+        }
+        $archived = Read-SharedText -Path $Path | ConvertFrom-Json -Depth 20 -ErrorAction Stop
+        if ($archived -isnot [pscustomobject]) {
+            return
+        }
+        $safeDetails = [ordered]@{}
+        foreach ($key in @($Details.Keys | Sort-Object)) {
+            $safeDetails[[string] $key] = [string] $Details[$key]
+        }
+        $result = [pscustomobject] ([ordered]@{
+            kind = $Kind
+            code = $Code
+            archivedUtc = [DateTime]::UtcNow.ToString('o')
+            details = [pscustomobject] $safeDetails
+        })
+        $archived | Add-Member -NotePropertyName result -NotePropertyValue $result -Force
+        Write-AtomicJson -Path $Path -Value $archived
+    }
+    catch {
+        return
+    }
+}
+
 function Move-AttemptToArchive {
     param(
         [Parameter(Mandatory)][object] $Paths,
         [Parameter(Mandatory)][ValidateSet('failed', 'conflict', 'orphaned')]
-        [string] $Kind
+        [string] $Kind,
+        [Parameter(Mandatory = $false)][string] $Code,
+        [Parameter(Mandatory = $false)][hashtable] $Details = @{}
     )
 
     $timestamp = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
@@ -895,6 +972,9 @@ function Move-AttemptToArchive {
     if (Test-Path -LiteralPath $Paths.State -PathType Leaf) {
         $stateArchive = Join-Path $Paths.Root "$script:SessionKey.$Kind.$timestamp.state.json"
         Move-Item -LiteralPath $Paths.State -Destination $stateArchive -Force
+        if (-not [string]::IsNullOrWhiteSpace($Code)) {
+            Add-ArchivedAttemptResult -Path $stateArchive -Kind $Kind -Code $Code -Details $Details
+        }
     }
 }
 
@@ -1029,7 +1109,7 @@ function Get-HandoffSectionSpecs {
         'Verified state' = @{ MaxItems = 4; MaxWords = 100; MaxItemWords = 34; FilterFacts = $true }
         'Changed surfaces' = @{ MaxItems = 4; MaxWords = 60; MaxItemWords = 24; FilterFacts = $true }
         'Verification' = @{ MaxItems = 4; MaxWords = 70; MaxItemWords = 26; FilterFacts = $true }
-        'Open risks' = @{ MaxItems = 3; MaxWords = 55; MaxItemWords = 26; FilterFacts = $false }
+        'Open risks' = @{ MaxItems = 3; MaxWords = 75; MaxItemWords = 26; FilterFacts = $false }
         'Next gate' = @{ MaxItems = 2; MaxWords = 40; MaxItemWords = 24; FilterFacts = $false }
     }
 }
@@ -1052,9 +1132,11 @@ function ConvertTo-CleanHandoff {
     $items = [ordered]@{}
     $seen = @{}
     $sectionWords = @{}
+    $usage = @{}
     foreach ($section in $specs.Keys) {
         $items[$section] = [System.Collections.Generic.List[string]]::new()
         $sectionWords[$section] = 0
+        $usage[$section] = @{ Items = 0; Words = 0; ItemWords = 0; Characters = 0; Bytes = 0 }
         $seen[$section] = [System.Collections.Generic.HashSet[string]]::new(
             [System.StringComparer]::OrdinalIgnoreCase
         )
@@ -1118,12 +1200,22 @@ function ConvertTo-CleanHandoff {
         }
 
         $wordCount = Get-WordCount -Text $text
+        $textElements = [System.Globalization.StringInfo]::ParseCombiningCharacters($text).Count
+        $utf8Bytes = $script:Utf8NoBom.GetByteCount($text)
+        # Whole-section figures for the refusal report: every bullet that reaches the budget
+        # check counts, including the ones the check then turns away.
+        $sectionUsage = $usage[$currentSection]
+        $sectionUsage.Items++
+        $sectionUsage.Words += $wordCount
+        $sectionUsage.ItemWords = [Math]::Max([int] $sectionUsage.ItemWords, $wordCount)
+        $sectionUsage.Characters = [Math]::Max([int] $sectionUsage.Characters, $textElements)
+        $sectionUsage.Bytes = [Math]::Max([int] $sectionUsage.Bytes, $utf8Bytes)
         if (
             $items[$currentSection].Count -ge [int] $spec.MaxItems -or
             $wordCount -gt [int] $spec.MaxItemWords -or
             $sectionWords[$currentSection] + $wordCount -gt [int] $spec.MaxWords -or
-            [System.Globalization.StringInfo]::ParseCombiningCharacters($text).Count -gt $MaxItemCharacters -or
-            $script:Utf8NoBom.GetByteCount($text) -gt $MaxItemUtf8Bytes
+            $textElements -gt $MaxItemCharacters -or
+            $utf8Bytes -gt $MaxItemUtf8Bytes
         ) {
             $budgetExceeded = $true
             continue
@@ -1143,10 +1235,32 @@ function ConvertTo-CleanHandoff {
         $budgetExceeded = $true
     }
 
+    $breaches = [System.Collections.Generic.List[string]]::new()
+    foreach ($section in $specs.Keys) {
+        $spec = $specs[$section]
+        $sectionUsage = $usage[$section]
+        $over = [ordered]@{
+            'bullet-count' = $sectionUsage.Items - [int] $spec.MaxItems
+            'bullet-words' = $sectionUsage.ItemWords - [int] $spec.MaxItemWords
+            'section-words' = $sectionUsage.Words - [int] $spec.MaxWords
+            'characters' = $sectionUsage.Characters - $MaxItemCharacters
+            'utf8' = $sectionUsage.Bytes - $MaxItemUtf8Bytes
+        }
+        foreach ($limit in $over.Keys) {
+            if ($over[$limit] -gt 0) {
+                $breaches.Add("$section $limit +$($over[$limit])")
+            }
+        }
+    }
+    if ($publishedWords -gt $MaxPublishedWords) {
+        $breaches.Add("Body words +$($publishedWords - $MaxPublishedWords)")
+    }
+
     return [pscustomobject]@{
         Valid = -not $budgetExceeded -and $missingSections.Count -eq 0
         Code = if ($budgetExceeded) { 'draft-budget-exceeded' } elseif ($missingSections.Count -eq 0) { 'clean' } else { 'required-section-empty' }
         MissingSections = $missingSections
+        Breaches = $breaches.ToArray()
         Items = $items
         Cleaning = [pscustomobject]@{
             droppedItems = $droppedItems
@@ -1449,7 +1563,7 @@ function Initialize-HandoffDraft {
             (Test-Path -LiteralPath $Paths.State -PathType Leaf) -or
             (Test-Path -LiteralPath $Paths.Draft -PathType Leaf)
         ) {
-            Move-AttemptToArchive -Paths $Paths -Kind orphaned
+            Move-AttemptToArchive -Paths $Paths -Kind orphaned -Code 'superseded'
         }
 
         $state = [ordered]@{
@@ -1568,7 +1682,7 @@ function Complete-HandoffDraft {
         }
         if (-not (Test-Path -LiteralPath $Paths.State -PathType Leaf)) {
         if (Test-Path -LiteralPath $Paths.Draft -PathType Leaf) {
-            Move-AttemptToArchive -Paths $Paths -Kind orphaned
+            Move-AttemptToArchive -Paths $Paths -Kind orphaned -Code 'state-missing'
             Write-HealthRecord `
                 -Status FAILED `
                 -Code 'state-missing' `
@@ -1586,14 +1700,14 @@ function Complete-HandoffDraft {
             ConvertFrom-Json -Depth 20 -ErrorAction Stop
     }
     catch {
-        Move-AttemptToArchive -Paths $Paths -Kind failed
+        Move-AttemptToArchive -Paths $Paths -Kind failed -Code 'state-invalid'
         Write-HealthRecord -Status FAILED -Code 'state-invalid'
         Write-HandoffFailureResult -Code 'state-invalid'
     }
 
     $stateIsValid = Test-HandoffState -State $state -Context $Context -Paths $Paths
     if (-not $stateIsValid) {
-        Move-AttemptToArchive -Paths $Paths -Kind failed
+        Move-AttemptToArchive -Paths $Paths -Kind failed -Code 'state-contract-mismatch'
         Write-HealthRecord -Status FAILED -Code 'state-contract-mismatch'
         Write-HandoffFailureResult -Code 'state-contract-mismatch'
     }
@@ -1610,14 +1724,14 @@ function Complete-HandoffDraft {
             [string] $state.turnId -cne [string] $Payload.turn_id -or
             [string]::IsNullOrWhiteSpace([string] $state.transcript) -or
             -not (Test-SamePath -Left $state.transcript -Right $Payload.transcript_path)) {
-            Move-AttemptToArchive -Paths $Paths -Kind failed
+            Move-AttemptToArchive -Paths $Paths -Kind failed -Code 'prepared-ownership-mismatch'
             Write-HealthRecord -Status FAILED -Code 'prepared-ownership-mismatch'
             Write-HandoffFailureResult -Code 'prepared-ownership-mismatch'
         }
         if ($InitialStop -and (Test-ToolFreeQuestion -Payload $Payload)) {
             Save-CompletedAttempt -Paths $Paths -Payload $Payload -TranscriptOffset $script:ValidatedTranscriptLength
             if (Test-Path -LiteralPath $Paths.Draft -PathType Leaf) {
-                Move-AttemptToArchive -Paths $Paths -Kind orphaned
+                Move-AttemptToArchive -Paths $Paths -Kind orphaned -Code 'tool-free-turn'
             }
             else { Remove-Item -LiteralPath $Paths.State -Force }
             Write-HealthRecord -Status SKIPPED -Code 'tool-free-turn'
@@ -1627,13 +1741,13 @@ function Complete-HandoffDraft {
             (Get-Item -LiteralPath $Paths.Draft).Length -le $MaxDraftBytes
         if (-not $hasBoundedDraft -or -not (Test-PreparedDraftFresh -State $state -Payload $Payload -Paths $Paths)) {
             if (-not $InitialStop) {
-                Move-AttemptToArchive -Paths $Paths -Kind failed
+                Move-AttemptToArchive -Paths $Paths -Kind failed -Code 'prepared-draft-stale'
                 Write-HealthRecord -Status FAILED -Code 'prepared-draft-stale'
                 Write-HandoffFailureResult -Code 'prepared-draft-stale'
             }
             # Keep the original hash. In particular, do not rebaseline after a
             # concurrent publisher when recovering a missing or stale draft.
-            Move-AttemptToArchive -Paths $Paths -Kind orphaned
+            Move-AttemptToArchive -Paths $Paths -Kind orphaned -Code 'prepared-draft-recovery'
             $state.preparation = 'recovery'
             Write-AtomicJson -Path $Paths.State -Value $state
             Write-HealthRecord -Status PREPARED -Code 'prepared-draft-recovery'
@@ -1642,13 +1756,13 @@ function Complete-HandoffDraft {
     }
 
     if (-not (Test-Path -LiteralPath $Paths.Draft -PathType Leaf)) {
-        Move-AttemptToArchive -Paths $Paths -Kind failed
+        Move-AttemptToArchive -Paths $Paths -Kind failed -Code 'draft-missing'
         Write-HealthRecord -Status FAILED -Code 'draft-missing'
         Write-HandoffFailureResult -Code 'draft-missing'
     }
     $draftInfo = Get-Item -LiteralPath $Paths.Draft
     if ($draftInfo.Length -gt $MaxDraftBytes) {
-        Move-AttemptToArchive -Paths $Paths -Kind failed
+        Move-AttemptToArchive -Paths $Paths -Kind failed -Code 'draft-too-large'
         Write-HealthRecord -Status FAILED -Code 'draft-too-large' -Details @{
             maximumBytes = $MaxDraftBytes
         }
@@ -1658,19 +1772,23 @@ function Complete-HandoffDraft {
     $cleaned = ConvertTo-CleanHandoff -Draft (Read-SharedText -Path $Paths.Draft)
     if (-not $cleaned.Valid) {
         $failureCode = if ($cleaned.Code -eq 'draft-budget-exceeded') { $cleaned.Code } else { 'draft-invalid' }
-        Move-AttemptToArchive -Paths $Paths -Kind failed
+        $failureDetails = @{ missingSections = ($cleaned.MissingSections -join ',') }
+        if ($cleaned.Breaches.Count -gt 0) {
+            $failureDetails.budget = $cleaned.Breaches -join '; '
+        }
+        Move-AttemptToArchive -Paths $Paths -Kind failed -Code $failureCode -Details $failureDetails
         Write-HealthRecord `
             -Status FAILED `
             -Code $failureCode `
             -Cleaning $cleaned.Cleaning `
-            -Details @{ missingSections = ($cleaned.MissingSections -join ',') }
-        Write-HandoffFailureResult -Code $failureCode
+            -Details $failureDetails
+        Write-HandoffFailureResult -Code $failureCode -Budget $cleaned.Breaches
     }
 
     $document = ConvertTo-HandoffDocument -Cleaned $cleaned -State $state
     $documentBytes = $script:Utf8NoBom.GetByteCount($document)
     if ($documentBytes -gt $MaxPublishedBytes) {
-        Move-AttemptToArchive -Paths $Paths -Kind failed
+        Move-AttemptToArchive -Paths $Paths -Kind failed -Code 'document-too-large'
         Write-HealthRecord `
             -Status FAILED `
             -Code 'document-too-large' `
@@ -1684,7 +1802,7 @@ function Complete-HandoffDraft {
 
         $currentHash = Get-SharedFileHash -Path $Context.Target
         if ([string] $state.baselineHash -cne $currentHash) {
-            Move-AttemptToArchive -Paths $Paths -Kind conflict
+            Move-AttemptToArchive -Paths $Paths -Kind conflict -Code 'canonical-changed'
             Write-HealthRecord `
                 -Status CONFLICT `
                 -Code 'canonical-changed' `
@@ -1734,6 +1852,7 @@ try {
     $script:Stage = 'read-input'
     $rawInput = [Console]::In.ReadToEnd()
     $payload = $rawInput | ConvertFrom-Json -Depth 100 -ErrorAction Stop
+    Add-CompatEnvelopeAlias -Payload $payload
 
     $beforeModel = $Provider -ceq 'Codex' -and [string] $payload.hook_event_name -ceq 'UserPromptSubmit'
     if (-not $beforeModel -and [string] $payload.hook_event_name -cne 'Stop') {
@@ -1781,9 +1900,15 @@ try {
         $script:Stage = 'prepare'
         Initialize-HandoffDraft -Context $context -Paths $paths -Payload $payload -BeforeModel
     }
+    # grok fires one more Stop as the session closes and ignores its decision. No turn is left
+    # to write a draft, so settle an attempt that is already pending and never prepare one.
+    $sessionEnding = [string] $payload.reason -cin @('shutdown', 'channel_closed')
+    if ($sessionEnding -and -not (Test-Path -LiteralPath $paths.State -PathType Leaf)) {
+        Write-NeutralHookResult
+    }
     $stopHookActive = $payload.stop_hook_active -eq $true -or
         [string] $payload.stop_hook_active -eq 'true'
-    if ($stopHookActive) {
+    if ($stopHookActive -or $sessionEnding) {
         $script:Stage = 'complete'
         Complete-HandoffDraft -Context $context -Paths $paths -Payload $payload
     }

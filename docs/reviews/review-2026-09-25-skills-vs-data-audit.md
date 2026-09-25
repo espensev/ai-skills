@@ -1,5 +1,9 @@
 # Skills and hooks vs usage data — audit 2026-09-25
 
+> Follow-up: [provider browser alignment](review-2026-09-25-provider-browser-alignment.md)
+> settles decisions 5.4, 5.5 and 5.7 and corrects this doc on `E:\dUPEbIN`,
+> the pristine Codex plugin copy and `[[skills.config]]` gating (its §7).
+
 Controller `snd-desk` (v2 verifier VERIFIED 2026-09-25T02:27Z). Source branch
 `fix/ai-skills-online-followups-20260825`. Method: seven read-only lanes
 (install drift, wipe forensics, Claude skill usage, Codex skill usage, hook

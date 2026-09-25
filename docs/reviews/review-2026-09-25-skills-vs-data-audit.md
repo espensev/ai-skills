@@ -42,7 +42,7 @@ Damage found on 09-25:
 | Claude plugin cache | enabled `cloudflare` (wrangler, cloudflare-one-migrations) and `chrome-devtools-mcp` (chrome-devtools-cli) skills lack `SKILL.md`; parked `superpowers`, `plugin-dev`, `claude-code-setup` likewise |
 | Codex skills root | 5 third-party Cloudflare copies broken |
 | Codex plugin cache | enabled `documents`, `presentations`, `template-creator` (`openai-primary-runtime` 26.819.11345) and `chrome-devtools-mcp@claude-plugins-official` 1.7.0 skills lack `SKILL.md`; disabled `spreadsheets` and `superpowers` likewise; no pristine local copy exists |
-| Shared `~/.agents/skills` (read by Codex) | 8 duplicate copies of Codex package skills (`deep-audit`, `discover`, `manager`, `memory-management`, `planner`, `qa`, `repo-conventions`, `usage-stats`) hollowed 09-18 23:41–43; `sandbox-sdk` is in `.skill-lock.json` but its directory is absent |
+| Shared `~/.agents/skills` (read by Codex and Grok) | 8 duplicate copies of Codex package skills (`deep-audit`, `discover`, `manager`, `memory-management`, `planner`, `qa`, `repo-conventions`, `usage-stats`) hollowed 09-18 23:41–43; `sandbox-sdk` is in `.skill-lock.json` but its directory is absent |
 | Other repos under `D:\Development` | 10 repos show deleted tracked files; most are under 10 KiB (ordinary uncommitted work), a few large ones match the signature (LinkFix 3, Scribe ~18, appzone 4, SevHQ 1, Tokle 2) |
 
 `qa` and `manager` are routed in the global CLAUDE.md table and `on` in
@@ -199,6 +199,15 @@ Source fixes (test-first, each adversarially reviewed):
 6. **Merge.** `fix/ai-skills-online-followups-20260825` is still unmerged;
    `main` (`c4d1713`) predates the 09-11 relay gate, so any reinstall from
    `main` regresses both providers.
+7. **Shared `~/.agents/skills` root.** No installer owns the 8 hollow
+   copies. Codex loads the same skills from `~/.codex/skills`, but Grok
+   used the agents-root copies. On 08-22 its sessions listed `deep-audit`,
+   `discover`, `manager`, `memory-management`, `planner` and `qa` from
+   `.agents`; on 09-24 it listed only `.claude\discover`. Grok now falls
+   back to the repaired Claude-flavored copies in `~/.claude/skills`.
+   Choose one: restore the Codex-flavored copies (add `skills.config`
+   disables so Codex does not list them twice), leave the fallback, or
+   delete the hollow directories.
 
 ## 6. Upstream / deferred
 
@@ -215,10 +224,6 @@ Source fixes (test-first, each adversarially reviewed):
   orphaned attempts do not record which orphan code applied.
 - Codex native `rollout_summaries/` (256 files, 1 MB, oldest 23 days): no
   pruning seen yet; recheck after 30+ days.
-- The hollow `~/.agents/skills` copies were left as they are. Each one
-  duplicated a skill Codex already loads from `~/.codex/skills`, so
-  restoring them would bring back duplicate listings. Deleting the hollow
-  directories is optional cleanup.
 - `scripts/Sync-DeepAuditSharing.ps1`, the only owner of the agents-root
   `deep-audit` copy, throws on its dry run. It anchors on a `/manager` row
   in the shared `common_dev/CLAUDE.md`, which has been a 385-byte stub

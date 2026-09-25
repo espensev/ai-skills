@@ -89,6 +89,14 @@ object, or `session_meta.session_id` names a root thread other than the
 rollout's own `id`; a spawned worker writes its own rollout under its own id).
 Those sessions get no draft, no continuation prompt, and no canonical write;
 an unreadable or unrecognized transcript stays on the interactive path.
+Sessions whose `cwd` is not a project are skipped the same way with code
+`non-project-cwd`: a drive root, the user profile, Desktop, Documents itself, a
+Codex desktop scratch folder under `Documents\Codex` or
+`%CODEX_HOME%\Documents\Codex`, or the Windows directory tree. The same check
+applies to the enrolled workspace the cwd resolves to, so `Downloads\x` does not
+fall back into the profile store. The folders come from the known-folder APIs
+and `CODEX_HOME` at run time; project directories such as `D:\DevHome`,
+`D:\Development\*` and repos kept directly in Documents keep relaying.
 
 For Claude and unprepared Codex turns, the first Stop verifies `snd-desk`, resolves the canonical target, snapshots its
 hash, and creates a session/turn-scoped draft under the enrolled project's

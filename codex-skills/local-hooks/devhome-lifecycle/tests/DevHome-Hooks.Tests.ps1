@@ -303,6 +303,14 @@ This paragraph is intentionally ignored.
             return ($lines -join "`n")
         }
 
+        function ConvertTo-TestRememberSlug {
+            param([Parameter(Mandatory)][string] $Path)
+
+            # Mirrors the relay's slug for ASCII paths: a drive root keeps its separator (D:\ -> d--).
+            $slug = [System.IO.Path]::TrimEndingDirectorySeparator($Path) -replace '[^A-Za-z0-9._-]', '-'
+            return $slug.Substring(0, 1).ToLowerInvariant() + $slug.Substring(1)
+        }
+
         function New-TestMachineVerifier {
             $path = Join-Path $TestDrive ("machine-verifier-{0}.ps1" -f [guid]::NewGuid().ToString('N'))
             @'
@@ -2314,6 +2322,100 @@ Next gate
             else {
                 $output.hookSpecificOutput.additionalContext | Should -Match 'Draft:'
             }
+            Test-Path (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeTrue
+        }
+
+        It 'skips a non-project <Case> cwd without a draft, continuation, or canonical write' -Tag 'CwdGate' -ForEach @(
+            @{ Case = 'drive-root'; Provider = 'Codex'; Event = 'Stop' }
+            @{ Case = 'profile-root'; Provider = 'Claude'; Event = 'Stop' }
+            @{ Case = 'desktop'; Provider = 'Claude'; Event = 'Stop' }
+            @{ Case = 'documents-root'; Provider = 'Codex'; Event = 'Stop' }
+            @{ Case = 'documents-codex-scratch'; Provider = 'Codex'; Event = 'UserPromptSubmit' }
+            @{ Case = 'codex-home-scratch'; Provider = 'Codex'; Event = 'UserPromptSubmit' }
+            @{ Case = 'windows-system32'; Provider = 'Codex'; Event = 'Stop' }
+        ) {
+            $documents = [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)
+            $codexHome = Join-Path $TestDrive 'codex-home'
+            $cwd = switch ($Case) {
+                'drive-root' { 'D:\' }
+                'profile-root' { [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile) }
+                'desktop' { [Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory) }
+                'documents-root' { $documents }
+                'documents-codex-scratch' { Join-Path $documents 'Codex\2026-09-24-x' }
+                'codex-home-scratch' { Join-Path $codexHome 'Documents\Codex\2026-09-16\rea' }
+                'windows-system32' { 'C:\Windows\System32' }
+            }
+            # Enroll the cwd itself so only the gate, not a missing store, can skip it.
+            $projectRoot = Join-Path $script:RememberProjectsRoot (ConvertTo-TestRememberSlug -Path $cwd)
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $rolloutId = '01a08d10-5c2e-7a41-9b1f-3c5e7d9f1a2b'
+            $transcript = if ($Provider -eq 'Codex') {
+                Write-HandoffRelayTranscript -FileName "rollout-2026-09-24T12-00-00-$rolloutId.jsonl" -Records @(
+                    @{ type = 'session_meta'; payload = @{ id = $rolloutId; session_id = $rolloutId; source = 'cli'; originator = 'codex-tui'; cwd = $cwd } },
+                    @{ type = 'event_msg'; payload = @{ type = 'task_started'; turn_id = 'cwd-turn' } },
+                    @{ type = 'response_item'; payload = @{ type = 'message'; role = 'user'; content = @(@{ type = 'input_text'; text = 'Change the parser.' }) } },
+                    @{ type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; input = 'edit' } }
+                )
+            }
+            else {
+                Write-HandoffRelayTranscript -Records @(
+                    @{ type = 'user'; entrypoint = 'cli'; message = @{ role = 'user'; content = 'Change the parser.' } },
+                    @{ type = 'assistant'; entrypoint = 'cli'; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; name = 'Edit' }) } }
+                )
+            }
+            $savedCodexHome = [Environment]::GetEnvironmentVariable('CODEX_HOME')
+            try {
+                [Environment]::SetEnvironmentVariable('CODEX_HOME', $codexHome)
+                $result = Invoke-HandoffRelayProcess -Provider $Provider -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                    hook_event_name = $Event; session_id = $rolloutId; turn_id = 'cwd-turn'
+                    cwd = $cwd; transcript_path = $transcript; stop_hook_active = $false
+                }
+            }
+            finally {
+                [Environment]::SetEnvironmentVariable('CODEX_HOME', $savedCodexHome)
+            }
+            $result.ExitCode | Should -Be 0
+            $result.Output.Trim() | Should -BeExactly '{}'
+            Test-Path (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeFalse
+            Test-Path (Join-Path $projectRoot 'remember.md') | Should -BeFalse
+            $health = Get-Content -Raw -LiteralPath (
+                Join-Path (Split-Path -Parent $script:RememberProjectsRoot) 'handoff-relay\latest-status.json'
+            ) | ConvertFrom-Json
+            $health.status | Should -BeExactly 'SKIPPED'
+            $health.code | Should -BeExactly 'non-project-cwd'
+            $health.project | Should -BeExactly (Split-Path -Leaf $projectRoot)
+        }
+
+        It 'skips an unenrolled cwd whose nearest enrolled ancestor is a non-project store' -Tag 'CwdGate' {
+            $profileRoot = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+            $projectRoot = Join-Path $script:RememberProjectsRoot (ConvertTo-TestRememberSlug -Path $profileRoot)
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; session_id = 'ancestor-session'; turn_id = 'ancestor-turn'
+                cwd = (Join-Path $profileRoot 'Downloads\x'); stop_hook_active = $false
+            }
+            $result.Output.Trim() | Should -BeExactly '{}'
+            Test-Path (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeFalse
+            $health = Get-Content -Raw -LiteralPath (
+                Join-Path (Split-Path -Parent $script:RememberProjectsRoot) 'handoff-relay\latest-status.json'
+            ) | ConvertFrom-Json
+            $health.code | Should -BeExactly 'non-project-cwd'
+        }
+
+        It 'keeps the normal path for the project cwd <Cwd>' -Tag 'CwdGate' -ForEach @(
+            @{ Cwd = 'D:\Development\foo' }
+            @{ Cwd = 'D:\DevHome' }
+            @{ Cwd = (Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)) 'WaveSpeed') }
+        ) {
+            $projectRoot = Join-Path $script:RememberProjectsRoot (ConvertTo-TestRememberSlug -Path $Cwd)
+            $null = New-Item -ItemType Directory -Path $projectRoot -Force
+            $result = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload @{
+                hook_event_name = 'Stop'; session_id = 'project-cwd-session'; turn_id = 'project-cwd-turn'
+                cwd = $Cwd; stop_hook_active = $false
+            }
+            $output = $result.Output | ConvertFrom-Json -Depth 20
+            $output.decision | Should -BeExactly 'block'
+            $output.reason | Should -Match 'Draft:'
             Test-Path (Join-Path $projectRoot 'tmp\handoff-relay') | Should -BeTrue
         }
 

@@ -558,6 +558,60 @@ function Get-SessionKind {
     return 'interactive'
 }
 
+function Test-NonProjectDirectory {
+    param([Parameter(Mandatory)][AllowEmptyString()][string] $Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return $false
+    }
+
+    # A session opened in a drive root, the profile, Desktop, Documents, a Codex desktop scratch
+    # folder or the Windows tree is not project work, and a handoff there only leaves a junk
+    # Remember store. Codex desktop creates scratch folders under Documents\Codex, or under
+    # %CODEX_HOME%\Documents\Codex when CODEX_HOME is set. Repos kept directly in Documents
+    # still relay.
+    try {
+        $comparison = [System.StringComparison]::OrdinalIgnoreCase
+        $resolved = Resolve-NormalizedPath -Path $Path
+        if ([string]::Equals($resolved, [System.IO.Path]::GetPathRoot($resolved), $comparison)) {
+            return $true
+        }
+
+        $documents = [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)
+        $codexHome = [Environment]::GetEnvironmentVariable('CODEX_HOME')
+        $folders = @(
+            [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+            [Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)
+            $documents
+        )
+        foreach ($folder in $folders) {
+            if (-not [string]::IsNullOrWhiteSpace($folder) -and (Test-SamePath -Left $resolved -Right $folder)) {
+                return $true
+            }
+        }
+        $trees = @(
+            [Environment]::GetFolderPath([Environment+SpecialFolder]::Windows)
+            if (-not [string]::IsNullOrWhiteSpace($documents)) { Join-Path $documents 'Codex' }
+            if (-not [string]::IsNullOrWhiteSpace($codexHome)) { Join-Path $codexHome 'Documents\Codex' }
+        )
+        foreach ($tree in $trees) {
+            if ([string]::IsNullOrWhiteSpace($tree)) { continue }
+            $root = Resolve-NormalizedPath -Path $tree
+            if (
+                [string]::Equals($resolved, $root, $comparison) -or
+                $resolved.StartsWith($root + [System.IO.Path]::DirectorySeparatorChar, $comparison)
+            ) {
+                return $true
+            }
+        }
+    }
+    catch {
+        return $false
+    }
+
+    return $false
+}
+
 function Test-ToolFreeQuestion {
     param([Parameter(Mandatory)][object] $Payload)
 
@@ -1888,6 +1942,15 @@ try {
     $script:ProjectSlug = [string] $context.ProjectSlug
 
     $script:Stage = 'classify-session'
+    # The workspace check covers an unenrolled cwd whose nearest enrolled ancestor is itself a
+    # non-project store (for example Downloads\x falling back to the profile store).
+    if (
+        (Test-NonProjectDirectory -Path ([string] $payload.cwd)) -or
+        (Test-NonProjectDirectory -Path ([string] $context.Workspace))
+    ) {
+        Write-HealthRecord -Status SKIPPED -Code 'non-project-cwd'
+        Write-NeutralHookResult
+    }
     $sessionKind = Get-SessionKind -Payload $payload
     if ($sessionKind -cne 'interactive') {
         Write-HealthRecord -Status SKIPPED -Code "non-interactive-$sessionKind"

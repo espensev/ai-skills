@@ -95,10 +95,10 @@ through as fact.
 | "gate passed" | reuse a receipt whose inputs and environment still match; rerun when inputs changed |
 | "next step is Z" | the latest tracker and later commits — is Z already done? |
 
-`shell/powershell/scripts/Test-HandoffNote.ps1` performs the commit / branch /
-path / test rows of this table mechanically and already ran at session start
-for the current project; read its `stale` rows first, then verify the
-remaining prose claims by hand.
+If session start supplied a verification report for the current project,
+confirm its inputs still match and read its `stale` rows first. Check any
+remaining claims directly. Without a current report, perform the checks
+above; do not assume a machine-local verifier exists or has already run.
 
 Refresh volatile runtime, machine identity, trust, authentication, and branch
 facts before actions that depend on them. A source test or administrative

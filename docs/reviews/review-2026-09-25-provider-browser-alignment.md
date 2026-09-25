@@ -27,7 +27,7 @@ that includes its remote-debugging port 9222.
 | Claude Code 2.1.282 | active | `browser-use@synced` (account sync, uvx in every session); bare `chrome-devtools-mcp` 1.9.0 plugin server; `playwright` user MCP on 9001 (4 real calls 09-24); synced skills `chrome-browser`, `built-in-browser` |
 | Codex CLI 0.156.1 | active | `playwright` MCP live; `chrome-devtools` config server pointed at dead 9223; `chrome-devtools-mcp@claude-plugins-official` plugin enabled; `node_repl` browser-use host; `browser-harness` skill re-enabled (its disable entry was lost, used 09-21); in-app/browser-use feature flags on by default; desktop import sync pulls Claude plugins in |
 | Codex Chrome extension | active | installed and enabled in the real Chrome, native host `com.openai.codexextension` |
-| Grok CLI 1.0.41 | active | inherits Claude `mcpServers`, plugins and skills through `[compat.claude]` and ignores Claude's toggles; ran Playwright on 9001 (09-24) and bare chrome-devtools-mcp 1.8.0 (09-11) |
+| Grok CLI 1.0.41 | active | inherits Claude `mcpServers`, plugins and skills through `[compat.claude]`; it honours Claude's `enabledPlugins` for plugin skills but not `deniedMcpServers` or `skillOverrides`; ran Playwright on 9001 (09-24) and bare chrome-devtools-mcp 1.8.0 (09-11) |
 | Kimi Code 2.0.2 / desktop 3.2.14 | active | `kimi-webbridge` plugin plus WebBridge daemon on 10086 plus Chrome extension with `debugger` on all URLs, in the real Chrome; desktop `InAppBrowser` tool; a subagent launched Playwright Edge 09-25 |
 | Qwen Code 0.24.2 | dormant | bundled `browser-use` skill not disabled |
 | qodercli 1.1.63 | active | none of its own (reads `~/.agents/skills`) |
@@ -36,6 +36,7 @@ that includes its remote-debugging port 9222.
 | VS Code 1.138 Copilot | active | `workbench.browser.enableChatTools` defaults to true |
 | Cline 3.0.64 | active | none (`browser_action` off by default) |
 | aider, bailian, kilocode, kimi-home, kimi-work, openclaw, qoderwork, qoder-cn, superdesign, serena, ollama, grokbot | dormant / not installed | none active |
+| Claude Desktop (MSIX `Claude` 2.9939.2.0) | installed | not evaluated in this pass |
 | Real Chrome | user browser | CDP on 9222 user-enabled; Claude, Codex and Kimi extensions installed and enabled |
 
 ## 3. Configuration changes applied
@@ -153,7 +154,9 @@ Real-Chrome and app-UI settings (not changed from here):
 2. Kimi: turn off the desktop Work-settings WebBridge toggle and
    Permissions → Browser, and disable (not remove) the Kimi Chrome
    extension.
-3. Codex Chrome extension: disable it in Chrome.
+3. Disable the Codex Chrome extension, and the Claude extension
+   `fcoeoabgfenejglbffodgkkbkcdhcgfn` (enabled in Chrome Default, Chrome
+   Profile 2 and Edge Default; Claude Code's side is already denied).
 4. Qoder IDE: Integrations → Browser Run Mode → Disabled for Editor and
    Quest. `/browser` still bypasses this.
 
@@ -177,10 +180,11 @@ Decisions:
 9. `review-controller` and `codex-state-cleanup` are absent from the shared
    root: packaging decision §5.3 of the audit is still open.
 10. The Remember-bridge `-Check` for Grok fails because the installed bridge
-    is ahead of its repo, which is an upstream fix. Grok also loads the
-    official `remember` 0.33.0 plugin's hooks in `inspect` despite
-    `[plugins] disabled = ["remember"]`. Recent sessions show only the
-    native bridge hooks firing, so treat this as unverified, not a double
+    is ahead of its repo, which is an upstream fix. Separately,
+    `grok inspect` lists hooks from the official `remember` 0.33.0 plugin
+    (disabled in Claude) and from `superpowers`/`hookify`. Recent session
+    logs show only the native `hooks\remember.json` bridge hooks and the
+    compat Stop hook firing, so the listing does not look like live double
     capture.
 11. EaseUS DupFiles Cleaner is still installed.
 12. Merge of `fix/ai-skills-online-followups-20260825` to `main`.

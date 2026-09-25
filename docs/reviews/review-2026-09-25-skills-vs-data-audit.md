@@ -41,6 +41,8 @@ Damage found on 09-25:
 | Claude runtime `scripts/task_manager.py`, `memory_audit.py`, 10 `scripts/analysis`/`task_runtime` files | missing |
 | Claude plugin cache | enabled `cloudflare` (wrangler, cloudflare-one-migrations) and `chrome-devtools-mcp` (chrome-devtools-cli) skills lack `SKILL.md`; parked `superpowers`, `plugin-dev`, `claude-code-setup` likewise |
 | Codex skills root | 5 third-party Cloudflare copies broken |
+| Codex plugin cache | enabled `documents`, `presentations`, `template-creator` (`openai-primary-runtime` 26.819.11345) and `chrome-devtools-mcp@claude-plugins-official` 1.7.0 skills lack `SKILL.md`; disabled `spreadsheets` and `superpowers` likewise; no pristine local copy exists |
+| Shared `~/.agents/skills` (read by Codex) | 8 duplicate copies of Codex package skills (`deep-audit`, `discover`, `manager`, `memory-management`, `planner`, `qa`, `repo-conventions`, `usage-stats`) hollowed 09-18 23:41–43; `sandbox-sdk` is in `.skill-lock.json` but its directory is absent |
 | Other repos under `D:\Development` | 10 repos show deleted tracked files; most are under 10 KiB (ordinary uncommitted work), a few large ones match the signature (LinkFix 3, Scribe ~18, appzone 4, SevHQ 1, Tokle 2) |
 
 `qa` and `manager` are routed in the global CLAUDE.md table and `on` in
@@ -177,7 +179,10 @@ Source fixes (test-first, each adversarially reviewed):
    restore, and the large deleted tracked files in the repos listed in §1.
 2. **Plugin caches.** Reinstall `cloudflare` and `chrome-devtools-mcp`
    through Claude Code's plugin manager; `superpowers`, `plugin-dev` and
-   `claude-code-setup` are parked but also damaged.
+   `claude-code-setup` are parked but also damaged. In Codex, the enabled
+   `documents`, `presentations` and `template-creator` runtime plugins and
+   `chrome-devtools-mcp@claude-plugins-official` need a re-fetch (toggle or
+   reinstall through Codex); Codex keeps no pristine copy to restore from.
 3. **review-controller packaging.** It is `source_only`, so the installer
    cannot restore or verify it. Promoting it to `optional_skills` would make
    it managed but changes what ships in ready-package exports.
@@ -210,6 +215,15 @@ Source fixes (test-first, each adversarially reviewed):
   orphaned attempts do not record which orphan code applied.
 - Codex native `rollout_summaries/` (256 files, 1 MB, oldest 23 days): no
   pruning seen yet; recheck after 30+ days.
+- The hollow `~/.agents/skills` copies were left as they are. Each one
+  duplicated a skill Codex already loads from `~/.codex/skills`, so
+  restoring them would bring back duplicate listings. Deleting the hollow
+  directories is optional cleanup.
+- `scripts/Sync-DeepAuditSharing.ps1`, the only owner of the agents-root
+  `deep-audit` copy, throws on its dry run. It anchors on a `/manager` row
+  in the shared `common_dev/CLAUDE.md`, which has been a 385-byte stub
+  since 08-05. Its bare invocation is also a dry run. Retire it or rebase
+  it on the current shared-rules layout.
 
 ## 7. Refuted or corrected lane claims
 

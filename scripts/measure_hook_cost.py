@@ -29,6 +29,8 @@ rollouts before writing:
   every thread spawned under it): a rollout is a subagent when session_id is
   present and differs from id. Agreed 472/472 with an independent signal
   (payload["source"] being a dict with a "subagent" key) on the local corpus.
+  Only the FIRST session_meta counts: forked subagent rollouts follow their
+  own meta with a copy of the parent's (usually source "cli").
 * Exec sessions. The spec names interactive/subagent/exec but only defines
   subagent. We use originator == "codex_exec" or source == "exec", checked
   after the subagent test (an exec-spawned subagent is still a subagent).
@@ -255,7 +257,28 @@ def _injected_context_kind(text: str) -> Optional[str]:
         return "draft"
     if text.startswith("## Memory"):
         return "memory"
+    if text.startswith("<skills_instructions>"):
+        return "skills_instructions"
     return None
+
+
+def _injected_context_bytes(texts: list[str]) -> dict[str, int]:
+    """Attribute a developer message's bytes per content item.
+
+    Codex sends memory, the skills catalog, and permissions/collaboration/apps/
+    plugins blocks as separate items of one startup message. Unrecognised items
+    count as "other" only inside a message that also carries a known kind (in
+    practice the startup message, including any role prompt folded into it);
+    a standalone developer message with no known kind is excluded.
+    """
+    out: Counter = Counter()
+    for t in texts:
+        if not t:
+            continue
+        out[_injected_context_kind(t) or "other"] += len(t.encode("utf-8"))
+    if set(out) == {"other"}:
+        return {}
+    return dict(out)
 
 
 def collect_codex(root: Path, cutoff_ts: float) -> dict:
@@ -287,7 +310,7 @@ def collect_codex(root: Path, cutoff_ts: float) -> dict:
                 continue
             ptype = payload.get("type")
             ts = rec.get("timestamp") or ""
-            if rtype == "session_meta":
+            if rtype == "session_meta" and kind is None:
                 kind = _codex_session_kind(payload)
             elif rtype == "event_msg":
                 if ptype == "token_count":
@@ -315,19 +338,19 @@ def collect_codex(root: Path, cutoff_ts: float) -> dict:
                 if ptype == "message":
                     role = payload.get("role")
                     content = payload.get("content")
-                    text = (
-                        "".join(c.get("text", "") for c in content if isinstance(c, dict))
+                    texts = (
+                        [c.get("text", "") for c in content if isinstance(c, dict)]
                         if isinstance(content, list)
-                        else ""
+                        else []
                     )
+                    text = "".join(texts)
                     if role == "developer":
-                        ictx_kind = _injected_context_kind(text)
-                        if ictx_kind:
+                        for ictx_kind, nbytes in _injected_context_bytes(texts).items():
                             entry = injected_context.setdefault(
                                 ictx_kind, {"count": 0, "bytes": 0}
                             )
                             entry["count"] += 1
-                            entry["bytes"] += len(text.encode("utf-8"))
+                            entry["bytes"] += nbytes
                     elif role == "user" and "<hook_prompt" in text:
                         hook_at = ts
                         hook_tokens = dict(last_tokens)
@@ -402,7 +425,7 @@ def render_text(results: dict, days: int) -> str:
         _append_counts(lines, "Sessions by kind:", x["sessions_by_kind"])
         lines.append(_stop_line(s, extra))
         _append_counts(lines, "Continuations by session kind:", x["continuations_by_kind"])
-        lines.append("Injected context kinds (count, bytes):")
+        lines.append("Injected context kinds (messages containing kind, bytes; 'other' = rest of those messages):")
         for k, v in sorted(x["injected_context"].items(), key=lambda kv: -kv[1]["count"]):
             lines.append(f"  {v['count']:6d}  {v['bytes']:8d}B  {k}")
         _append_counts(lines, "Skill usage:", x["skill_usage"])

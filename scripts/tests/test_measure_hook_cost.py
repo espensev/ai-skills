@@ -108,6 +108,10 @@ class ClaudeFixtureMixin:
 class CodexFixtureMixin:
     """Builds one interactive, one subagent, and one exec Codex rollout."""
 
+    MEMORY_TEXT = "## Memory\r\n\r\nYou have access to a memory folder."
+    SKILLS_TEXT = "<skills_instructions>\n## Skills\n- handoff: resume work\n</skills_instructions>"
+    PERMISSIONS_TEXT = "<permissions instructions>\nsandbox rules\n</permissions instructions>"
+
     def _build_codex_root(self, root: Path) -> None:
         base_dir = root / "sessions" / "2026" / "01" / "01"
 
@@ -142,19 +146,36 @@ class CodexFixtureMixin:
         def task_complete(ts):
             return {"type": "event_msg", "payload": {"type": "task_complete"}, "timestamp": ts}
 
+        main_meta = {
+            "type": "session_meta",
+            "payload": {"id": "main-1", "session_id": "main-1", "originator": "codex-tui", "source": "cli"},
+            "timestamp": "2026-01-01T00:00:00Z",
+        }
+
         # Interactive/main rollout: id == session_id, originator codex-tui.
         main_records = [
-            {
-                "type": "session_meta",
-                "payload": {"id": "main-1", "session_id": "main-1", "originator": "codex-tui", "source": "cli"},
-                "timestamp": "2026-01-01T00:00:00Z",
-            },
+            main_meta,
             {
                 "type": "response_item",
                 "payload": {
                     "type": "message",
                     "role": "developer",
                     "content": [{"type": "text", "text": "=== HANDOFF ===\nsome handoff text"}],
+                },
+                "timestamp": "2026-01-01T00:00:00Z",
+            },
+            # Real Codex startup message: memory, skills catalog, and other
+            # instruction blocks arrive as separate items of one message.
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "developer",
+                    "content": [
+                        {"type": "input_text", "text": self.MEMORY_TEXT},
+                        {"type": "input_text", "text": self.SKILLS_TEXT},
+                        {"type": "input_text", "text": self.PERMISSIONS_TEXT},
+                    ],
                 },
                 "timestamp": "2026-01-01T00:00:00Z",
             },
@@ -174,7 +195,8 @@ class CodexFixtureMixin:
         ]
         _write_jsonl(base_dir / "rollout-2026-01-01T00-00-00-main-1.jsonl", main_records)
 
-        # Subagent rollout: session_id (root) differs from its own id.
+        # Subagent rollout: session_id (root) differs from its own id. Forked
+        # subagents then carry a copy of the parent's session_meta.
         sub_records = [
             {
                 "type": "session_meta",
@@ -185,7 +207,10 @@ class CodexFixtureMixin:
                     "source": {"subagent": {"thread_spawn": {"parent_thread_id": "main-1"}}},
                 },
                 "timestamp": "2026-01-01T00:01:00Z",
-            }
+            },
+            main_meta,
+            hook_prompt("2026-01-01T00:01:00Z"),
+            task_complete("2026-01-01T00:01:03Z"),
         ]
         _write_jsonl(base_dir / "rollout-2026-01-01T00-01-00-sub-1.jsonl", sub_records)
 
@@ -286,18 +311,28 @@ class CollectCodexTests(CodexFixtureMixin, unittest.TestCase):
     def test_stop_continuation_duration_and_tokens(self):
         result = mhc.collect_codex(self.root, self.cutoff)
         stats = result["stop_continuations"]
-        self.assertEqual(stats["n"], 1)
+        self.assertEqual(stats["n"], 2)
         self.assertEqual(stats["max"], 7.0)
-        # total=250-100=150; noncached_in=(150-50)-(80-20)=40; out=70-20=50
+        # main: total=250-100=150; noncached_in=(150-50)-(80-20)=40; out=70-20=50
+        # sub: no token_count records, so it adds 0 to both totals.
         self.assertEqual(stats["noncached_input_tokens_total"], 40)
         self.assertEqual(stats["output_tokens_total"], 50)
-        self.assertEqual(result["continuations_by_kind"], {"interactive": 1})
+        self.assertEqual(result["continuations_by_kind"], {"interactive": 1, "subagent": 1})
 
     def test_injected_context(self):
         result = mhc.collect_codex(self.root, self.cutoff)
         handoff = result["injected_context"]["handoff"]
         self.assertEqual(handoff["count"], 1)
         self.assertEqual(handoff["bytes"], len("=== HANDOFF ===\nsome handoff text".encode("utf-8")))
+
+    def test_injected_context_splits_combined_developer_message(self):
+        result = mhc.collect_codex(self.root, self.cutoff)
+        ictx = result["injected_context"]
+        self.assertEqual(ictx["memory"], {"count": 1, "bytes": len(self.MEMORY_TEXT.encode("utf-8"))})
+        self.assertEqual(
+            ictx["skills_instructions"], {"count": 1, "bytes": len(self.SKILLS_TEXT.encode("utf-8"))}
+        )
+        self.assertEqual(ictx["other"], {"count": 1, "bytes": len(self.PERMISSIONS_TEXT.encode("utf-8"))})
 
     def test_skill_usage_from_tool_call(self):
         result = mhc.collect_codex(self.root, self.cutoff)

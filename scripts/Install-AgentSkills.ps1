@@ -21,11 +21,17 @@ param (
     [switch]$Force,
 
     [Parameter(Mandatory=$false)]
-    [switch]$DryRun
+    [switch]$DryRun,
+
+    [Parameter(Mandatory=$false)]
+    [switch]$Check
 )
 
 $ErrorActionPreference = "Stop"
 
+if ($Check -and ($Force -or $DryRun)) {
+    throw "Check cannot be combined with Force or DryRun; it is already read-only"
+}
 if ($SkillNames -and $Provider -eq "Both") {
     throw "SkillNames requires a single provider: Codex or Claude"
 }
@@ -101,6 +107,38 @@ function Get-PathIdentity {
     return $FullPath
 }
 
+function Get-PackageFiles {
+    param ([string]$SourcePath)
+
+    $SourcePrefix = [System.IO.Path]::GetFullPath($SourcePath).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    ) + [System.IO.Path]::DirectorySeparatorChar
+    return @(Get-ChildItem -LiteralPath $SourcePath -Recurse -File -Force |
+        Where-Object { -not (Test-GeneratedPackageArtifact $_.FullName) } |
+        ForEach-Object { $_.FullName.Substring($SourcePrefix.Length) })
+}
+
+function Test-SameFileContent {
+    param (
+        [string]$SourceFile,
+        [string]$TargetFile
+    )
+
+    # ISO-8859-1 (Latin-1) maps each byte to one char, so these strings are the raw bytes. Text
+    # compares with CRLF folded to LF, because a line-ending flip is not drift; a
+    # NUL byte marks a binary file, which compares raw.
+    $SourceBytes = [System.IO.File]::ReadAllBytes($SourceFile)
+    $TargetBytes = [System.IO.File]::ReadAllBytes($TargetFile)
+    $SourceText = [System.Text.Encoding]::GetEncoding(28591).GetString($SourceBytes)
+    $TargetText = [System.Text.Encoding]::GetEncoding(28591).GetString($TargetBytes)
+    if ([Array]::IndexOf($SourceBytes, [byte]0) -lt 0 -and [Array]::IndexOf($TargetBytes, [byte]0) -lt 0) {
+        $SourceText = $SourceText.Replace("`r`n", "`n")
+        $TargetText = $TargetText.Replace("`r`n", "`n")
+    }
+    return [string]::Equals($SourceText, $TargetText, [System.StringComparison]::Ordinal)
+}
+
 function Copy-CleanDirectory {
     param (
         [string]$SourcePath,
@@ -108,18 +146,11 @@ function Copy-CleanDirectory {
     )
 
     New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
-    $SourcePrefix = [System.IO.Path]::GetFullPath($SourcePath).TrimEnd(
-        [System.IO.Path]::DirectorySeparatorChar,
-        [System.IO.Path]::AltDirectorySeparatorChar
-    ) + [System.IO.Path]::DirectorySeparatorChar
-    Get-ChildItem -LiteralPath $SourcePath -Recurse -File -Force |
-        Where-Object { -not (Test-GeneratedPackageArtifact $_.FullName) } |
-        ForEach-Object {
-            $RelativeFile = $_.FullName.Substring($SourcePrefix.Length)
-            $TargetFile = Join-Path $TargetPath $RelativeFile
-            New-Item -ItemType Directory -Path (Split-Path -Parent $TargetFile) -Force | Out-Null
-            Copy-Item -LiteralPath $_.FullName -Destination $TargetFile -Force
-        }
+    foreach ($RelativeFile in Get-PackageFiles $SourcePath) {
+        $TargetFile = Join-Path $TargetPath $RelativeFile
+        New-Item -ItemType Directory -Path (Split-Path -Parent $TargetFile) -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $SourcePath $RelativeFile) -Destination $TargetFile -Force
+    }
 
     Get-ChildItem -LiteralPath $TargetPath -Recurse -File -Force -ErrorAction SilentlyContinue |
         Where-Object { Test-GeneratedPackageArtifact $_.FullName } |
@@ -214,8 +245,43 @@ function Copy-ManifestFile {
     return "copied"
 }
 
+function Repair-MissingFiles {
+    param (
+        [string]$ProviderName,
+        [string]$Kind,
+        [string]$Name,
+        [string]$SourcePath,
+        [string]$TargetPath
+    )
+
+    # Without -Force an existing directory is only topped up: copy the source
+    # files it lacks and never overwrite one that is there, so local edits survive.
+    $Missing = @(Get-PackageFiles $SourcePath | Where-Object {
+        -not (Test-Path -LiteralPath (Join-Path $TargetPath $_) -PathType Leaf)
+    })
+    if ($Missing.Count -eq 0) {
+        return "skipped"
+    }
+
+    $Action = "repaired"
+    if ($DryRun) {
+        $Action = "would-repair"
+    } else {
+        foreach ($RelativeFile in $Missing) {
+            $TargetFile = Join-Path $TargetPath $RelativeFile
+            New-Item -ItemType Directory -Path (Split-Path -Parent $TargetFile) -Force | Out-Null
+            Copy-Item -LiteralPath (Join-Path $SourcePath $RelativeFile) -Destination $TargetFile -Force
+        }
+    }
+
+    $MissingList = ($Missing -replace "\\", "/") -join ", "
+    Write-Host "$Kind $Action [$ProviderName]: $Name ($($Missing.Count) missing: $MissingList) -> $TargetPath"
+    return $Action
+}
+
 function Copy-SkillDirectory {
     param (
+        [string]$ProviderName,
         [string]$SourceRoot,
         [string]$TargetRoot,
         [string]$SkillName
@@ -229,7 +295,7 @@ function Copy-SkillDirectory {
     }
 
     if ((Test-Path $TargetPath) -and -not $Force) {
-        return "skipped"
+        return Repair-MissingFiles -ProviderName $ProviderName -Kind "Skill" -Name $SkillName -SourcePath $SourcePath -TargetPath $TargetPath
     }
 
     if ($DryRun) {
@@ -250,6 +316,7 @@ function Copy-SkillDirectory {
 
 function Copy-ManifestDirectory {
     param (
+        [string]$ProviderName,
         [string]$SourceRoot,
         [string]$TargetRoot,
         [string]$RelativePath
@@ -263,7 +330,7 @@ function Copy-ManifestDirectory {
     }
 
     if ((Test-Path $TargetPath) -and -not $Force) {
-        return "skipped"
+        return Repair-MissingFiles -ProviderName $ProviderName -Kind "Directory" -Name $RelativePath -SourcePath $SourcePath -TargetPath $TargetPath
     }
 
     if ($DryRun) {
@@ -328,11 +395,10 @@ function Remove-RetiredSkillDirectories {
     return @($Pruned)
 }
 
-function Sync-ProviderPackage {
+function Get-ProviderSelection {
     param (
         [string]$ProviderName,
-        [string]$PackageDirectory,
-        [string[]]$TargetRoots
+        [string]$PackageDirectory
     )
 
     $PackageRoot = Join-Path $RepoRoot $PackageDirectory
@@ -359,6 +425,109 @@ function Sync-ProviderPackage {
         $SupportFiles = @()
         $SupportDirectories = @()
     }
+
+    return [pscustomobject]@{
+        PackageRoot = $PackageRoot
+        Skills = @($Skills)
+        SupportFiles = @($SupportFiles)
+        SupportDirectories = @($SupportDirectories)
+    }
+}
+
+function Get-InstallFindings {
+    param (
+        [string]$ProviderName,
+        [string]$TargetRoot,
+        [object]$Selection,
+        [switch]$IncludeDrift
+    )
+
+    # One entry per selected source file; skills install at the target root, not
+    # under skills\, so each entry carries both of its paths.
+    $Entries = @()
+    foreach ($File in $Selection.SupportFiles) {
+        $NativeFile = $File -replace "/", [System.IO.Path]::DirectorySeparatorChar
+        $Entries += [pscustomobject]@{
+            Kind = "File"
+            Path = $File
+            Source = Join-Path $Selection.PackageRoot $NativeFile
+            Target = Join-Path $TargetRoot $NativeFile
+        }
+    }
+    $Groups = @(
+        foreach ($Directory in $Selection.SupportDirectories) {
+            $NativeDirectory = $Directory -replace "/", [System.IO.Path]::DirectorySeparatorChar
+            @{ Kind = "Directory"; Name = $Directory; Source = Join-Path $Selection.PackageRoot $NativeDirectory; Target = Join-Path $TargetRoot $NativeDirectory }
+        }
+        foreach ($Skill in $Selection.Skills) {
+            @{ Kind = "Skill"; Name = $Skill; Source = Join-Path $Selection.PackageRoot "skills\$Skill"; Target = Join-Path $TargetRoot $Skill }
+        }
+    )
+    foreach ($Group in $Groups) {
+        foreach ($RelativeFile in Get-PackageFiles $Group.Source) {
+            $Entries += [pscustomobject]@{
+                Kind = $Group.Kind
+                Path = "$($Group.Name)/$($RelativeFile -replace "\\", "/")"
+                Source = Join-Path $Group.Source $RelativeFile
+                Target = Join-Path $Group.Target $RelativeFile
+            }
+        }
+    }
+
+    foreach ($Entry in $Entries) {
+        if (-not (Test-Path -LiteralPath $Entry.Source -PathType Leaf)) {
+            throw "Manifest references missing file: $($Entry.Source)"
+        }
+
+        $Status = $null
+        if (-not (Test-Path -LiteralPath $Entry.Target -PathType Leaf)) {
+            $Status = "Missing"
+        } elseif ($IncludeDrift -and -not (Test-SameFileContent -SourceFile $Entry.Source -TargetFile $Entry.Target)) {
+            $Status = "Drifted"
+        }
+        if ($Status) {
+            [pscustomobject]@{
+                Provider = $ProviderName
+                Target = $TargetRoot
+                Kind = $Entry.Kind
+                Path = $Entry.Path
+                Status = $Status
+            }
+        }
+    }
+}
+
+function Test-ProviderPackage {
+    param (
+        [string]$ProviderName,
+        [string]$PackageDirectory,
+        [string[]]$TargetRoots
+    )
+
+    $Selection = Get-ProviderSelection -ProviderName $ProviderName -PackageDirectory $PackageDirectory
+    $Targets = Get-UniquePaths $TargetRoots
+    if ($Targets.Count -eq 0) {
+        throw "$ProviderName has no target skill roots"
+    }
+
+    foreach ($TargetRoot in $Targets) {
+        Write-Host "Check [$ProviderName]: $TargetRoot ($($Selection.Skills.Count) skills, $($Selection.SupportFiles.Count) files, $($Selection.SupportDirectories.Count) directories) against $($Selection.PackageRoot)"
+        Get-InstallFindings -ProviderName $ProviderName -TargetRoot $TargetRoot -Selection $Selection -IncludeDrift
+    }
+}
+
+function Sync-ProviderPackage {
+    param (
+        [string]$ProviderName,
+        [string]$PackageDirectory,
+        [string[]]$TargetRoots
+    )
+
+    $Selection = Get-ProviderSelection -ProviderName $ProviderName -PackageDirectory $PackageDirectory
+    $PackageRoot = $Selection.PackageRoot
+    $Skills = $Selection.Skills
+    $SupportFiles = $Selection.SupportFiles
+    $SupportDirectories = $Selection.SupportDirectories
     $Targets = Get-UniquePaths $TargetRoots
 
     if ($Targets.Count -eq 0) {
@@ -375,8 +544,10 @@ function Sync-ProviderPackage {
         $FilesCopied = 0
         $FilesSkipped = 0
         $DirectoriesCopied = 0
+        $DirectoriesRepaired = 0
         $DirectoriesSkipped = 0
         $SkillsCopied = 0
+        $SkillsRepaired = 0
         $SkillsSkipped = 0
         $RetiredSkillsPruned = @(
             if (-not $SkillNames) {
@@ -397,20 +568,33 @@ function Sync-ProviderPackage {
         }
 
         foreach ($Directory in $SupportDirectories) {
-            $Result = Copy-ManifestDirectory -SourceRoot $PackageRoot -TargetRoot $TargetRoot -RelativePath $Directory
+            $Result = Copy-ManifestDirectory -ProviderName $ProviderName -SourceRoot $PackageRoot -TargetRoot $TargetRoot -RelativePath $Directory
             if ($Result -eq "skipped") {
                 $DirectoriesSkipped += 1
+            } elseif ($Result -in @("repaired", "would-repair")) {
+                $DirectoriesRepaired += 1
             } else {
                 $DirectoriesCopied += 1
             }
         }
 
         foreach ($Skill in $Skills) {
-            $Result = Copy-SkillDirectory -SourceRoot $PackageRoot -TargetRoot $TargetRoot -SkillName $Skill
+            $Result = Copy-SkillDirectory -ProviderName $ProviderName -SourceRoot $PackageRoot -TargetRoot $TargetRoot -SkillName $Skill
             if ($Result -eq "skipped") {
                 $SkillsSkipped += 1
+            } elseif ($Result -in @("repaired", "would-repair")) {
+                $SkillsRepaired += 1
             } else {
                 $SkillsCopied += 1
+            }
+        }
+
+        if (-not $DryRun) {
+            # A copy that returned is not proof it landed: every selected source
+            # file, each skill's SKILL.md included, must now exist in the target.
+            $Missing = @(Get-InstallFindings -ProviderName $ProviderName -TargetRoot $TargetRoot -Selection $Selection)
+            if ($Missing.Count -gt 0) {
+                throw "Post-install verification failed [$ProviderName] ${TargetRoot}: $($Missing.Count) missing: $(($Missing | ForEach-Object { $_.Path }) -join ', ')"
             }
         }
 
@@ -419,10 +603,12 @@ function Sync-ProviderPackage {
             Target = $TargetRoot
             Skills = $Skills.Count
             SkillsCopied = $SkillsCopied
+            SkillsRepaired = $SkillsRepaired
             SkillsSkipped = $SkillsSkipped
             FilesCopied = $FilesCopied
             FilesSkipped = $FilesSkipped
             DirectoriesCopied = $DirectoriesCopied
+            DirectoriesRepaired = $DirectoriesRepaired
             DirectoriesSkipped = $DirectoriesSkipped
             RetiredSkillsPruned = $RetiredSkillsPruned.Count
             DryRun = [bool]$DryRun
@@ -441,11 +627,17 @@ if (-not $ClaudeTargets) {
 }
 
 $AllRows = @()
+$CheckRows = @()
 $LocalPluginResult = $null
+$LocalPluginCheckFailed = $false
 
 if ($Provider -eq "Both" -or $Provider -eq "Codex") {
-    foreach ($Row in Sync-ProviderPackage -ProviderName "Codex" -PackageDirectory "codex-skills" -TargetRoots $CodexTargets) {
-        $AllRows += $Row
+    if ($Check) {
+        $CheckRows += @(Test-ProviderPackage -ProviderName "Codex" -PackageDirectory "codex-skills" -TargetRoots $CodexTargets)
+    } else {
+        foreach ($Row in Sync-ProviderPackage -ProviderName "Codex" -PackageDirectory "codex-skills" -TargetRoots $CodexTargets) {
+            $AllRows += $Row
+        }
     }
 
     if ($CodexLocalPlugin -eq "DevHomeLifecycle") {
@@ -457,20 +649,57 @@ if ($Provider -eq "Both" -or $Provider -eq "Codex") {
         $PluginSyncParameters = @{
             CodexHome = "D:\DevHome\state\codex"
         }
-        if ($DryRun) {
+        if ($DryRun -or $Check) {
             $PluginSyncParameters.Check = $true
         }
         elseif ($Force) {
             $PluginSyncParameters.Force = $true
         }
         $LocalPluginResult = & $PluginSyncPath @PluginSyncParameters
+        # The synchronizer's -Check carries its verdict in the exit code.
+        $LocalPluginCheckFailed = $Check -and $LASTEXITCODE -ne 0
     }
 }
 
 if ($Provider -eq "Both" -or $Provider -eq "Claude") {
-    foreach ($Row in Sync-ProviderPackage -ProviderName "Claude" -PackageDirectory "claude-skills" -TargetRoots $ClaudeTargets) {
-        $AllRows += $Row
+    if ($Check) {
+        $CheckRows += @(Test-ProviderPackage -ProviderName "Claude" -PackageDirectory "claude-skills" -TargetRoots $ClaudeTargets)
+    } else {
+        foreach ($Row in Sync-ProviderPackage -ProviderName "Claude" -PackageDirectory "claude-skills" -TargetRoots $ClaudeTargets) {
+            $AllRows += $Row
+        }
     }
+}
+
+if ($Check) {
+    Write-Output ""
+    Write-Output "Local Agent Skill Check (read-only)"
+    Write-Output ""
+    $SortedCheckRows = @($CheckRows | Sort-Object Provider, Target, Status, Kind, Path)
+    if ($SortedCheckRows.Count -gt 0) {
+        $SortedCheckRows | Format-Table -AutoSize
+        # Format-Table truncates to the host width; these lines are the
+        # untruncated surface that callers and tests match on.
+        foreach ($Row in $SortedCheckRows) {
+            Write-Output "FINDING $($Row.Status) [$($Row.Provider)] $($Row.Kind) $($Row.Path) <- $($Row.Target)"
+        }
+    }
+
+    if ($null -ne $LocalPluginResult) {
+        Write-Output ""
+        Write-Output "Local Codex Plugin Check"
+        $LocalPluginResult | Format-List
+    }
+
+    if ($SortedCheckRows.Count -gt 0 -or $LocalPluginCheckFailed) {
+        $MissingCount = @($SortedCheckRows | Where-Object { $_.Status -eq "Missing" }).Count
+        $DriftedCount = @($SortedCheckRows | Where-Object { $_.Status -eq "Drifted" }).Count
+        $PluginNote = if ($LocalPluginCheckFailed) { "; local Codex plugin is not current" } else { "" }
+        throw "Install check failed: $MissingCount missing, $DriftedCount drifted$PluginNote. Re-run without -Check to restore missing files, or add -Force to overwrite drifted ones."
+    }
+
+    Write-Output "PASS - installed entries match source"
+    return
 }
 
 Write-Output "Local Agent Skill Sync"

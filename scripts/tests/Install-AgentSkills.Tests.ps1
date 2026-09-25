@@ -48,6 +48,132 @@ Describe "selective skill installation" -Tag 'SelectiveSkills' {
     }
 }
 
+Describe "content-aware repair without -Force" -Tag 'Repair' {
+    BeforeAll {
+        function Get-SourceHash {
+            param ([string]$RelativePath)
+            (Get-FileHash -LiteralPath (Join-Path $script:RepoRoot "codex-skills\$RelativePath")).Hash
+        }
+    }
+
+    It "repairs an emptied skill directory and missing runtime files on a bare run" {
+        $target = Join-Path $TestDrive 'repair-emptied'
+        & $script:Installer -Provider Codex -CodexTargets $target *>&1 | Out-Null
+        Get-ChildItem -LiteralPath (Join-Path $target 'qa') -Force | Remove-Item -Recurse -Force
+        Remove-Item -LiteralPath (Join-Path $target 'scripts\task_manager.py')
+        Remove-Item -LiteralPath (Join-Path $target 'scripts\analysis\engine.py')
+
+        $output = (& $script:Installer -Provider Codex -CodexTargets $target 6>&1) | Out-String
+
+        $output | Should -Match ([regex]::Escape('Skill repaired [Codex]: qa (1 missing: SKILL.md)'))
+        $output | Should -Match ([regex]::Escape('Directory repaired [Codex]: scripts/analysis (1 missing: engine.py)'))
+        (Get-FileHash -LiteralPath (Join-Path $target 'qa\SKILL.md')).Hash | Should -BeExactly (Get-SourceHash 'skills\qa\SKILL.md')
+        foreach ($path in @('scripts\task_manager.py', 'scripts\analysis\engine.py')) {
+            (Get-FileHash -LiteralPath (Join-Path $target $path)).Hash | Should -BeExactly (Get-SourceHash $path)
+        }
+    }
+
+    It "restores only the missing files and keeps a locally edited file" {
+        $target = Join-Path $TestDrive 'repair-partial'
+        $skillDir = Join-Path $target 'deep-audit'
+        New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $skillDir 'SKILL.md') -Value 'local edit'
+        $editedHash = (Get-FileHash -LiteralPath (Join-Path $skillDir 'SKILL.md')).Hash
+
+        $output = (& $script:Installer -Provider Codex -CodexTargets $target -SkillNames deep-audit 6>&1) | Out-String
+
+        $output | Should -Match ([regex]::Escape('Skill repaired [Codex]: deep-audit (3 missing:'))
+        (Get-FileHash -LiteralPath (Join-Path $skillDir 'SKILL.md')).Hash | Should -BeExactly $editedHash
+        foreach ($path in @('examples\depth-test.md', 'references\mode-contracts.md', 'references\state-and-report-contracts.md')) {
+            (Get-FileHash -LiteralPath (Join-Path $skillDir $path)).Hash | Should -BeExactly (Get-SourceHash "skills\deep-audit\$path")
+        }
+    }
+
+    It "reports the repair under -DryRun without writing" {
+        $target = Join-Path $TestDrive 'repair-dry-run'
+        New-Item -ItemType Directory -Path (Join-Path $target 'qa') -Force | Out-Null
+
+        $output = (& $script:Installer -Provider Codex -CodexTargets $target -SkillNames qa -DryRun 6>&1) | Out-String
+
+        $output | Should -Match ([regex]::Escape('Skill would-repair [Codex]: qa (1 missing: SKILL.md)'))
+        @(Get-ChildItem -LiteralPath (Join-Path $target 'qa') -Force) | Should -HaveCount 0
+    }
+
+    It "throws when a copy leaves SKILL.md absent after the run" {
+        # A directory squatting on SKILL.md makes Copy-Item copy into it without
+        # error, so only the post-install verification can notice the missing file.
+        $target = Join-Path $TestDrive 'verify-absent'
+        New-Item -ItemType Directory -Path (Join-Path $target 'qa\SKILL.md') -Force | Out-Null
+
+        { & $script:Installer -Provider Codex -CodexTargets $target -SkillNames qa 6>$null } |
+            Should -Throw '*Post-install verification failed*qa/SKILL.md*'
+    }
+}
+
+Describe "read-only install check" -Tag 'Check' {
+    BeforeAll {
+        function Invoke-InstallerCheck {
+            param ([string]$Target)
+            $output = (& pwsh -NoProfile -File $script:Installer -Provider Codex -CodexTargets $Target -Check 2>&1) | Out-String
+            [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
+        }
+
+        function Get-TreeSnapshot {
+            param ([string]$Root)
+            @(Get-ChildItem -LiteralPath $Root -Recurse -Force | Sort-Object FullName | ForEach-Object {
+                if ($_.PSIsContainer) { "$($_.FullName) <dir>" } else { "$($_.FullName) $((Get-FileHash -LiteralPath $_.FullName).Hash)" }
+            }) -join "`n"
+        }
+    }
+
+    It "passes a clean install and treats a CRLF-only difference as clean" {
+        $target = Join-Path $TestDrive 'check-clean'
+        & $script:Installer -Provider Codex -CodexTargets $target *>&1 | Out-Null
+        $skillFile = Join-Path $target 'qa\SKILL.md'
+        [System.IO.File]::WriteAllText($skillFile, ([System.IO.File]::ReadAllText($skillFile) -replace "`r?`n", "`r`n"))
+        (Get-FileHash -LiteralPath $skillFile).Hash |
+            Should -Not -BeExactly (Get-FileHash -LiteralPath (Join-Path $script:RepoRoot 'codex-skills\skills\qa\SKILL.md')).Hash
+
+        $result = Invoke-InstallerCheck $target
+
+        $result.ExitCode | Should -Be 0
+        $result.Output | Should -Match ([regex]::Escape("Check [Codex]: $target"))
+        $result.Output | Should -Match 'PASS'
+    }
+
+    It "fails on a missing SKILL.md without writing anything" {
+        $target = Join-Path $TestDrive 'check-missing'
+        & $script:Installer -Provider Codex -CodexTargets $target *>&1 | Out-Null
+        Remove-Item -LiteralPath (Join-Path $target 'qa\SKILL.md')
+        New-Item -ItemType Directory -Path (Join-Path $target "$($script:RetiredNames[0])") -Force | Out-Null
+        $before = Get-TreeSnapshot $target
+
+        $result = Invoke-InstallerCheck $target
+
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match ([regex]::Escape('FINDING Missing [Codex] Skill qa/SKILL.md'))
+        Get-TreeSnapshot $target | Should -BeExactly $before
+    }
+
+    It "fails on drifted content" {
+        $target = Join-Path $TestDrive 'check-drift'
+        & $script:Installer -Provider Codex -CodexTargets $target *>&1 | Out-Null
+        Add-Content -LiteralPath (Join-Path $target 'scripts\analysis\engine.py') -Value '# local drift'
+
+        $result = Invoke-InstallerCheck $target
+
+        $result.ExitCode | Should -Not -Be 0
+        $result.Output | Should -Match ([regex]::Escape('FINDING Drifted [Codex] Directory scripts/analysis/engine.py'))
+    }
+
+    It "refuses -Force or -DryRun alongside -Check" {
+        $target = Join-Path $TestDrive 'check-exclusive'
+        { & $script:Installer -Provider Codex -CodexTargets $target -Check -Force } | Should -Throw '*Check cannot be combined*'
+        { & $script:Installer -Provider Codex -CodexTargets $target -Check -DryRun } | Should -Throw '*Check cannot be combined*'
+        Test-Path -LiteralPath $target | Should -BeFalse
+    }
+}
+
 Describe "retired skill installation contract" {
     It "keeps the complete retirement set in one registry" {
         $script:Registry.schema | Should -Be "ai-skills/retired-skills/v1"

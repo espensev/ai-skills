@@ -28,10 +28,21 @@ Preview what would be copied:
 .\scripts\Install-AgentSkills.ps1 -Provider Both -DryRun
 ```
 
-Copy only missing manifest-listed package entries:
+Copy only missing manifest-listed package entries. An existing skill or runtime
+directory that lost files (for example an emptied skill) is repaired by copying
+back only the missing files; files already present are never overwritten
+without `-Force`. Every real run then verifies that each selected source file,
+including each `SKILL.md`, exists in the target:
 
 ```powershell
 .\scripts\Install-AgentSkills.ps1 -Provider Both
+```
+
+Check installed state read-only; exits non-zero on a missing file or content
+drift (CRLF-only differences are not drift):
+
+```powershell
+.\scripts\Install-AgentSkills.ps1 -Provider Both -Check
 ```
 
 Refresh existing manifest-listed entries as well:

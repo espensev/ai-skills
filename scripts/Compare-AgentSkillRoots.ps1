@@ -129,12 +129,20 @@ function Get-PortableRelativePath {
         [System.IO.Path]::DirectorySeparatorChar,
         [System.IO.Path]::AltDirectorySeparatorChar
     )
+    $BaseWithSeparator = $BaseFull + [System.IO.Path]::DirectorySeparatorChar
+
+    # Callers pass enumerated FullName paths, which are already absolute.
+    # GetFullPath rewrites a stray file named like a DOS device (skill\NUL) to
+    # \\.\NUL and loses the owning skill, so plain prefix math goes first.
+    if ($TargetPath.StartsWith($BaseWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $TargetPath.Substring($BaseWithSeparator.Length) -replace "\\", "/"
+    }
+
     $TargetFull = [System.IO.Path]::GetFullPath($TargetPath)
 
     try {
         $RelativePath = [System.IO.Path]::GetRelativePath($BaseFull, $TargetFull)
     } catch {
-        $BaseWithSeparator = $BaseFull + [System.IO.Path]::DirectorySeparatorChar
         if ($TargetFull.Equals($BaseFull, [System.StringComparison]::OrdinalIgnoreCase)) {
             $RelativePath = "."
         } elseif ($TargetFull.StartsWith($BaseWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -145,6 +153,23 @@ function Get-PortableRelativePath {
     }
 
     return $RelativePath -replace "\\", "/"
+}
+
+# Text files compare with CRLF folded to LF so a checkout's line endings do not
+# read as drift; these binary types stay byte-exact.
+$BinaryExtensions = @(".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp", ".zip", ".gz", ".exe", ".dll", ".pdf")
+
+function Get-ComparableContent {
+    param ([string]$Path)
+
+    # Latin-1 maps every byte to one char, so the fold is byte-exact and no
+    # text encoding is guessed.
+    $Content = [System.Text.Encoding]::GetEncoding(28591).GetString([System.IO.File]::ReadAllBytes($Path))
+    # A NUL byte also marks a binary file, matching Install-AgentSkills.ps1 -Check.
+    if ([System.IO.Path]::GetExtension($Path) -notin $BinaryExtensions -and $Content.IndexOf([char]0) -lt 0) {
+        $Content = $Content.Replace("`r`n", "`n")
+    }
+    return $Content
 }
 
 function Test-FileMatch {
@@ -160,18 +185,18 @@ function Test-FileMatch {
     $SourcePath = Join-Path $SourceRoot $NativePath
     $TargetPath = Join-Path $TargetRoot $NativePath
 
-    if (-not (Test-Path $SourcePath)) {
+    if (-not (Test-Path -LiteralPath $SourcePath)) {
         Add-Row $ProviderName $TargetRoot $Kind $RelativePath "SourceMissing"
         return
     }
-    if (-not (Test-Path $TargetPath)) {
+    if (-not (Test-Path -LiteralPath $TargetPath)) {
         Add-Row $ProviderName $TargetRoot $Kind $RelativePath "Missing"
         return
     }
 
-    $SourceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $SourcePath).Hash
-    $TargetHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $TargetPath).Hash
-    if ($SourceHash -ne $TargetHash) {
+    $SourceContent = Get-ComparableContent $SourcePath
+    $TargetContent = Get-ComparableContent $TargetPath
+    if (-not [string]::Equals($SourceContent, $TargetContent, [System.StringComparison]::Ordinal)) {
         Add-Row $ProviderName $TargetRoot $Kind $RelativePath "Stale"
     }
 }
@@ -189,11 +214,11 @@ function Test-DirectoryMatch {
     $SourceDir = Join-Path $SourceRoot $NativePath
     $TargetDir = Join-Path $TargetRoot $NativePath
 
-    if (-not (Test-Path $SourceDir)) {
+    if (-not (Test-Path -LiteralPath $SourceDir)) {
         Add-Row $ProviderName $TargetRoot $Kind $RelativePath "SourceMissing"
         return
     }
-    if (-not (Test-Path $TargetDir)) {
+    if (-not (Test-Path -LiteralPath $TargetDir)) {
         Add-Row $ProviderName $TargetRoot $Kind $RelativePath "Missing"
         return
     }
@@ -210,7 +235,7 @@ function Test-DirectoryMatch {
     foreach ($TargetFile in $TargetFiles) {
         $RelativeFile = Get-PortableRelativePath -BasePath $TargetRoot -TargetPath $TargetFile.FullName
         $SourcePath = Join-Path $SourceRoot ($RelativeFile -replace "/", [System.IO.Path]::DirectorySeparatorChar)
-        if (-not (Test-Path $SourcePath)) {
+        if (-not (Test-Path -LiteralPath $SourcePath)) {
             Add-Row $ProviderName $TargetRoot $Kind $RelativeFile "ExtraFile"
         }
     }
@@ -267,16 +292,30 @@ function Compare-ProviderPackage {
         foreach ($Skill in $Skills) {
             Test-DirectoryMatch -ProviderName $ProviderName -TargetRoot $TargetRoot -SourceRoot (Join-Path $PackageRoot "skills") -RelativePath $Skill -Kind "Skill"
         }
+        # Source-only skills are never walked above, so a copy that lost its
+        # SKILL.md would otherwise produce no row. Absence is not demanded.
+        foreach ($SourceOnly in $SourceOnlySkills) {
+            $SkillDir = Join-Path $TargetRoot $SourceOnly
+            if ((Test-Path -LiteralPath $SkillDir -PathType Container) -and
+                -not (Test-Path -LiteralPath (Join-Path $SkillDir "SKILL.md") -PathType Leaf)) {
+                Add-Row $ProviderName $TargetRoot "Skill" "$SourceOnly/SKILL.md" "Missing" "Source-only skill directory has no SKILL.md"
+            }
+        }
 
         if ($IncludeExtra) {
-            $RootSkillDirs = @(Get-ChildItem -LiteralPath $TargetRoot -Directory -Force | Where-Object {
-                Test-Path (Join-Path $_.FullName "SKILL.md")
-            } | ForEach-Object { $_.Name })
-            foreach ($SourceOnly in @($RootSkillDirs | Where-Object { $_ -in $SourceOnlySkills })) {
-                Add-Row $ProviderName $TargetRoot "Skill" $SourceOnly "SourceOnlyInstalled" "Listed in source_only_skills; not managed by installer"
+            # Every directory counts, so an orphan without SKILL.md is reported.
+            # Dot directories are host-owned (Codex .system) and top-level
+            # directories of manifest files (scripts/) belong to the package.
+            $OwnedDirs = @(@($Files | Where-Object { $_ -match '/' }) + @($Directories) | ForEach-Object { ($_ -split '/')[0] })
+            $RootDirs = @(Get-ChildItem -LiteralPath $TargetRoot -Directory -Force | Where-Object {
+                -not $_.Name.StartsWith(".") -and $_.Name -notin $OwnedDirs
+            })
+            foreach ($SourceOnly in @($RootDirs | Where-Object { $_.Name -in $SourceOnlySkills })) {
+                Add-Row $ProviderName $TargetRoot "Skill" $SourceOnly.Name "SourceOnlyInstalled" "Listed in source_only_skills; not managed by installer"
             }
-            foreach ($Extra in @($RootSkillDirs | Where-Object { $_ -notin $Skills -and $_ -notin $SourceOnlySkills })) {
-                Add-Row $ProviderName $TargetRoot "Skill" $Extra "Extra"
+            foreach ($Extra in @($RootDirs | Where-Object { $_.Name -notin $Skills -and $_.Name -notin $SourceOnlySkills })) {
+                $Detail = if (Test-Path -LiteralPath (Join-Path $Extra.FullName "SKILL.md") -PathType Leaf) { "" } else { "No SKILL.md" }
+                Add-Row $ProviderName $TargetRoot "Skill" $Extra.Name "Extra" $Detail
             }
         }
     }

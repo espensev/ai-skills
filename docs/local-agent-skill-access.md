@@ -96,11 +96,15 @@ The three lifecycle surfaces are intentionally distinct:
 
 | Surface | Location | Authority |
 |---|---|---|
-| Source | `D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle` | Canonical; update Git separately. |
+| Source | `%MACHINE_CODE_ROOT%AI4000\skills\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle` | Canonical; update Git separately. |
 | Plugin cache | `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle\` | Materialized copy refreshed by the command above. |
 | Codex runtime hooks | `D:\DevHome\state\codex\hooks.json` and two owned files under `hooks\` | Installed projection reconciled from source. |
 | Claude Handoff Relay | `D:\DevHome\state\claude\settings.json` and `hooks\Invoke-HandoffRelay.ps1` | Dedicated installer preserves unrelated settings/hooks and owns only its exact Stop command and script. |
 | Handoff Relay state | `D:\DevHome\state\remember\projects\<project>\tmp\handoff-relay\` and `D:\DevHome\state\remember\handoff-relay\latest-status.json` | Session drafts, hash/lock state, preserved failures/conflicts, and one redacted health record; canonical output remains `<project>\remember.md`. |
+
+The former `%MACHINE_CODE_ROOT%Development\AI-related\Ai-Skills` source path
+remains a compatibility junction to the same checkout. Plugin-cache and runtime
+paths remain installer-owned; the source relocation does not migrate them.
 
 Read-only checks:
 

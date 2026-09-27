@@ -27,6 +27,18 @@ documented defaults below:
 | `OLLAMA_TELEMETRY_REMOTE_URL` | remote API | `http://192.168.2.5:43217` |
 | `OLLAMA_TELEMETRY_OBSERVER_URL` | local observer API | `http://127.0.0.1:43191` |
 
+On `snd-desk`, the repository is now physically stored in AI4000. The bundled
+script fallback above no longer exists on this workstation. Set the override
+in the current PowerShell process before using the scripts:
+
+```powershell
+$env:OLLAMA_TELEMETRY_REPO = Join-Path $env:MACHINE_CODE_ROOT 'AI4000\observability\ollama-telemetry'
+```
+
+The former `%MACHINE_CODE_ROOT%Development\web\SevHQ\SevIQ\apps\ollama-telemetry`
+path remains a compatibility junction to this checkout. Setting the override
+does not persist configuration, restart services, or deploy code.
+
 ## Commands
 
 ### `/telemetry-live-ops verify`

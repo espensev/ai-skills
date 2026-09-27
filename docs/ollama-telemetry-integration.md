@@ -23,11 +23,15 @@ portable packages.
 
 ## Local Checkout
 
-For this workstation, set:
+For this workstation, select the physical checkout for the current process:
 
 ```powershell
-$env:OLLAMA_TELEMETRY_REPO = 'D:\Development\AI-data-handling\ollama-telemetry'
+$env:OLLAMA_TELEMETRY_REPO = Join-Path $env:MACHINE_CODE_ROOT 'AI4000\observability\ollama-telemetry'
 ```
+
+The former `%MACHINE_CODE_ROOT%Development\web\SevHQ\SevIQ\apps\ollama-telemetry`
+path remains a compatibility junction to this checkout. The setting above does
+not persist environment changes, restart the telemetry services, or deploy code.
 
 Portable skills should resolve that env var or a project config value. They
 should not hard-code the local path into exported package behavior.

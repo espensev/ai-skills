@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -30,9 +33,88 @@ BROWSER_CONTROL_SKILL = SKILLS / "browser-control" / "SKILL.md"
 BROWSER_CONTROL_CDP = SKILLS / "browser-control" / "cdp.mjs"
 BROWSER_CONTROL_CODEX_INTEGRATION = SKILLS / "browser-control" / "CODEX-INTEGRATION.md"
 USAGE_STATS_SKILL = SKILLS / "usage-stats" / "SKILL.md"
+EVAL_CASES = ROOT / "eval" / "cases" / "light-skill-cases.json"
+EVAL_RESPONSES = ROOT / "eval" / "responses.mock.json"
+EVAL_RESULTS = ROOT / "eval" / "results" / "latest.json"
 
 
 class TestSkillDocsContract(unittest.TestCase):
+    def test_committed_light_eval_snapshot_matches_fixtures(self):
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "eval_skills.py"),
+                "--cases",
+                str(EVAL_CASES),
+                "--responses",
+                str(EVAL_RESPONSES),
+            ],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
+        evaluated = json.loads(completed.stdout)
+        committed = json.loads(EVAL_RESULTS.read_text(encoding="utf-8"))
+        cases = json.loads(EVAL_CASES.read_text(encoding="utf-8"))
+        responses = json.loads(EVAL_RESPONSES.read_text(encoding="utf-8"))
+        case_ids = [case["id"] for case in cases]
+        response_ids = [response["id"] for response in responses]
+        self.assertEqual(len(case_ids), len(set(case_ids)), "eval case IDs must be unique")
+        self.assertEqual(len(response_ids), len(set(response_ids)), "mock response IDs must be unique")
+        self.assertEqual(set(case_ids), set(response_ids), "every eval case needs exactly one mock response")
+        self.assertEqual(evaluated["summary"]["failed"], 0, "committed mock eval must be green")
+        self.assertEqual(committed["cases"], "eval/cases/light-skill-cases.json")
+        self.assertEqual(committed["responses"], "eval/responses.mock.json")
+        self.assertEqual(
+            committed["summary"],
+            evaluated["summary"],
+            "eval/results/latest.json summary is stale; refresh it with eval_skills.py",
+        )
+        self.assertEqual(
+            committed["results"],
+            evaluated["results"],
+            "eval/results/latest.json results are stale; refresh them with eval_skills.py",
+        )
+
+    def test_light_eval_rejects_duplicate_list_ids(self):
+        duplicate_cases = [
+            {"id": "duplicate", "skill": "qa", "checks": {}},
+            {"id": "duplicate", "skill": "review", "checks": {}},
+        ]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            cases_path = temp_root / "cases.json"
+            responses_path = temp_root / "responses.json"
+            cases_path.write_text(json.dumps(duplicate_cases), encoding="utf-8")
+            responses_path.write_text("[]", encoding="utf-8")
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "eval_skills.py"),
+                    "--cases",
+                    str(cases_path),
+                    "--responses",
+                    str(responses_path),
+                ],
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("Duplicate eval id: duplicate", completed.stderr)
+
+    def test_every_installable_skill_has_an_eval_case(self):
+        manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
+        cases = json.loads(EVAL_CASES.read_text(encoding="utf-8"))
+        installable = set(manifest["default_skills"] + manifest["optional_skills"])
+        covered = {case["skill"] for case in cases}
+        self.assertEqual(installable, covered)
+
     def test_expected_export_files_exist(self):
         expected = [
             ROOT / "AGENTS.md",

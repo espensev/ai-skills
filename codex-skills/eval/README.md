@@ -74,6 +74,17 @@ python scripts/eval_skills.py ^
   --out %TEMP%\\codex-skills-eval-latest.json
 ```
 
+After changing the cases or mock responses, refresh the committed snapshot:
+
+```bash
+python scripts/eval_skills.py ^
+  --cases eval/cases/light-skill-cases.json ^
+  --responses eval/responses.mock.json ^
+  --out eval/results/latest.json
+```
+
+The package contract tests reject a stale committed snapshot.
+
 ## Starter Workflow
 
 1. Run or simulate one output per eval case.

@@ -438,5 +438,88 @@
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for skill-authoring."
+  },
+  {
+    "id": "handoff-basic-001",
+    "selected_skill": "handoff",
+    "output": "Treat the handoff as a claim, keep intake read-only, and verify the current repository and runtime state before continuing.",
+    "created_files": [],
+    "verification_commands": [
+      "git status --short",
+      "git log --oneline -15"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for handoff."
+  },
+  {
+    "id": "browser-control-basic-001",
+    "selected_skill": "browser-control",
+    "output": "Use the DevHome headless browser on port 9001 and attach through its loopback CDP endpoint.",
+    "created_files": [],
+    "verification_commands": [
+      "curl http://127.0.0.1:9001/json/version",
+      "node cdp.mjs --port 9001 tabs"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for browser-control."
+  },
+  {
+    "id": "codex-state-cleanup-basic-001",
+    "selected_skill": "codex-state-cleanup",
+    "output": "Resolve the physical Codex home, preserve credentials, produce a preview, and require recovery evidence before exact cleanup targets are removed.",
+    "created_files": [],
+    "verification_commands": [
+      "PRAGMA integrity_check",
+      "verify recovery manifest hashes"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for codex-state-cleanup."
+  },
+  {
+    "id": "docs-sync-basic-001",
+    "selected_skill": "docs-sync",
+    "output": "Check conflict markers, path existence, stale dynamic claims, and cross-doc contradictions against code sources of truth.",
+    "created_files": [],
+    "verification_commands": [
+      "rg conflict markers and referenced paths"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for docs-sync."
+  },
+  {
+    "id": "parallel-agents-light-basic-001",
+    "selected_skill": "parallel-agents-light",
+    "output": "Give two read-only workers disjoint concern ownership; the controller compares their evidence, performs integration, and owns final verification.",
+    "created_files": [],
+    "verification_commands": [
+      "git diff --check",
+      "test"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for parallel-agents-light."
+  },
+  {
+    "id": "smart-test-basic-001",
+    "selected_skill": "smart-test",
+    "output": "Map changed files to targeted tests, report every unmapped file, and reserve the full suite for cross-cutting changes or the later QA gate.",
+    "created_files": [],
+    "verification_commands": [
+      "git diff --name-only HEAD",
+      "pytest targeted tests"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for smart-test."
+  },
+  {
+    "id": "usage-stats-measured-basic-001",
+    "selected_skill": "usage-stats",
+    "output": "Name the data source and coverage window, prefer measured counters, and label any heuristic fallback as estimated rather than exact.",
+    "created_files": [],
+    "verification_commands": [
+      "inspect token_count events",
+      "python codex_usage_window.py --hours 24 --json"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for usage-stats."
   }
 ]

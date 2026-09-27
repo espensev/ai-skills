@@ -809,5 +809,165 @@
       ],
       "must_create": []
     }
+  },
+  {
+    "id": "handoff-basic-001",
+    "skill": "handoff",
+    "prompt": "Continue from the named handoff, verify what is still true, and carry the work forward without disturbing unrelated changes.",
+    "checks": {
+      "must_mention": [
+        "claim",
+        "read-only",
+        "verify",
+        "current"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "git status",
+        "git log",
+        "verify"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "browser-control-basic-001",
+    "skill": "browser-control",
+    "prompt": "Use the isolated live browser to inspect the page DOM and capture a screenshot without touching my real browser profile.",
+    "checks": {
+      "must_mention": [
+        "DevHome",
+        "CDP",
+        "9001",
+        "headless"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "json/version",
+        "cdp.mjs",
+        "browser-url"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "codex-state-cleanup-basic-001",
+    "skill": "codex-state-cleanup",
+    "prompt": "Audit my Codex home and reclaim safe disk space, showing a preview and recovery evidence before any deletion.",
+    "checks": {
+      "must_mention": [
+        "physical",
+        "preview",
+        "credentials",
+        "recovery"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "integrity_check",
+        "hash",
+        "manifest"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "docs-sync-basic-001",
+    "skill": "docs-sync",
+    "prompt": "Check README, status, and architecture docs against the codebase for stale or contradictory claims.",
+    "checks": {
+      "must_mention": [
+        "conflict markers",
+        "path existence",
+        "cross-doc",
+        "stale"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "rg",
+        "check"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "parallel-agents-light-basic-001",
+    "skill": "parallel-agents-light",
+    "prompt": "Use two lightweight read-only Codex subagents to inspect separate concerns, then integrate and verify their findings in the controller thread.",
+    "checks": {
+      "must_mention": [
+        "ownership",
+        "read-only",
+        "controller",
+        "verification"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "git diff",
+        "test",
+        "verify"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "smart-test-basic-001",
+    "skill": "smart-test",
+    "prompt": "Map these changed files to the smallest useful test subset for fast feedback before the full QA gate.",
+    "checks": {
+      "must_mention": [
+        "changed files",
+        "targeted",
+        "unmapped",
+        "full suite"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "git diff",
+        "pytest",
+        "test"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "usage-stats-measured-basic-001",
+    "skill": "usage-stats",
+    "prompt": "Report the last 24 hours of Codex usage and an execution closeout, preferring real counters and clearly labelling any fallback estimate.",
+    "checks": {
+      "must_mention": [
+        "measured",
+        "estimated",
+        "data source",
+        "coverage"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "token_count",
+        "codex_usage_window.py",
+        "telemetry"
+      ],
+      "must_create": []
+    }
   }
 ]

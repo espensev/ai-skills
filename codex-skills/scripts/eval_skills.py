@@ -17,6 +17,13 @@ def resolve_path(path: Path | None) -> Path | None:
     return path if path.is_absolute() else ROOT / path
 
 
+def display_path(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return str(path)
+
+
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -28,7 +35,13 @@ def dump_json(path: Path, payload: Any) -> None:
 
 def as_case_map(payload: Any) -> dict[str, dict[str, Any]]:
     if isinstance(payload, list):
-        return {str(item["id"]): item for item in payload}
+        mapped: dict[str, dict[str, Any]] = {}
+        for item in payload:
+            item_id = str(item["id"])
+            if item_id in mapped:
+                raise ValueError(f"Duplicate eval id: {item_id}")
+            mapped[item_id] = item
+        return mapped
     if isinstance(payload, dict):
         return {str(key): value for key, value in payload.items()}
     raise ValueError("Cases/responses must be a JSON array or object.")
@@ -186,8 +199,8 @@ def main() -> int:
         results.append(evaluate_case(cases[case_id], response))
 
     payload = {
-        "cases": str(cases_path),
-        "responses": str(responses_path),
+        "cases": display_path(cases_path),
+        "responses": display_path(responses_path),
         "summary": summarize(results),
         "results": results,
     }

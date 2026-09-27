@@ -9,6 +9,24 @@
     "notes": ""
   },
   {
+    "id": "browser-control-basic-001",
+    "selected_skill": "browser-control",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "codex-state-cleanup-basic-001",
+    "selected_skill": "codex-state-cleanup",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "deep-audit-basic-001",
     "selected_skill": "deep-audit",
     "output": "",
@@ -90,6 +108,15 @@
     "notes": ""
   },
   {
+    "id": "docs-sync-basic-001",
+    "selected_skill": "docs-sync",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "documentation-lookup-basic-001",
     "selected_skill": "documentation-lookup",
     "output": "",
@@ -101,6 +128,15 @@
   {
     "id": "exa-search-basic-001",
     "selected_skill": "exa-search",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "handoff-basic-001",
+    "selected_skill": "handoff",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -155,6 +191,15 @@
   {
     "id": "memory-management-basic-001",
     "selected_skill": "memory-management",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "parallel-agents-light-basic-001",
+    "selected_skill": "parallel-agents-light",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -326,6 +371,24 @@
   {
     "id": "skill-authoring-basic-001",
     "selected_skill": "skill-authoring",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "smart-test-basic-001",
+    "selected_skill": "smart-test",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "usage-stats-measured-basic-001",
+    "selected_skill": "usage-stats",
     "output": "",
     "created_files": [],
     "verification_commands": [],

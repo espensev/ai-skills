@@ -18,22 +18,15 @@ documented defaults below:
 
 | Env override | Targets | Documented default |
 |---|---|---|
-| `OLLAMA_TELEMETRY_REPO` | telemetry repo root | `D:\Development\AI-data-handling\ollama-telemetry` |
+| `OLLAMA_TELEMETRY_REPO` | telemetry repo root | `%MACHINE_CODE_ROOT%AI4000\observability\ollama-telemetry` |
 | `OLLAMA_TELEMETRY_REMOTE_HOST` | SSH host alias | `snd-host` |
 | `OLLAMA_TELEMETRY_REMOTE_URL` | remote API | `http://192.168.2.5:43217` |
 | `OLLAMA_TELEMETRY_OBSERVER_URL` | local observer API | `http://127.0.0.1:43191` |
 
-On `snd-desk`, the repository is now physically stored in AI4000. The bundled
-script fallback above no longer exists on this workstation. Set the override
-in the current PowerShell process before using the scripts:
-
-```powershell
-$env:OLLAMA_TELEMETRY_REPO = Join-Path $env:MACHINE_CODE_ROOT 'AI4000\observability\ollama-telemetry'
-```
-
-The former `%MACHINE_CODE_ROOT%Development\web\SevHQ\SevIQ\apps\ollama-telemetry`
-path remains a compatibility junction to this checkout. Setting the override
-does not persist configuration, restart services, or deploy code.
+An explicit `-RepoRoot` takes precedence over `OLLAMA_TELEMETRY_REPO`; otherwise
+the scripts derive the repository from `MACHINE_CODE_ROOT`. Environment values
+are resolved from Process, User, then Machine scope. If neither an override nor
+the code role is configured, resolution fails before any live operation.
 
 Bundled commands:
 

@@ -7,8 +7,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/Sync-DevHomeCodexHooks.ps1\" -SourcePackageRoot \"D:/Development/AI-related/Ai-Skills/codex-skills/local-hooks/devhome-lifecycle\" -Quiet",
-            "commandWindows": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/Sync-DevHomeCodexHooks.ps1\" -SourcePackageRoot \"D:/Development/AI-related/Ai-Skills/codex-skills/local-hooks/devhome-lifecycle\" -Quiet",
+            "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/Sync-DevHomeCodexHooks.ps1\" -SourcePackageRoot \"D:/AI4000/skills/Ai-Skills/codex-skills/local-hooks/devhome-lifecycle\" -Quiet",
+            "commandWindows": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/Sync-DevHomeCodexHooks.ps1\" -SourcePackageRoot \"D:/AI4000/skills/Ai-Skills/codex-skills/local-hooks/devhome-lifecycle\" -Quiet",
             "timeout": 20,
             "statusMessage": "Synchronizing DevHome lifecycle hooks from AI Skills"
           }

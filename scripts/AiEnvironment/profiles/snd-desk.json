@@ -6,7 +6,7 @@
     "instanceId": "ca96d510-7d87-4cec-8e1a-bd8fc3866903"
   },
   "source": {
-    "repositoryRoot": "D:\\Development\\AI-related\\Ai-Skills"
+    "repositoryRoot": "D:\\AI4000\\skills\\Ai-Skills"
   },
   "providers": {
     "codex": {
@@ -34,7 +34,7 @@
       "ownership": "managed",
       "desired": {
         "name": "ai-skills",
-        "sourcePath": "D:\\Development\\AI-related\\Ai-Skills"
+        "sourcePath": "D:\\AI4000\\skills\\Ai-Skills"
       }
     },
     {
@@ -54,7 +54,7 @@
       "desired": {
         "name": "devhome-lifecycle@ai-skills",
         "enabled": true,
-        "sourceRoot": "D:\\Development\\AI-related\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
+        "sourceRoot": "D:\\AI4000\\skills\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
         "cacheRoot": "D:\\DevHome\\state\\codex\\plugins\\cache\\ai-skills\\devhome-lifecycle",
         "trustRecordKey": "devhome-lifecycle@ai-skills:hooks/hooks.json:session_start:0:0",
         "projectionReasonCode": "OWNED_PLUGIN_PAYLOAD_MISMATCH"
@@ -66,7 +66,7 @@
       "kind": "hook",
       "ownership": "managed",
       "desired": {
-        "sourceRoot": "D:\\Development\\AI-related\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
+        "sourceRoot": "D:\\AI4000\\skills\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
         "targetRoot": "D:\\DevHome\\state\\codex",
         "projectionReasonCode": "CODEX_HOOK_PROJECTION_MISMATCH"
       }
@@ -77,7 +77,7 @@
       "kind": "hook",
       "ownership": "managed",
       "desired": {
-        "sourceRoot": "D:\\Development\\AI-related\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
+        "sourceRoot": "D:\\AI4000\\skills\\Ai-Skills\\codex-skills\\local-hooks\\devhome-lifecycle",
         "targetRoot": "D:\\DevHome\\state\\claude",
         "registrationContains": "hooks/Invoke-HandoffRelay.ps1",
         "projectionReasonCode": "CLAUDE_HANDOFF_PROJECTION_MISMATCH"

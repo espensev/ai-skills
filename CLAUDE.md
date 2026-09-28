@@ -19,15 +19,21 @@
 
 ## Package Boundary
 
-- Treat `claude-skills/` and `codex-skills/` as the canonical provider package
-  sources. Do not create another full repo-local copy of a skill merely for
-  discovery.
+- Treat `claude-skills/` and `codex-skills/` as the provider package surfaces.
+  For entries in `skills-src/manifest.json` under `generated_skills`, author
+  `skills-src/<skill>/SKILL.src.md` and its support files, then run
+  `scripts/Build-ProviderSkillPackages.ps1`; the provider copies are committed
+  build outputs. Check them with `Build-ProviderSkillPackages.ps1 -Check`.
+  Other skills and package runtime files are authored in their provider
+  package. Do not create another full repo-local copy merely for discovery.
 - Treat `codex-skills/local-hooks/devhome-lifecycle/` as the machine-local
   source for Codex lifecycle hooks and the shared Claude/Codex Handoff Relay.
   Keep it outside the portable release and provider install manifests. Its
   plugin cache, DevHome runtime projections, enablement, and hook trust are
   separate operational state; use the source installers rather than editing or
   exporting installed copies.
+  Codex Remember capture belongs to the upstream `remember@remember-dev`
+  plugin; the former Windows adapter is retired.
 - Treat `scripts/AiEnvironment/` as the read-only wanted-state observer for
   the effective Codex and Claude environment. `profiles/` is reviewed intent,
   `locks/` is the commit-backed promotion artifact, and

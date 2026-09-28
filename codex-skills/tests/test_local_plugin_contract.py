@@ -113,7 +113,7 @@ class TestLocalPluginContract(unittest.TestCase):
         expected_command = (
             'pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File '
             '"${PLUGIN_ROOT}/Sync-DevHomeCodexHooks.ps1" -SourcePackageRoot '
-            '"D:/Development/AI-related/Ai-Skills/codex-skills/local-hooks/'
+            '"D:/AI4000/skills/Ai-Skills/codex-skills/local-hooks/'
             'devhome-lifecycle" -Quiet'
         )
         self.assertEqual(command_hook["command"], expected_command)

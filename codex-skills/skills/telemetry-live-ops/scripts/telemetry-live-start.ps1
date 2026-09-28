@@ -38,6 +38,26 @@ function Get-EnvironmentValue {
     return $null
 }
 
+function Resolve-TelemetryRepositoryRoot {
+    param([AllowEmptyString()][string]$CurrentValue)
+
+    if (-not [string]::IsNullOrWhiteSpace($CurrentValue)) {
+        return $CurrentValue
+    }
+
+    $override = Get-EnvironmentValue -Names @('OLLAMA_TELEMETRY_REPO')
+    if (-not [string]::IsNullOrWhiteSpace($override)) {
+        return $override
+    }
+
+    $codeRoot = Get-EnvironmentValue -Names @('MACHINE_CODE_ROOT')
+    if ([string]::IsNullOrWhiteSpace($codeRoot)) {
+        throw 'Set MACHINE_CODE_ROOT, OLLAMA_TELEMETRY_REPO, or -RepoRoot to locate the telemetry repository.'
+    }
+
+    return Join-Path $codeRoot 'AI4000\observability\ollama-telemetry'
+}
+
 function Resolve-StringSetting {
     param(
         [AllowEmptyString()]
@@ -74,10 +94,7 @@ function Assert-PathExists {
     }
 }
 
-$RepoRoot = Resolve-StringSetting `
-    -CurrentValue $RepoRoot `
-    -EnvironmentNames @('OLLAMA_TELEMETRY_REPO') `
-    -FallbackValue 'D:\Development\AI-data-handling\ollama-telemetry'
+$RepoRoot = Resolve-TelemetryRepositoryRoot -CurrentValue $RepoRoot
 
 $SshHost = Resolve-StringSetting `
     -CurrentValue $SshHost `

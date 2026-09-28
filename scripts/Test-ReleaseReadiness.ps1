@@ -96,6 +96,14 @@ if (-not $SkipUnitTests) {
             throw "AI environment wanted-state contracts failed: $($AiEnvironmentResult.FailedCount)"
         }
     }
+
+    Invoke-Step "Telemetry repository resolution contracts" {
+        $TelemetryTestPath = Join-Path $RepoRoot "scripts\tests\TelemetryRepositoryRoot.Tests.ps1"
+        $TelemetryResult = Invoke-Pester -Path $TelemetryTestPath -Output Normal -PassThru
+        if ($TelemetryResult.FailedCount -ne 0) {
+            throw "Telemetry repository resolution contracts failed: $($TelemetryResult.FailedCount)"
+        }
+    }
 }
 
 if (-not $SkipParityReport) {

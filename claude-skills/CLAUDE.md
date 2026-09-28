@@ -1,12 +1,18 @@
 # Project Conventions
 
-This repository is the source package for the shared campaign-skill runtime.
-Treat this repository root as the git root and the canonical place to make
-reusable changes before they are copied into consumer repos.
+This directory is the Claude source package for the shared campaign-skill
+runtime. In the Ai-Skills checkout, the Git root is its parent; paths below
+are relative to this package unless stated otherwise. Make reusable changes
+in the owning source before exporting them into consumer repos.
 
 ## Scope
 
-- Edit shared source here: `scripts/`, `skills/`, `tests/`, contract docs, and package docs.
+- In the Ai-Skills checkout, consult `../skills-src/manifest.json` before
+  editing a skill. Author `generated_skills` in
+  `../skills-src/<skill>/SKILL.src.md` and its support files, then regenerate
+  with `../scripts/Build-ProviderSkillPackages.ps1`; do not edit those generated
+  provider copies directly. Provider-owned skills, runtime source, tests,
+  contracts, and package docs remain at their package-root paths.
 - Do not treat generated runtime files as package source. Do not commit populated `.claude/`, `data/`, `agents/`, or campaign-tracker artifacts from local runs.
 - Keep package docs talking about package-root files. Only describe `.claude/skills/...` paths when you are explicitly talking about the installed consumer layout.
 

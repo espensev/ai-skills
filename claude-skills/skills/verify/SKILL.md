@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Evidence-capture recipe for verifying DevHome PowerShell profile/module changes at their real surface (interactive console sessions of both engines).
+description: Use when verifying DevHome PowerShell profile/module changes with evidence captured at their real surface (interactive console sessions of both engines).
 ---
 
 # Verifying DevHome shell changes

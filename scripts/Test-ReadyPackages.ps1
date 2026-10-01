@@ -422,6 +422,14 @@ if (-not (Test-Path $ReleaseManifestPath)) {
                     }
                 }
 
+                foreach ($Skill in $SourceOnlySkills) {
+                    $SkillPath = Join-Path $PackageRoot ("skills\" + $Skill + "\SKILL.md")
+                    if (Test-RequiredPath $PackageRoot "skills/$Skill/SKILL.md" "$($Package.name) skill") {
+                        Test-SkillDescription $Package.name $Skill $SkillPath
+                        Test-SkillSupportReferences $Package.name $Skill $SkillPath
+                    }
+                }
+
                 $SkillDir = Join-Path $PackageRoot "skills"
                 $DiskSkills = @()
                 if (Test-Path $SkillDir) {

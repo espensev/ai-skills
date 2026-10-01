@@ -12,7 +12,7 @@ trust state by hand.
 ## Authority
 
 - Source authority:
-  `D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle`
+  `%MACHINE_CODE_ROOT%AI4000\skills\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle`
 - Codex projection: `D:\DevHome\state\codex\hooks.json` and the two owned
   scripts under `D:\DevHome\state\codex\hooks`
 - Claude projection: `D:\DevHome\state\claude\settings.json` plus
@@ -23,6 +23,21 @@ trust state by hand.
 - Remember: Codex capture runs through the upstream `remember@remember-dev`
   plugin (pinned checkout `D:\DevHome\state\remember\artifacts\remember-current`),
   not through this package; the former Windows adapter was retired in 0.3.1.
+
+Resolve the source authority once in the PowerShell session before running the
+commands below:
+
+```powershell
+$skillsRepo = Join-Path $env:MACHINE_CODE_ROOT 'AI4000\skills\Ai-Skills'
+$lifecycleSource = Join-Path $skillsRepo 'codex-skills\local-hooks\devhome-lifecycle'
+if (-not (Test-Path -LiteralPath $lifecycleSource -PathType Container)) {
+    throw 'The canonical DevHome lifecycle source is unavailable.'
+}
+```
+
+The Codex synchronizers target the primary DevHome Codex home shown above.
+Ambient `CODEX_HOME` does not select an alternate account installation. Do not
+use their test-only home override for production account homes.
 
 The package remains outside the portable provider manifests. The
 `devhome-lifecycle@ai-skills` plugin contributes this skill and one startup
@@ -83,18 +98,18 @@ capped at 32 KiB. The cleaner does not semantically prove a claim.
 
 ## Refresh the plugin choice
 
-From the Ai-Skills repository root, use the normal local sync entrypoint. It
+Use the resolved Ai-Skills source repository's normal local sync entrypoint. It
 registers the marketplace and proves source-to-cache hash convergence:
 
 ```powershell
-.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+& (Join-Path $skillsRepo 'scripts\Install-AgentSkills.ps1') -Provider Codex -CodexLocalPlugin DevHomeLifecycle
 ```
 
 Do not assume a restart refreshes a local plugin cache. Use
 the canonical source synchronizer for a read-only cache check:
 
 ```powershell
-& 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1' -Check
+& (Join-Path $lifecycleSource 'Sync-DevHomeLifecyclePlugin.ps1') -Check
 ```
 
 The check exits `0` only when `Status` is `CURRENT` and still prints the full
@@ -114,7 +129,7 @@ check reports `Enabled` as Codex returns it and never reads hook trust.
 Run the read-only convergence check from the source authority:
 
 ```powershell
-& 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeCodexHooks.ps1' -Check
+& (Join-Path $lifecycleSource 'Sync-DevHomeCodexHooks.ps1') -Check
 ```
 
 ## Diagnose visible hook failures
@@ -150,7 +165,7 @@ If the check reports drift, run the same script without `-Check`. It delegates
 mutation to the identity-gated installer and verifies convergence afterward:
 
 ```powershell
-& 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeCodexHooks.ps1'
+& (Join-Path $lifecycleSource 'Sync-DevHomeCodexHooks.ps1')
 ```
 
 Do not copy files manually, edit generated native memory, or manufacture hook
@@ -160,8 +175,8 @@ new definition in `/hooks`.
 Check or synchronize the Claude projection with the dedicated installer:
 
 ```powershell
-& 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1' -Check
-& 'D:\Development\AI-related\Ai-Skills\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1'
+& (Join-Path $lifecycleSource 'Install-DevHomeClaudeHandoffRelay.ps1') -Check
+& (Join-Path $lifecycleSource 'Install-DevHomeClaudeHandoffRelay.ps1')
 ```
 
 Start a fresh Claude session after synchronization. The installer preserves

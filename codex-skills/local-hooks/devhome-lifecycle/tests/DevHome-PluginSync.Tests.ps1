@@ -5,6 +5,7 @@ Describe 'DevHome lifecycle plugin cache synchronization' {
         $script:Synchronizer = Join-Path $script:PackageRoot 'Sync-DevHomeLifecyclePlugin.ps1'
         $script:ExpectedInstallationId = 'ca96d510-7d87-4cec-8e1a-bd8fc3866903'
         $script:PhysicalCodexHome = 'D:\DevHome\state\codex'
+        $script:PreviousMockMetadata = Get-Variable -Name DevHomePluginSyncMockMetadata -Scope Global -ErrorAction SilentlyContinue
 
         function New-FakeCodexEnvironment {
             $root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
@@ -266,6 +267,7 @@ exit /b 64
 
         function Invoke-TestSynchronizer {
             param(
+                [string] $Account = 'main',
                 [switch] $Check,
                 [switch] $Force,
                 [switch] $WhatIf,
@@ -273,6 +275,7 @@ exit /b 64
             )
 
             $parameters = @{
+                Account = $Account
                 CodexHome = $script:Fake.CodexHome
                 CodexCommand = $script:Fake.CodexCommand
                 VerifierPath = $VerifierPath
@@ -290,6 +293,52 @@ exit /b 64
 
             & $script:Synchronizer @parameters
         }
+
+        function Mock-ProductionAccountHome {
+            param(
+                [string] $Account = 'account3',
+                [bool] $Exists = $true,
+                [string] $ReparsePath,
+                [string] $ReparseTarget,
+                [string] $ResolvedReparseTarget
+            )
+
+            $script:ProductionAccountHome = Join-Path 'D:\DevHome\state\codex-accounts' $Account
+            $global:DevHomePluginSyncMockMetadata = @{
+                AccountHome = $script:ProductionAccountHome
+                Exists = $Exists
+                ReparsePath = $ReparsePath
+                ReparseTarget = $ReparseTarget
+                ResolvedReparseTarget = $ResolvedReparseTarget
+            }
+            Mock Test-Path { & (Get-Command Test-Path -CommandType Cmdlet) @PesterBoundParameters }
+            Mock Test-Path { $global:DevHomePluginSyncMockMetadata.Exists } -ParameterFilter {
+                $LiteralPath -eq $global:DevHomePluginSyncMockMetadata.AccountHome -and $PathType -eq 'Container'
+            }
+            # Production-path metadata is simulated; every real directory and
+            # fake CLI write belongs to TestDrive, including junction targets.
+            Mock Get-Item { & (Get-Command Get-Item -CommandType Cmdlet) @PesterBoundParameters }
+            Mock Get-Item {
+                if ($LiteralPath -eq $global:DevHomePluginSyncMockMetadata.ReparsePath) {
+                    if ($global:DevHomePluginSyncMockMetadata.ResolvedReparseTarget) {
+                        $link = [pscustomobject]@{
+                            Attributes = [System.IO.FileAttributes]::Directory -bor [System.IO.FileAttributes]::ReparsePoint
+                        }
+                        $link | Add-Member -MemberType ScriptMethod -Name ResolveLinkTarget -Value {
+                            param($ResolveFinalTarget)
+                            [System.IO.DirectoryInfo]::new($global:DevHomePluginSyncMockMetadata.ResolvedReparseTarget)
+                        }
+                        return $link
+                    }
+                    & (Get-Command Get-Item -CommandType Cmdlet) -LiteralPath $global:DevHomePluginSyncMockMetadata.ReparseTarget -Force
+                }
+                else {
+                    [pscustomobject]@{ Attributes = [System.IO.FileAttributes]::Directory }
+                }
+            } -ParameterFilter {
+                $LiteralPath -like 'D:\DevHome*' -or $LiteralPath -like '\\localhost\D$\DevHome*'
+            }
+        }
     }
 
     BeforeEach {
@@ -301,6 +350,15 @@ exit /b 64
     AfterEach {
         Remove-Item Env:FAKE_CODEX_STATE -ErrorAction SilentlyContinue
         Remove-Item Env:FAKE_IDENTITY_MARKER -ErrorAction SilentlyContinue
+    }
+
+    AfterAll {
+        if ($null -ne $script:PreviousMockMetadata) {
+            $global:DevHomePluginSyncMockMetadata = $script:PreviousMockMetadata.Value
+        }
+        else {
+            Remove-Variable -Name DevHomePluginSyncMockMetadata -Scope Global -ErrorAction SilentlyContinue
+        }
     }
 
     It 'reports a missing marketplace and plugin without mutating in check mode' {
@@ -325,6 +383,269 @@ exit /b 64
         @($result.Drift) | Should -HaveCount 0
         @($state.mutations) | Should -Be @('marketplace-add', 'plugin-add')
         Test-Path -LiteralPath $result.Cache -PathType Container | Should -BeTrue
+        $result.Account | Should -BeExactly 'main'
+    }
+
+    It 'converges and refreshes the selected account fixture while restoring ambient CODEX_HOME' {
+        $ambientCodexHome = Join-Path $script:Fake.Root 'ambient-home'
+        $hadCodexHome = Test-Path Env:CODEX_HOME
+        $previousCodexHome = $env:CODEX_HOME
+        try {
+            $env:CODEX_HOME = $ambientCodexHome
+            $missing = Invoke-TestSynchronizer -Account 'AcCoUnT3' -Check
+            $missing.Account | Should -BeExactly 'account3'
+            $missing.ConvergeCommand | Should -BeLike '*-CodexLocalPluginAccount account3'
+            $missing.NextStep | Should -BeLike '*-CodexLocalPluginAccount account3*'
+            $env:CODEX_HOME | Should -BeExactly $ambientCodexHome
+
+            $installed = Invoke-TestSynchronizer -Account 'account3'
+            $installed.Status | Should -BeExactly 'CURRENT'
+            $installed.Account | Should -BeExactly 'account3'
+            $installed.CodexHome | Should -BeExactly $script:Fake.CodexHome
+            $cachedHook = Join-Path $installed.Cache 'Sync-DevHomeCodexHooks.ps1'
+            Add-Content -LiteralPath $cachedHook -Value '# stale account cache'
+            Set-FakeState { param($state) $state.mutations = @() }
+
+            $check = Invoke-TestSynchronizer -Account 'account3' -Check -VerifierPath $script:Fake.BadVerifier
+            $check.Status | Should -BeExactly 'STALE'
+            @((Get-FakeState).mutations) | Should -HaveCount 0
+            $refreshed = Invoke-TestSynchronizer -Account 'account3'
+            $refreshed.Status | Should -BeExactly 'CURRENT'
+            $refreshed.Action | Should -BeExactly 'REFRESHED'
+            @((Get-FakeState).mutations) | Should -Be @('plugin-remove', 'plugin-add')
+            @((Get-FakeState).codexHomes | Select-Object -Unique) | Should -Be @($script:Fake.CodexHome)
+            $env:CODEX_HOME | Should -BeExactly $ambientCodexHome
+            Test-Path -LiteralPath $ambientCodexHome | Should -BeFalse
+            (Get-Content -LiteralPath $cachedHook -Tail 1) | Should -Not -BeExactly '# stale account cache'
+
+            Set-FakeState { param($state) $state.failure = 'marketplace-list-nonzero' }
+            { Invoke-TestSynchronizer -Account 'account3' -Check } | Should -Throw '*Codex command failed*'
+            $env:CODEX_HOME | Should -BeExactly $ambientCodexHome
+        }
+        finally {
+            if ($hadCodexHome) {
+                $env:CODEX_HOME = $previousCodexHome
+            }
+            else {
+                Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
+    It 'keeps CODEX_HOME absent when the caller had no override' -TestCases @(
+        @{ Preview = $false }, @{ Preview = $true }
+    ) {
+        param($Preview)
+
+        $hadCodexHome = Test-Path Env:CODEX_HOME
+        $previousCodexHome = $env:CODEX_HOME
+        try {
+            Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue
+            $null = Invoke-TestSynchronizer -Account 'account3' -Check:(-not $Preview) -WhatIf:$Preview
+            Test-Path Env:CODEX_HOME | Should -BeFalse
+        }
+        finally {
+            if ($hadCodexHome) {
+                $env:CODEX_HOME = $previousCodexHome
+            }
+        }
+    }
+
+    It 'rejects invalid account names before querying Codex' -TestCases @(
+        @{ AccountName = '' }, @{ AccountName = '..' }, @{ AccountName = 'account3/child' },
+        @{ AccountName = 'account3\child' }, @{ AccountName = '3account' },
+        @{ AccountName = 'account_3' }, @{ AccountName = ' account3' },
+        @{ AccountName = "account3`n" }, @{ AccountName = 'äccount' },
+        @{ AccountName = 'a' * 33 }
+    ) {
+        param($AccountName)
+
+        { Invoke-TestSynchronizer -Account $AccountName -Check } | Should -Throw '*account*'
+        @((Get-FakeState).calls) | Should -HaveCount 0
+    }
+
+    It 'selects the direct production account home and ignores ambient CODEX_HOME in check mode' {
+        Mock-ProductionAccountHome
+        $hadCodexHome = Test-Path Env:CODEX_HOME
+        $previousCodexHome = $env:CODEX_HOME
+        try {
+            $env:CODEX_HOME = Join-Path $script:Fake.Root 'ambient-home'
+            $ambientCodexHome = $env:CODEX_HOME
+            $result = & $script:Synchronizer -Account 'AcCoUnT3' `
+                -CodexCommand $script:Fake.CodexCommand -VerifierPath $script:Fake.BadVerifier -Check
+
+            $result.Account | Should -BeExactly 'account3'
+            $result.CodexHome | Should -BeExactly $script:ProductionAccountHome
+            $result.Cache | Should -BeLike "$($script:ProductionAccountHome)\plugins\cache\*"
+            @((Get-FakeState).codexHomes | Select-Object -Unique) | Should -Be @($script:ProductionAccountHome)
+            @((Get-FakeState).mutations) | Should -HaveCount 0
+            Test-Path -LiteralPath $script:Fake.IdentityMarker | Should -BeFalse
+            $env:CODEX_HOME | Should -BeExactly $ambientCodexHome
+        }
+        finally {
+            if ($hadCodexHome) {
+                $env:CODEX_HOME = $previousCodexHome
+            }
+            else {
+                Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
+    It 'refuses an unregistered production account before querying or creating it' {
+        Mock-ProductionAccountHome -Account 'unregistered' -Exists $false
+        Mock New-Item { throw 'Production account creation is forbidden in tests.' } -ParameterFilter {
+            $Path -like 'D:\DevHome*'
+        }
+
+        {
+            & $script:Synchronizer -Account 'unregistered' -CodexCommand $script:Fake.CodexCommand -Check
+        } | Should -Throw '*account home*does not exist*'
+        @((Get-FakeState).calls) | Should -HaveCount 0
+        Should -Invoke New-Item -Times 0 -ParameterFilter { $Path -like 'D:\DevHome*' }
+    }
+
+    It 'rejects production CodexHome conflicts even with the fixture-only override' -TestCases @(
+        @{ Target = 'D:\DevHome\state\codex'; Selected = 'account3' },
+        @{ Target = 'D:\DevHome\state\codex-accounts\account3'; Selected = 'main' },
+        @{ Target = 'D:\DevHome\state\codex-accounts\other'; Selected = 'account3' },
+        @{ Target = 'D:\DevHome\state\codex-accounts'; Selected = 'account3' }
+    ) {
+        param($Target, $Selected)
+
+        {
+            & $script:Synchronizer -Account $Selected -CodexHome $Target `
+                -AllowTestOnlyCodexHomeOverride -CodexCommand $script:Fake.CodexCommand -Check
+        } | Should -Throw '*selected account*'
+        @((Get-FakeState).calls) | Should -HaveCount 0
+    }
+
+    It 'rejects CodexHome traversal before normalization or querying Codex' {
+        {
+            & $script:Synchronizer -Account 'account3' `
+                -CodexHome 'D:\DevHome\state\codex-accounts\other\..\account3' `
+                -CodexCommand $script:Fake.CodexCommand -Check
+        } | Should -Throw '*traversal*'
+        @((Get-FakeState).calls) | Should -HaveCount 0
+    }
+
+    It 'refuses an escaped production account or plugin directory before querying Codex' -TestCases @(
+        @{ EscapedChild = '' }, @{ EscapedChild = 'plugins' },
+        @{ EscapedChild = 'config.toml' }, @{ EscapedChild = 'plugins\data' },
+        @{ EscapedChild = 'plugins\data\agent-plugins' },
+        @{ EscapedChild = 'plugins\.remote-plugin-install-staging' },
+        @{ EscapedChild = 'plugins\.marketplace-plugin-source-staging' }
+    ) {
+        param($EscapedChild)
+
+        $outsideRoot = Join-Path $script:Fake.Root 'outside-state'
+        $junctionPath = Join-Path $script:Fake.Root 'escaped-account'
+        $null = New-Item -ItemType Directory -Path $outsideRoot
+        $null = New-Item -ItemType Junction -Path $junctionPath -Target $outsideRoot
+        $escapedPath = Join-Path 'D:\DevHome\state\codex-accounts\account3' $EscapedChild
+        Mock-ProductionAccountHome -ReparsePath $escapedPath.TrimEnd('\') -ReparseTarget $junctionPath
+        ((Get-Item -LiteralPath $escapedPath.TrimEnd('\') -Force).Attributes -band
+            [System.IO.FileAttributes]::ReparsePoint) | Should -Not -Be 0
+
+        {
+            & $script:Synchronizer -Account 'account3' -CodexCommand $script:Fake.CodexCommand -Check
+        } | Should -Throw '*outside*physical DevHome state root*'
+        @((Get-FakeState).calls) | Should -HaveCount 0
+    }
+
+    It 'refuses a fixture-only home or mutable child alias that resolves into production state' -TestCases @(
+        @{ FixtureChild = '' }, @{ FixtureChild = 'plugins' }, @{ FixtureChild = 'config.toml' },
+        @{ FixtureChild = ''; FixtureTarget = '\\localhost\D$\DevHome\state\codex'; FailurePattern = '*network*test-only*' }
+    ) {
+        param(
+            $FixtureChild,
+            $FixtureTarget = 'D:\DevHome\state\codex-accounts\account3',
+            $FailurePattern = '*test-only*production state*'
+        )
+
+        Mock-ProductionAccountHome
+        $null = New-Item -ItemType Directory -Path $script:Fake.CodexHome -Force
+        $global:DevHomePluginSyncMockMetadata.FixtureReparsePath =
+            (Join-Path $script:Fake.CodexHome $FixtureChild).TrimEnd('\')
+        $global:DevHomePluginSyncMockMetadata.FixtureTarget = $FixtureTarget
+        $alias = [pscustomobject]@{
+            Attributes = [System.IO.FileAttributes]::Directory -bor [System.IO.FileAttributes]::ReparsePoint
+        }
+        $alias | Add-Member -MemberType ScriptMethod -Name ResolveLinkTarget -Value {
+            param($ResolveFinalTarget)
+            [System.IO.DirectoryInfo]::new($global:DevHomePluginSyncMockMetadata.FixtureTarget)
+        }
+        $global:DevHomePluginSyncMockMetadata.Alias = $alias
+        Mock Get-Item { $global:DevHomePluginSyncMockMetadata.Alias } -ParameterFilter {
+            $LiteralPath -eq $global:DevHomePluginSyncMockMetadata.FixtureReparsePath
+        }
+
+        { Invoke-TestSynchronizer -Account 'account3' -Check } |
+            Should -Throw $FailurePattern
+        @((Get-FakeState).calls) | Should -HaveCount 0
+    }
+
+    It 'refuses a production account or mutable child alias into another account' -TestCases @(
+        @{ EscapedChild = '' }, @{ EscapedChild = 'plugins' }, @{ EscapedChild = 'plugins\cache' },
+        @{ EscapedChild = 'config.toml' }, @{ EscapedChild = 'plugins\data\agent-plugins' }
+    ) {
+        param($EscapedChild)
+
+        $escapedPath = (Join-Path 'D:\DevHome\state\codex-accounts\account3' $EscapedChild).TrimEnd('\')
+        Mock-ProductionAccountHome -ReparsePath $escapedPath `
+            -ResolvedReparseTarget (Join-Path 'D:\DevHome\state\codex' $EscapedChild).TrimEnd('\')
+
+        {
+            & $script:Synchronizer -Account 'account3' -CodexCommand $script:Fake.CodexCommand -Check
+        } | Should -Throw '*outside selected account*'
+        @((Get-FakeState).calls) | Should -HaveCount 0
+    }
+
+    It 'refuses network fixture homes before querying Codex' -TestCases @(
+        @{ NetworkHome = '\\localhost\D$\DevHome\state\codex' },
+        @{ NetworkHome = '\\?\UNC\localhost\D$\DevHome\state\codex' }
+    ) {
+        param($NetworkHome)
+
+        {
+            & $script:Synchronizer -CodexHome $NetworkHome -AllowTestOnlyCodexHomeOverride `
+                -CodexCommand $script:Fake.CodexCommand -Check
+        } | Should -Throw '*network*test-only*'
+        @((Get-FakeState).calls) | Should -HaveCount 0
+    }
+
+    It 'requires the installed verifier for production accounts even with the fixture-only switch' {
+        Mock-ProductionAccountHome
+
+        {
+            & $script:Synchronizer -Account 'account3' -CodexHome $script:ProductionAccountHome `
+                -AllowTestOnlyCodexHomeOverride -CodexCommand $script:Fake.CodexCommand `
+                -VerifierPath $script:Fake.GoodVerifier
+        } | Should -Throw '*verifier override*production DevHome CODEX_HOME*'
+        @((Get-FakeState).mutations) | Should -HaveCount 0
+        Test-Path -LiteralPath $script:Fake.IdentityMarker | Should -BeFalse
+    }
+
+    It 'refuses identity expectation overrides for production accounts' -TestCases @(
+        @{ Override = @{ ExpectedMachineId = 'other-machine' } },
+        @{ Override = @{ ExpectedInstallationId = 'other-installation' } }
+    ) {
+        param($Override)
+
+        Mock-ProductionAccountHome
+        {
+            & $script:Synchronizer -Account 'account3' -CodexCommand $script:Fake.CodexCommand @Override
+        } | Should -Throw '*identity expectation override*'
+        @((Get-FakeState).mutations) | Should -HaveCount 0
+        Test-Path -LiteralPath $script:Fake.IdentityMarker | Should -BeFalse
+    }
+
+    It 'rejects identity failure before an alternate account fixture mutation' {
+        { Invoke-TestSynchronizer -Account 'account3' -VerifierPath $script:Fake.BadVerifier } |
+            Should -Throw '*Machine identity mismatch*'
+        @((Get-FakeState).mutations) | Should -HaveCount 0
+        Test-Path -LiteralPath $script:Fake.IdentityMarker | Should -BeFalse
+        Test-Path -LiteralPath $script:Fake.CodexHome | Should -BeFalse
     }
 
     It 'detects stale cache payload read-only and repairs it with remove plus add' {

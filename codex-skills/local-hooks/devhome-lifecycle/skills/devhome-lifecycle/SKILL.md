@@ -18,8 +18,9 @@ trust state by hand.
 - Claude projection: `D:\DevHome\state\claude\settings.json` plus
   `D:\DevHome\state\claude\hooks\Invoke-HandoffRelay.ps1`
 - Plugin cache:
-  `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle`; never
-  develop there or relocate it through `CODEX_HOME`
+  `D:\DevHome\state\codex\plugins\cache\ai-skills\devhome-lifecycle` for `main`,
+  or the selected existing home under `D:\DevHome\state\codex-accounts`; never
+  develop in a cache or relocate it through `CODEX_HOME`
 - Remember: Codex capture runs through the upstream `remember@remember-dev`
   plugin (pinned checkout `D:\DevHome\state\remember\artifacts\remember-current`),
   not through this package; the former Windows adapter was retired in 0.3.1.
@@ -45,9 +46,13 @@ if (-not (Test-Path -LiteralPath $lifecycleSource -PathType Container)) {
 }
 ```
 
-The Codex synchronizers target the primary DevHome Codex home shown above.
-Ambient `CODEX_HOME` does not select an alternate account installation. Do not
-use their test-only home override for production account homes.
+Plugin synchronization defaults to account `main`. Select an existing named
+account explicitly with `-Account account3`, or use
+`-CodexLocalPluginAccount account3` on the repository installer. This selects
+only plugin registration and cache under `D:\DevHome\state\codex-accounts\account3`.
+The lifecycle runtime remains at the primary DevHome Codex home shown above.
+Ambient `CODEX_HOME` does not select a plugin account. Do not use the test-only
+home override for production account homes.
 
 The package remains outside the portable provider manifests. The
 `devhome-lifecycle@ai-skills` plugin contributes this skill and one startup
@@ -113,6 +118,7 @@ registers the marketplace and proves source-to-cache hash convergence:
 
 ```powershell
 & (Join-Path $skillsRepo 'scripts\Install-AgentSkills.ps1') -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+& (Join-Path $skillsRepo 'scripts\Install-AgentSkills.ps1') -Provider Codex -CodexLocalPlugin DevHomeLifecycle -CodexLocalPluginAccount account3
 ```
 
 Do not assume a restart refreshes a local plugin cache. Use
@@ -120,6 +126,7 @@ the canonical source synchronizer for a read-only cache check:
 
 ```powershell
 & (Join-Path $lifecycleSource 'Sync-DevHomeLifecyclePlugin.ps1') -Check
+& (Join-Path $lifecycleSource 'Sync-DevHomeLifecyclePlugin.ps1') -Account account3 -Check
 ```
 
 The check exits `0` only when `Status` is `CURRENT` and still prints the full

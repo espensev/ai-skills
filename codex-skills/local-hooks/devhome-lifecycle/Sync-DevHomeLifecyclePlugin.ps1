@@ -2,6 +2,9 @@
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
 param(
     [Parameter(Mandatory = $false)]
+    [string] $Account = 'main',
+
+    [Parameter(Mandatory = $false)]
     [string] $CodexHome = 'D:\DevHome\state\codex',
 
     [Parameter(Mandatory = $false)]
@@ -35,6 +38,10 @@ $ErrorActionPreference = 'Stop'
 if ($Check -and $Force) {
     throw 'Check and Force cannot be used together.'
 }
+if ($Account -notmatch '\A[A-Za-z][A-Za-z0-9-]{0,31}\z') {
+    throw "Invalid account '$Account'; use 1-32 letters, digits, or hyphens, starting with a letter."
+}
+$Account = $Account.ToLowerInvariant()
 
 $MarketplaceName = 'ai-skills'
 $PluginName = 'devhome-lifecycle'
@@ -60,6 +67,9 @@ $LoadedPayloadFiles = @(
     '.mcp.json'
 )
 $ConvergeCommand = '.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle'
+if ($Account -ne 'main') {
+    $ConvergeCommand += " -CodexLocalPluginAccount $Account"
+}
 $InstalledVerifierPath = Join-Path `
     ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) `
     'common_dev\v2\Test-LocalMachineIdentity.ps1'
@@ -98,6 +108,79 @@ function Test-SamePath {
         (Resolve-NormalizedPath -Path $Right),
         [System.StringComparison]::OrdinalIgnoreCase
     )
+}
+
+function Resolve-PhysicalPath {
+    param(
+        [Parameter(Mandatory)][string] $Path,
+        [int] $Depth = 0
+    )
+
+    if ($Depth -gt 32) {
+        throw "Unable to resolve reparse traversal safely: $Path"
+    }
+    $normalized = Resolve-NormalizedPath -Path $Path
+    $pathRoot = [System.IO.Path]::GetPathRoot($normalized)
+    $current = $pathRoot
+    $missingAncestor = $false
+    foreach ($part in $normalized.Substring($pathRoot.Length).Split(
+        [char[]] @([char] '\', [char] '/'),
+        [System.StringSplitOptions]::RemoveEmptyEntries
+    )) {
+        $current = Join-Path $current $part
+        if ($missingAncestor) {
+            continue
+        }
+        try {
+            $item = Get-Item -LiteralPath $current -Force -ErrorAction Stop
+        }
+        catch [System.Management.Automation.ItemNotFoundException] {
+            $missingAncestor = $true
+            continue
+        }
+        if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            $target = $item.ResolveLinkTarget($true)
+            if ($null -eq $target) {
+                throw "Unable to resolve reparse target safely: $current"
+            }
+            $current = Resolve-PhysicalPath -Path $target.FullName -Depth ($Depth + 1)
+        }
+    }
+
+    return $current
+}
+
+function Assert-ProductionPath {
+    param([Parameter(Mandatory)][string] $Path)
+
+    $physicalPath = Resolve-PhysicalPath -Path $Path
+    if (-not $physicalPath.StartsWith("$PhysicalStateRoot\", [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing path '$Path' resolved outside the physical DevHome state root '$PhysicalStateRoot': $physicalPath"
+    }
+    if (
+        -not (Test-SamePath -Left $physicalPath -Right $SelectedCodexHome) -and
+        -not $physicalPath.StartsWith("$SelectedCodexHome\", [System.StringComparison]::OrdinalIgnoreCase)
+    ) {
+        throw "Refusing path '$Path' resolved outside selected account '$Account' home '$SelectedCodexHome': $physicalPath"
+    }
+}
+
+function Assert-FixturePath {
+    param([Parameter(Mandatory)][string] $Path)
+
+    if ($Path.StartsWith('\\', [System.StringComparison]::Ordinal)) {
+        throw "Refusing network path '$Path'; test-only Codex homes must be local isolated fixtures."
+    }
+    $physicalPath = Resolve-PhysicalPath -Path $Path
+    if ($physicalPath.StartsWith('\\', [System.StringComparison]::Ordinal)) {
+        throw "Refusing network path '$physicalPath' resolved from '$Path'; test-only Codex homes must be local isolated fixtures."
+    }
+    if (
+        (Test-SamePath -Left $physicalPath -Right $PhysicalStateRoot) -or
+        $physicalPath.StartsWith("$PhysicalStateRoot\", [System.StringComparison]::OrdinalIgnoreCase)
+    ) {
+        throw "Refusing test-only Codex path '$Path' resolved into production state: $physicalPath"
+    }
 }
 
 function Test-GeneratedCapabilityPath {
@@ -187,17 +270,42 @@ if (-not (Test-SamePath -Left $PackageRoot -Right $ExpectedPackageRoot)) {
     throw "Unable to derive the Ai-Skills repository root safely from package path: $PackageRoot"
 }
 
-$PhysicalCodexHome = Resolve-NormalizedPath -Path 'D:\DevHome\state\codex'
-$ResolvedCodexHome = Resolve-NormalizedPath -Path $CodexHome
+$PhysicalStateRoot = Resolve-NormalizedPath -Path 'D:\DevHome\state'
+$PhysicalCodexHome = Resolve-NormalizedPath -Path (Join-Path $PhysicalStateRoot 'codex')
+$SelectedCodexHome = if ($Account -eq 'main') {
+    $PhysicalCodexHome
+}
+else {
+    Join-Path $PhysicalStateRoot "codex-accounts\$Account"
+}
+if ($PSBoundParameters.ContainsKey('CodexHome')) {
+    if ([Environment]::ExpandEnvironmentVariables($CodexHome) -match '(^|[\\/])\.{1,2}([\\/]|$)') {
+        throw "Refusing CodexHome path traversal: $CodexHome"
+    }
+    $ResolvedCodexHome = Resolve-NormalizedPath -Path $CodexHome
+}
+else {
+    $ResolvedCodexHome = $SelectedCodexHome
+}
 $codexPathRoot = Resolve-NormalizedPath -Path ([System.IO.Path]::GetPathRoot($ResolvedCodexHome))
 if (Test-SamePath -Left $ResolvedCodexHome -Right $codexPathRoot) {
     throw "Refusing to use a filesystem root as CODEX_HOME: $ResolvedCodexHome"
 }
-if (
-    -not (Test-SamePath -Left $ResolvedCodexHome -Right $PhysicalCodexHome) -and
-    -not $AllowTestOnlyCodexHomeOverride
-) {
-    throw "Refusing alternate Codex home '$ResolvedCodexHome'; lifecycle plugin state is pinned to the physical DevHome CODEX_HOME '$PhysicalCodexHome'. Use the test-only override only for isolated tests."
+$IsProductionCodexHome = Test-SamePath -Left $ResolvedCodexHome -Right $SelectedCodexHome
+if (-not $IsProductionCodexHome) {
+    if (
+        -not $AllowTestOnlyCodexHomeOverride -or
+        (Test-SamePath -Left $ResolvedCodexHome -Right $PhysicalStateRoot) -or
+        $ResolvedCodexHome.StartsWith("$PhysicalStateRoot\", [System.StringComparison]::OrdinalIgnoreCase)
+    ) {
+        throw "Refusing Codex home '$ResolvedCodexHome' for selected account '$Account'; its physical DevHome CODEX_HOME is '$SelectedCodexHome'. Use the test-only override only for isolated tests outside production state."
+    }
+    Assert-FixturePath -Path $ResolvedCodexHome
+}
+if ($IsProductionCodexHome -and $Account -ne 'main') {
+    if (-not (Test-Path -LiteralPath $ResolvedCodexHome -PathType Container)) {
+        throw "Selected account home does not exist; register account '$Account' before plugin synchronization: $ResolvedCodexHome"
+    }
 }
 
 $MarketplaceManifestPath = Join-Path $RepoRoot '.agents\plugins\marketplace.json'
@@ -245,6 +353,23 @@ if ($pluginManifest.name -cne $PluginName -or [string]::IsNullOrWhiteSpace($plug
 }
 $PluginVersion = [string]$pluginManifest.version
 $CachePath = Join-Path $ResolvedCodexHome "plugins\cache\$MarketplaceName\$PluginName\$PluginVersion"
+foreach ($mutablePath in @(
+    $ResolvedCodexHome,
+    $CachePath,
+    (Join-Path $ResolvedCodexHome 'config.toml'),
+    (Join-Path $ResolvedCodexHome 'plugins\marketplaces'),
+    (Join-Path $ResolvedCodexHome 'plugins\marketplaces.json'),
+    (Join-Path $ResolvedCodexHome 'plugins\data\agent-plugins'),
+    (Join-Path $ResolvedCodexHome 'plugins\.remote-plugin-install-staging'),
+    (Join-Path $ResolvedCodexHome 'plugins\.marketplace-plugin-source-staging')
+)) {
+    if ($IsProductionCodexHome) {
+        Assert-ProductionPath -Path $mutablePath
+    }
+    else {
+        Assert-FixturePath -Path $mutablePath
+    }
+}
 
 $SourceSkillFiles = @(Get-SkillCapabilityFiles -Root $PackageRoot)
 $SourceMcpManifestPath = Join-Path $PackageRoot '.mcp.json'
@@ -339,7 +464,7 @@ function Invoke-Codex {
             $env:CODEX_HOME = $previousCodexHome
         }
         else {
-            Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue
+            Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue -WhatIf:$false -Confirm:$false
         }
     }
 
@@ -551,7 +676,9 @@ function Get-ConvergenceState {
         Source = $PackageRoot
         Repository = $RepoRoot
         Cache = $CachePath
+        Account = $Account
         CodexHome = $ResolvedCodexHome
+        ConvergeCommand = $ConvergeCommand
         CodexExecutable = $CodexExecutable
         CodexVersion = $CodexVersion
         Files = $PayloadFiles.Count
@@ -589,16 +716,27 @@ function Complete-ConvergenceState {
     else {
         $null
     }
+    if ($Account -ne 'main' -and $State.NextStep -and -not $State.NextStep.Contains($ConvergeCommand)) {
+        $State.NextStep += " Account convergence: $ConvergeCommand"
+    }
 
     return $State
 }
 
 function Assert-VerifiedMachine {
     if (
-        (Test-SamePath -Left $ResolvedCodexHome -Right $PhysicalCodexHome) -and
+        $IsProductionCodexHome -and
+        ($ExpectedMachineId -cne 'snd-desk' -or
+            $ExpectedInstallationId -cne 'ca96d510-7d87-4cec-8e1a-bd8fc3866903')
+    ) {
+        throw 'Refusing machine identity expectation override for a production DevHome CODEX_HOME.'
+    }
+    if (
+        $IsProductionCodexHome -and
         -not (Test-SamePath -Left $VerifierPath -Right $InstalledVerifierPath)
     ) {
-        throw "Refusing verifier override '$VerifierPath' for the physical DevHome CODEX_HOME; mutations there are gated by the installed verifier: $InstalledVerifierPath"
+        $homeDescription = if ($Account -eq 'main') { 'physical' } else { 'production' }
+        throw "Refusing verifier override '$VerifierPath' for the $homeDescription DevHome CODEX_HOME; mutations there are gated by the installed verifier: $InstalledVerifierPath"
     }
     if (-not (Test-Path -LiteralPath $VerifierPath -PathType Leaf)) {
         throw "Machine verifier is missing: $VerifierPath"

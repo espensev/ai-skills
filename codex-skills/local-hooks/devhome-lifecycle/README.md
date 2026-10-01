@@ -208,16 +208,22 @@ agent-skill synchronization entrypoint:
 
 ```powershell
 .\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle -CodexLocalPluginAccount account3
 ```
 
 That command registers the repository marketplace, hash-checks the closed plugin
 payload in Codex's materialized cache, and installs or refreshes it when needed.
 Re-run it after source changes; do not rely on a Codex restart to refresh a local
 plugin cache. Use `-Force` when an explicit remove-and-reinstall is wanted.
-The local choice is pinned to `D:\DevHome\state\codex`; it does not follow an
-alternate `CODEX_HOME` into AppData or another user-state root. That guarantee
-currently covers marketplace configuration, plugin cache, and the three Codex
-runtime files.
+The plugin account defaults to `main`, at `D:\DevHome\state\codex`.
+`-CodexLocalPluginAccount account3` selects the existing direct-child home
+`D:\DevHome\state\codex-accounts\account3` for marketplace configuration and
+plugin cache. Account names use letters, digits and hyphens, begin with a letter,
+and contain at most 32 characters; matching is case-insensitive. Missing account
+homes and paths that escape the physical DevHome state root are rejected.
+Ambient `CODEX_HOME` never selects the plugin target. Ordinary skill installation
+keeps its existing destination rules, and the three Codex runtime files remain
+at `D:\DevHome\state\codex` for every plugin account.
 
 The command does not acquire source changes: update this checkout separately,
 then run synchronization. It never pulls, resets, or cleans Git. Codex owns the
@@ -241,6 +247,7 @@ Read-only plugin-cache convergence check:
 
 ```powershell
 .\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1 -Check
+.\codex-skills\local-hooks\devhome-lifecycle\Sync-DevHomeLifecyclePlugin.ps1 -Account account3 -Check
 ```
 
 `-Check` never mutates and carries its verdict in the exit code: `0` only when
@@ -250,7 +257,7 @@ gate reads `$LASTEXITCODE`. The two sibling checks below throw on drift instead.
 
 Every run prints what it acted on: `CodexExecutable` and `CodexVersion` (the
 resolved application or script, never a same-named alias or function),
-`CodexHome`, the plugin's `Enabled` flag as Codex reports it, and a `NextStep`
+`Account`, `CodexHome`, the plugin's `Enabled` flag as Codex reports it, and a `NextStep`
 line. `Drift` lists every difference in the closed payload. `LoadedDrift` is the
 subset Codex itself loads or runs from the cache: the plugin manifest,
 `hooks/hooks.json`, the cached `Sync-DevHomeCodexHooks.ps1`, the `skills/` tree,
@@ -265,7 +272,8 @@ A refresh is `codex plugin remove` followed by `codex plugin add`, which is not
 atomic; Codex 0.155.1 has no plugin refresh command. If the add fails, the error
 says the plugin is now uninstalled; running the command again reinstalls it. The
 identity gate takes exactly one `VERIFIED` result, and a `-VerifierPath`
-override cannot gate a mutation of the physical Codex home.
+override cannot gate a mutation of any production Codex account home. Arbitrary
+`CodexHome` overrides remain available only for isolated tests.
 
 ## Install or refresh Codex
 

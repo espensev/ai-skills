@@ -46,13 +46,16 @@ repository root:
 
 ```powershell
 .\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle -CodexLocalPluginAccount account3
 ```
 
-That root command keeps source acquisition separate from cache/runtime
-convergence and pins the plugin cache and five-file runtime projection to
-`D:\DevHome\state\codex`. Adapter-generated state still follows ambient
-`CODEX_HOME` and is a known placement blocker. Plugin enablement and hook trust
-remain Codex-managed, user-reviewed state. See
+That root command keeps source acquisition separate from convergence. The
+plugin account defaults to `main`, at `D:\DevHome\state\codex`; an explicit
+account selects its existing home under `D:\DevHome\state\codex-accounts` for
+plugin registration and cache. Ordinary skill destinations keep their existing
+selection rules. The lifecycle runtime remains at `D:\DevHome\state\codex`
+regardless of plugin account or ambient `CODEX_HOME`. Plugin enablement and hook
+trust remain Codex-managed, user-reviewed state. See
 [`local-hooks/devhome-lifecycle/README.md`](local-hooks/devhome-lifecycle/README.md)
 for its operator contract.
 

@@ -48,6 +48,84 @@ Describe "selective skill installation" -Tag 'SelectiveSkills' {
     }
 }
 
+Describe "account-specific local plugin dispatch" -Tag 'LocalPluginAccount' {
+    BeforeEach {
+        $script:PluginRepo = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        $scripts = New-Item -ItemType Directory -Path (Join-Path $script:PluginRepo 'scripts') -Force
+        Copy-Item -LiteralPath $script:Installer, $script:RegistryPath -Destination $scripts.FullName
+        foreach ($provider in 'codex', 'claude') {
+            $package = Join-Path $script:PluginRepo "$provider-skills"
+            New-Item -ItemType Directory -Path (Join-Path $package 'package'), (Join-Path $package 'skills\example') -Force | Out-Null
+            '{"default_skills":["example"],"optional_skills":[],"contract_files":[],"optional_contract_files":[],"runtime_files":[],"runtime_directories":[]}' |
+                Set-Content -LiteralPath (Join-Path $package 'package\install-manifest.json')
+            Set-Content -LiteralPath (Join-Path $package 'skills\example\SKILL.md') -Value "$provider fixture"
+        }
+        $plugin = New-Item -ItemType Directory -Path (Join-Path $script:PluginRepo 'codex-skills\local-hooks\devhome-lifecycle') -Force
+        $script:DispatchRecord = Join-Path $plugin.FullName 'dispatch.json'
+        @'
+param([string]$Account, [string]$CodexHome, [switch]$Check, [switch]$Force)
+$PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'dispatch.json')
+$global:LASTEXITCODE = 0
+[pscustomobject]@{ Status = 'CURRENT'; Account = $Account }
+'@ | Set-Content -LiteralPath (Join-Path $plugin.FullName 'Sync-DevHomeLifecyclePlugin.ps1')
+        $script:FixtureInstaller = Join-Path $script:PluginRepo 'scripts\Install-AgentSkills.ps1'
+        $script:FixtureCodex = Join-Path $script:PluginRepo 'codex-target'
+        $script:FixtureClaude = Join-Path $script:PluginRepo 'claude-target'
+    }
+
+    It "defaults plugin synchronization to main" {
+        & $script:FixtureInstaller -Provider Codex -CodexTargets $script:FixtureCodex -CodexLocalPlugin DevHomeLifecycle | Out-Null
+        $dispatch = Get-Content -Raw -LiteralPath $script:DispatchRecord | ConvertFrom-Json
+        $dispatch.Account | Should -BeExactly 'main'
+        $dispatch.PSObject.Properties.Name | Should -Not -Contain 'CodexHome'
+    }
+
+    It "forwards account3 and <Mode> without changing skill roots" -ForEach @(
+        @{ Mode = 'Force'; Expected = 'Force' }
+        @{ Mode = 'DryRun'; Expected = 'Check' }
+        @{ Mode = 'Check'; Expected = 'Check' }
+    ) {
+        if ($Mode -eq 'Check') {
+            & $script:FixtureInstaller -Provider Both -CodexTargets $script:FixtureCodex -ClaudeTargets $script:FixtureClaude | Out-Null
+        }
+        $parameters = @{
+            Provider = 'Both'; CodexTargets = $script:FixtureCodex; ClaudeTargets = $script:FixtureClaude
+            CodexLocalPlugin = 'DevHomeLifecycle'; CodexLocalPluginAccount = 'account3'
+        }
+        $parameters[$Mode] = $true
+        & $script:FixtureInstaller @parameters | Out-Null
+        $dispatch = Get-Content -Raw -LiteralPath $script:DispatchRecord | ConvertFrom-Json
+        $dispatch.Account | Should -BeExactly 'account3'
+        $dispatch.$Expected | Should -BeTrue
+        $dispatch.PSObject.Properties.Name | Should -Not -Contain 'CodexHome'
+        foreach ($provider in 'codex', 'claude') {
+            $installed = Join-Path $script:PluginRepo "$provider-target\example\SKILL.md"
+            if ($Mode -eq 'DryRun') { Test-Path -LiteralPath $installed | Should -BeFalse }
+            else { (Get-Content -Raw -LiteralPath $installed).Trim() | Should -BeExactly "$provider fixture" }
+        }
+        Test-Path -LiteralPath (Join-Path $script:PluginRepo 'account3') | Should -BeFalse
+    }
+
+    It "rejects an account selector without a Codex plugin before writes" {
+        { & $script:FixtureInstaller -Provider Codex -CodexTargets $script:FixtureCodex -CodexLocalPluginAccount account3 } |
+            Should -Throw '*CodexLocalPluginAccount requires*'
+        { & $script:FixtureInstaller -Provider Claude -ClaudeTargets $script:FixtureClaude -CodexLocalPlugin DevHomeLifecycle -CodexLocalPluginAccount account3 } |
+            Should -Throw '*requires Provider Codex or Both*'
+        Test-Path -LiteralPath $script:FixtureCodex | Should -BeFalse
+        Test-Path -LiteralPath $script:FixtureClaude | Should -BeFalse
+        Test-Path -LiteralPath $script:DispatchRecord | Should -BeFalse
+    }
+
+    It "rejects path-shaped account names before writes" {
+        { & $script:FixtureInstaller -Provider Codex -CodexTargets $script:FixtureCodex -CodexLocalPlugin DevHomeLifecycle -CodexLocalPluginAccount '../outside' } |
+            Should -Throw
+        { & $script:FixtureInstaller -Provider Codex -CodexTargets $script:FixtureCodex -CodexLocalPlugin DevHomeLifecycle -CodexLocalPluginAccount "account3`n" } |
+            Should -Throw
+        Test-Path -LiteralPath $script:FixtureCodex | Should -BeFalse
+        Test-Path -LiteralPath $script:DispatchRecord | Should -BeFalse
+    }
+}
+
 Describe "content-aware repair without -Force" -Tag 'Repair' {
     BeforeAll {
         function Get-SourceHash {

@@ -192,6 +192,7 @@ state.
 
 ```powershell
 .\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle -CodexLocalPluginAccount account3
 .\codex-skills\local-hooks\devhome-lifecycle\Install-DevHomeClaudeHandoffRelay.ps1
 ```
 
@@ -201,9 +202,13 @@ updating this checkout; it hash-checks the materialized plugin cache and
 refreshes it only when needed, while `-Force` requests an explicit reinstall.
 Source acquisition is deliberately separate, so the synchronizer never pulls,
 cleans, or otherwise changes Git state.
-This machine-specific choice pins Codex state to `D:\DevHome\state\codex` and
-the Claude relay projection to `D:\DevHome\state\claude`; ambient home variables
-do not relocate them. Plugin enablement and hook trust remain user-controlled
+The plugin account defaults to `main`, at `D:\DevHome\state\codex`.
+`-CodexLocalPluginAccount account3` selects an existing
+`D:\DevHome\state\codex-accounts\account3` home for plugin registration and cache.
+The account selector does not change ordinary skill destinations. Lifecycle
+runtime stays at `D:\DevHome\state\codex`, and the Claude relay projection stays
+at `D:\DevHome\state\claude`; ambient home variables do not relocate them.
+Plugin enablement and hook trust remain user-controlled
 Codex state. After first installation or a hook command change, start fresh
 agent sessions, confirm the Codex plugin is enabled, and review its definitions
 in `/hooks`.

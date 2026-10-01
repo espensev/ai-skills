@@ -18,6 +18,10 @@ param (
     [string]$CodexLocalPlugin = "None",
 
     [Parameter(Mandatory=$false)]
+    [ValidatePattern('\A[A-Za-z][A-Za-z0-9-]{0,31}\z')]
+    [string]$CodexLocalPluginAccount = "main",
+
+    [Parameter(Mandatory=$false)]
     [switch]$Force,
 
     [Parameter(Mandatory=$false)]
@@ -37,6 +41,9 @@ if ($SkillNames -and $Provider -eq "Both") {
 }
 if ($SkillNames -and $CodexLocalPlugin -ne "None") {
     throw "Synchronize the local plugin in a separate invocation from selected skills"
+}
+if ($PSBoundParameters.ContainsKey('CodexLocalPluginAccount') -and $CodexLocalPlugin -eq "None") {
+    throw "CodexLocalPluginAccount requires a CodexLocalPlugin choice"
 }
 
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -647,7 +654,7 @@ if ($Provider -eq "Both" -or $Provider -eq "Codex") {
         }
 
         $PluginSyncParameters = @{
-            CodexHome = "D:\DevHome\state\codex"
+            Account = $CodexLocalPluginAccount
         }
         if ($DryRun -or $Check) {
             $PluginSyncParameters.Check = $true

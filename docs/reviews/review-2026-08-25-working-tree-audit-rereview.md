@@ -53,7 +53,7 @@ No high-severity findings.
   Impact: broad staging would create noisy, hard-to-review churn and risks mixing normalization with the 13 intended changes.
   Recommendation: diagnose the checkout/editor operation that rewrote the working copies, restore them to the existing attribute policy, and stage only explicit task-owned paths. Do not add a second `.gitattributes` policy or renormalize the repository as proposed by the superseded report.
 
-- [axis: regression] `docs/reviews/review-2026-08-25-working-tree-audit.md:75-101,165-170` is not safe as an operational ship plan.
+- [axis: regression] The original 2026-08-25 version of `docs/reviews/review-2026-08-25-working-tree-audit.md` was unsafe as an operational ship plan; its compressed replacement now routes to this rereview.
   Evidence: it calls the workflow deletion a clean dedupe even though the replacements are ignored and untracked, and says no `.gitattributes` exists even though the tracked file already defines LF policy at lines 1-14. Its recommended next command would delete the only tracked workflows and add redundant line-ending policy.
   Impact: following the report literally can lose versioned workflow artifacts and compound worktree noise.
   Recommendation: use this rereview as the current audit surface and correct or retire the superseded report before publication.

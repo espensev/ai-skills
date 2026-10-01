@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$RepoRoot = (Get-Location).Path,
+    [string]$WorktreeBaseRoot = "",
     [string]$PlanId = "",
     [ValidateSet("tasks", "campaign")]
     [string]$LaunchMode = "tasks",
@@ -192,7 +193,17 @@ function Ensure-AgentWorktree {
         [pscustomobject]$Agent
     )
 
-    $worktreeRoot = Join-Path $script:RepoRoot ".worktrees"
+    $baseRoot = $script:WorktreeBaseRoot
+    if (-not $baseRoot) {
+        if (-not $env:MACHINE_CODE_ROOT) { throw "Set MACHINE_CODE_ROOT or supply a centralized WorktreeBaseRoot." }
+        $baseRoot = Join-Path $env:MACHINE_CODE_ROOT 'DevHome/worktrees'
+    }
+    $listed = Invoke-Required -Executable "git" -Arguments @("-C", $script:RepoRoot, "worktree", "list", "--porcelain")
+    $mainPath = [regex]::Match($listed.Output, '(?m)^worktree (.+)$').Groups[1].Value.Trim()
+    if (-not $mainPath) { throw "Git did not report a main checkout." }
+    $project = [IO.Path]::GetFileName($mainPath.TrimEnd('\', '/'))
+    if ($project -eq 'work') { $project = [IO.Path]::GetFileName([IO.Path]::GetDirectoryName($mainPath)) }
+    $worktreeRoot = Join-Path $baseRoot $project
     New-Item -ItemType Directory -Path $worktreeRoot -Force | Out-Null
 
     $leaf = "agent-{0}-{1}" -f ([string]$Agent.id).ToLowerInvariant(), ([string]$Agent.name).ToLowerInvariant()
@@ -208,10 +219,10 @@ function Ensure-AgentWorktree {
     else {
         $branchCheck = Invoke-Required -Executable "git" -Arguments @("-C", $script:RepoRoot, "branch", "--list", $branch) -FailureLabel "Unable to inspect git branches"
         if ($branchCheck.Output) {
-            Invoke-Required -Executable "git" -Arguments @("-C", $script:RepoRoot, "worktree", "add", $worktreePath, $branch) -FailureLabel "Unable to attach existing branch as worktree"
+            Invoke-Required -Executable "git" -Arguments @("-C", $script:RepoRoot, "worktree", "add", $worktreePath, $branch) -FailureLabel "Unable to attach existing branch as worktree" | Out-Null
         }
         else {
-            Invoke-Required -Executable "git" -Arguments @("-C", $script:RepoRoot, "worktree", "add", "-b", $branch, $worktreePath, "HEAD") -FailureLabel "Unable to create agent worktree"
+            Invoke-Required -Executable "git" -Arguments @("-C", $script:RepoRoot, "worktree", "add", "-b", $branch, $worktreePath, "HEAD") -FailureLabel "Unable to create agent worktree" | Out-Null
         }
     }
 

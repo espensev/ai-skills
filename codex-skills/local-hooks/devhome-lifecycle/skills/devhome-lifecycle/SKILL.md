@@ -28,7 +28,17 @@ Resolve the source authority once in the PowerShell session before running the
 commands below:
 
 ```powershell
-$skillsRepo = Join-Path $env:MACHINE_CODE_ROOT 'AI4000\skills\Ai-Skills'
+$skillsCodeRoot = [Environment]::GetEnvironmentVariable('MACHINE_CODE_ROOT', 'Process')
+foreach ($skillsRootScope in 'User', 'Machine') {
+    if ([string]::IsNullOrWhiteSpace($skillsCodeRoot)) {
+        $skillsCodeRoot = [Environment]::GetEnvironmentVariable('MACHINE_CODE_ROOT', $skillsRootScope)
+    }
+}
+if ([string]::IsNullOrWhiteSpace($skillsCodeRoot) -or
+    -not [IO.Path]::IsPathFullyQualified($skillsCodeRoot)) {
+    throw 'MACHINE_CODE_ROOT must resolve to an absolute code-volume root.'
+}
+$skillsRepo = Join-Path $skillsCodeRoot 'AI4000\skills\Ai-Skills'
 $lifecycleSource = Join-Path $skillsRepo 'codex-skills\local-hooks\devhome-lifecycle'
 if (-not (Test-Path -LiteralPath $lifecycleSource -PathType Container)) {
     throw 'The canonical DevHome lifecycle source is unavailable.'

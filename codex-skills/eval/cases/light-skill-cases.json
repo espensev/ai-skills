@@ -759,5 +759,28 @@
       ],
       "must_create": []
     }
+  },
+  {
+    "id": "grand-sweep-basic-001",
+    "skill": "grand-sweep",
+    "prompt": "Plan a multi-tier grand audit campaign for this repository as a ZCode dynamic workflow: probe world reads, freeze the scope skeleton, fan out reviewer tiers with independent confirmation, recover the run if it stops, and close out with per-tier token accounting.",
+    "checks": {
+      "must_mention": [
+        "freeze",
+        "tier",
+        "confirm",
+        "accounting"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "run id",
+        "resume",
+        "journal"
+      ],
+      "must_create": []
+    }
   }
 ]

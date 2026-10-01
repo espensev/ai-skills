@@ -416,5 +416,16 @@
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for skill-authoring."
+  },
+  {
+    "id": "grand-sweep-basic-001",
+    "selected_skill": "grand-sweep",
+    "output": "Probe world reads, freeze the campaign skeleton and manifest, fan out reviewer tiers with independent confirmation per finding, resume or amend the same run ID after a stop, then record per-tier token accounting in STATE.md.",
+    "created_files": [],
+    "verification_commands": [
+      "resume"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock response for grand-sweep."
   }
 ]

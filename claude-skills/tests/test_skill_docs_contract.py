@@ -167,6 +167,14 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("scripts/hooks", manifest["runtime_directories"])
         self.assertIn("scripts/task_runtime", manifest["runtime_directories"])
 
+    def test_installable_skills_are_not_source_only(self):
+        manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
+        installable = set(manifest["default_skills"] + manifest["optional_skills"])
+        self.assertFalse(
+            installable.intersection(manifest["source_only_skills"]),
+            "Installable skills must not also be excluded as source-only",
+        )
+
     def test_always_off_skills_disable_model_invocation(self):
         demoted = (
             "delegate",

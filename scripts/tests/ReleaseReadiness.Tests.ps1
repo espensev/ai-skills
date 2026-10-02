@@ -56,7 +56,7 @@ Describe "controller-only plugin-cache contracts" {
         foreach ($name in @("Test-ReadyPackages.ps1", "Update-ReadmePackageCounts.ps1", "Build-ProviderSkillPackages.ps1", "Compare-ProviderSkillParity.ps1")) {
             Set-Content -LiteralPath (Join-Path $scriptRoot $name) -Encoding utf8 -Value 'param([switch]$StrictSkillManifest, [switch]$Check, [switch]$FailOnUndeclaredFork, [int]$MaxRows)'
         }
-        foreach ($name in @("Install-AgentSkills.Tests.ps1", "AiEnvironment.Tests.ps1")) {
+        foreach ($name in @("Install-AgentSkills.Tests.ps1", "AiEnvironment.Tests.ps1", "TelemetryRepositoryRoot.Tests.ps1")) {
             Set-Content -LiteralPath (Join-Path $scriptRoot "tests\$name") -Encoding utf8 -Value 'Describe "portable fixture contract" { It "passes" { $true | Should -BeTrue } }'
         }
         Set-Content -LiteralPath (Join-Path $scriptRoot "tests\ReleaseReadiness.Tests.ps1") -Encoding utf8 -Value 'Describe "fixture readiness contract" { It "passes without recursion" { $true | Should -BeTrue } }'
@@ -100,6 +100,7 @@ Describe "release readiness lifecycle authority" {
         Test-Path -LiteralPath $fixture.Marker | Should -BeFalse
         $result.Output | Should -Match "== Installer retirement contracts =="
         $result.Output | Should -Match "== AI environment wanted-state contracts =="
+        $result.Output | Should -Match "== Telemetry repository resolution contracts =="
         $result.Output | Should -Match "PASS - release readiness checks completed"
 
         $hooksManifest = Get-Content -Raw -LiteralPath $fixture.HooksPath | ConvertFrom-Json

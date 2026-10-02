@@ -2698,10 +2698,13 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
             Test-Path -LiteralPath $marker | Should -BeFalse
         }
 
-        It 'makes Install-AgentSkills pass the physical Codex root explicitly' {
+        It 'makes Install-AgentSkills delegate physical home resolution to the selected account' {
             $installerText = Get-Content -Raw -LiteralPath $script:AgentSkillInstaller
 
-            $installerText | Should -Match '(?s)\$PluginSyncParameters\s*=\s*@\{.*CodexHome\s*=\s*"D:\\DevHome\\state\\codex"'
+            $parameters = [regex]::Match($installerText, '(?s)\$PluginSyncParameters\s*=\s*@\{(?<body>.*?)\}')
+            $parameters.Success | Should -BeTrue
+            $parameters.Groups['body'].Value | Should -Match 'Account\s*=\s*\$CodexLocalPluginAccount'
+            $parameters.Groups['body'].Value | Should -Not -Match '\bCodexHome\s*='
         }
 
         It 'installs the closed hook set and proves it has no drift' {

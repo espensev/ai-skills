@@ -84,6 +84,7 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Diagnosing Bugs | auto | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | Documentation Lookup | auto | Fetch current framework and library docs before answering library-specific questions |
 | Exa Search | auto | Use Exa as an optional accelerator for semantic web, code, company, or people search when Exa MCP is available |
+| Grand Sweep | auto | Run multi-tier grand audit campaigns as ZCode dynamic workflows with a world-read probe, frozen scope skeleton, tiered reviewers, independent confirmation, crash recovery, and per-tier accounting |
 | MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
 | Memory Management | auto | Govern explicit updates to native Codex memory, keep generated registries read-only, enforce index budgets, and label controller/target machine provenance |
 | Parallel Agents Light | auto | Route Codex work between local execution, bounded sidecar subagents, split implementation, and full manager campaigns |
@@ -155,6 +156,7 @@ for d in \
   skills/docs-sync \
   skills/documentation-lookup \
   skills/exa-search \
+  skills/grand-sweep \
   skills/mcp-server-patterns \
   skills/memory-management \
   skills/parallel-agents-light \
@@ -204,6 +206,7 @@ for d in \
   skills/docs-sync \
   skills/documentation-lookup \
   skills/exa-search \
+  skills/grand-sweep \
   skills/mcp-server-patterns \
   skills/memory-management \
   skills/parallel-agents-light \

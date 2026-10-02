@@ -209,7 +209,7 @@
   {
     "id": "planner-edge-003",
     "skill": "planner",
-    "prompt": "Plan a campaign with only one agent — just fix the config loader.",
+    "prompt": "Plan a campaign with only one agent \u2014 just fix the config loader.",
     "checks": {
       "must_mention": [
         "agent",
@@ -502,7 +502,7 @@
   {
     "id": "delegate-basic-001",
     "skill": "delegate",
-    "prompt": "I already fetched the failing build log. Summarize these 180 lines into the failing tests and why — offload it to a local model if that's safe.",
+    "prompt": "I already fetched the failing build log. Summarize these 180 lines into the failing tests and why \u2014 offload it to a local model if that's safe.",
     "checks": {
       "must_mention": [
         "delegate",

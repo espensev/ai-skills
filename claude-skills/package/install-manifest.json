@@ -15,6 +15,7 @@
     "docs-sync",
     "memory-management",
     "review",
+    "review-controller",
     "skill-authoring",
     "smart-test",
     "usage-stats"

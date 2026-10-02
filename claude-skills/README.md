@@ -45,6 +45,7 @@ vendor into their own `.claude/skills` runtime tree.
 | Ship | `/ship` | Stage, commit, and push with smart file classification |
 | Diagnosing Bugs | `/diagnosing-bugs` | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | Review | `/review` | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
+| Review Controller | `/review-controller` | Lead a multi-lens product or journey review: the controller plans and judges, bundled Opus `review-specialist` agents inspect a frozen evidence set |
 | Delegate | `/delegate` | Route one bounded, already-fetched transform to local Ollama when telemetry readiness allows it |
 | Usage Stats | `/usage-stats` | Analyze token/cost/budget usage, session/tool activity, and agent performance, preferring measured telemetry data when available |
 | Memory Management | `/memory-management` | Govern auto-memory: typed write schema, locality routing, index budget, and audits |
@@ -108,6 +109,7 @@ for d in \
   skills/docs-sync \
   skills/memory-management \
   skills/review \
+  skills/review-controller \
   skills/skill-authoring \
   skills/smart-test \
   skills/usage-stats; do
@@ -148,6 +150,7 @@ for d in \
   skills/docs-sync \
   skills/memory-management \
   skills/review \
+  skills/review-controller \
   skills/skill-authoring \
   skills/smart-test \
   skills/usage-stats; do

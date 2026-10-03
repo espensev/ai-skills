@@ -182,8 +182,10 @@ collector scans more historical files.
 
 ## Follow-up
 
-- Collect more natural task samples, including Claude `usage-stats`, before
-  claiming broad routing reliability or an effectiveness improvement.
+- [Additional invocation controls](review-2026-10-03-invocation-controls.md)
+  cover Claude `usage-stats` with synthetic counters and negative requests.
+  More natural task samples are needed before claiming broad routing reliability
+  or an effectiveness improvement.
 - Use the corrected collector with a consistent window and session scope for
   future comparisons, retaining its token-coverage counts.
 

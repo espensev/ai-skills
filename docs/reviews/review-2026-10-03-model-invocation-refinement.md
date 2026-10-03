@@ -135,11 +135,27 @@ permission mode is unaffected.
   truncates the body at 8,000 bytes. A router-plus-references split is a
   follow-up, not part of this change.
 - A concurrent Codex session edited `scripts/measure_hook_cost.py`, its
-  tests, and appended follow-up verification to
-  `docs/reviews/review-2026-10-03-automatic-skill-invocation.md` while this
-  work was in progress. Those files are left unstaged for their owner. The
-  Codex skill root also has pre-existing drift in
+  tests, and `docs/reviews/review-2026-10-03-automatic-skill-invocation.md`
+  while this work was in progress. Its owner committed them as `888ca2f`, and
+  its later controls review and fixtures as `de21d09`; this change stages
+  none of them. The Codex skill root also has pre-existing drift in
   `scripts/skill_feedback_loop.py` that this change does not touch.
+- The Codex account homes `D:\DevHome\state\codex-accounts\account3` and
+  `account4` hold skill copies last refreshed on 2026-09-30. The check below
+  reports nine drifted `SKILL.md` files per home, including `ship` with the
+  old push confirmation and `manager` with the `status` default, and two
+  missing `usage-stats` references. Sessions under those homes keep the old
+  behaviour until refreshed:
+
+  ```powershell
+  .\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexTargets `
+    'D:\DevHome\state\codex-accounts\account3\skills', `
+    'D:\DevHome\state\codex-accounts\account4\skills' -Check
+  ```
+
+  Rerun with `-Force` instead of `-Check` to update them. The duplicate copies
+  under `D:\DevHome\state\agents\skills` are also stale, but Codex config
+  disables them.
 
 ## Validation
 
@@ -159,7 +175,12 @@ Method: fresh `claude -p` (Opus 5.5) and `codex exec` sessions in throwaway
 fixture repositories under `%TEMP%`, with ordinary prompts that name no skill
 and avoid the trigger words of the operator's routing table. Selection is read
 from the `Skill` tool call in Claude's `stream-json` output and from `SKILL.md`
-reads in Codex's `--json` output.
+reads in Codex's `--json` output. Codex ran its configured default model
+(`gpt-6.1-sol` at low reasoning effort, per `config.toml`; the stream does not
+name it) with `--sandbox workspace-write` for C1 and `read-only` otherwise.
+Each prompt ran to completion once, with the operator's settings, hooks, and
+global instructions active. Times are Claude's reported duration and Codex wall-clock
+time.
 
 - **P1, Claude `ship`: PASS.** Prompt: "The subtraction fix in calculator.py
   is validated and its tests pass. Get it into the repository history and out
@@ -182,7 +203,57 @@ reads in Codex's `--json` output.
   (recorded in `permission_denials`, no file created); the remaining probes
   use it.
 
-Results for the remaining Claude probes and the Codex probes follow.
+- **P3, Claude `memory-management`: PASS.** Prompt: "For future sessions in
+  this project, keep the fact that its tests must run with python -B because
+  stale bytecode broke a run today. Put it where it belongs." Claude selected
+  `memory-management` first. Default mode denied its write to a project
+  `CLAUDE.md` and its run of the bundled audit script, so it saved a topic
+  file and a `MEMORY.md` index line in the fixture's auto-memory directory,
+  which Claude Code permits, and named the write it would have preferred.
+  Eleven turns, 38 seconds.
+- **P4, Claude `skill-authoring`: PASS.** Prompt: "Codex keeps picking the
+  wrong one of our two testing skills; fix the triggering." Claude selected
+  `skill-authoring`, not `qa` or `smart-test`. It compared the installed
+  copies, checked the Codex `[[skills.config]]` entries, and aimed its edits
+  at `skills-src/{qa,smart-test}/SKILL.src.md` rather than the generated
+  copies. Both edits were denied; it proposed new descriptions with the
+  rebuild, test, and reinstall steps and asked before changing anything.
+  52 turns, 209 seconds.
+- **P5, Claude control: PASS.** "What is 17 times 23?" selected no skill and
+  used no tools: 391 in one turn.
+- **C1, Codex `ship`: PASS.** The P1 prompt, pointed at `./shiprepo-codex`.
+  Codex announced `ship`, read its `SKILL.md`, staged only `calculator.py`,
+  committed, pushed to the bare origin, and left `scratch.txt` untracked
+  without a confirmation request. It did not rerun the tests, citing the
+  user's validation. 51 seconds.
+- **C2, Codex `skill-authoring`: PASS.** The P4 prompt. Codex read
+  `skill-authoring` first and reached the same diagnosis as P4; the read-only
+  sandbox blocked edits, so it returned proposed descriptions. 56 seconds.
+- **C3, Codex control: PASS.** The P5 prompt returned 391 with no skill read
+  and no command. 23 seconds.
+- **P6 and C4, `smart-test` versus `qa`: PASS.** With an uncommitted
+  docstring edit in `src/alpha.py`, the prompt "Check only the tests that
+  cover what I changed." selected `smart-test` in both providers, and both
+  mapped the change to `tests/test_alpha.py` alone. Default mode denied
+  Claude's test run (23 seconds); Codex ran that file read-only and it passed
+  (48 seconds).
+
+P4 and C2 both proposed adding a changed-file exclusion to `qa`: its
+description ("the user wants tests run") names no `smart-test` boundary, while
+`smart-test` excludes `qa`. Their prompt asserted a mis-selection that P6 and
+C4 did not reproduce, so both descriptions are unchanged and the pair heads
+the trigger-set follow-up below.
+
+Negative controls for `docs-sync`, `smart-test`, `diagnosing-bugs`,
+`skill-authoring`, and `usage-stats` ran in the concurrent
+[invocation controls review](review-2026-10-03-invocation-controls.md), whose
+tested entries match this commit; none of its fourteen negative runs selected
+a skill.
+
+After the probes the repository tree was clean, the Claude install check
+passed, and the Codex check reported only the existing
+`skill_feedback_loop.py` drift. Fixtures and raw streams remain under
+`%TEMP%\aiskills-probe-20261003-042109` and are not committed.
 
 ## Follow-ups
 
@@ -194,4 +265,6 @@ Results for the remaining Claude probes and the Codex probes follow.
   Codex; the config entries above are the only blocker.
 - Build a 10 to 20 prompt trigger set per skill (explicit, implicit,
   contextual, negative) and run it with `codex exec --json` and
-  `claude plugin eval` instead of ad hoc probes.
+  `claude plugin eval` instead of ad hoc probes. Start with `qa` versus
+  `smart-test` ("run the tests", "test my changes", "run the full suite") and
+  change their descriptions only if the set shows a mis-selection.

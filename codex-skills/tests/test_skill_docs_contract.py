@@ -319,6 +319,25 @@ class TestSkillDocsContract(unittest.TestCase):
                 self.assertNotRegex(policy.read_text(encoding="utf-8"),
                                     r"allow_implicit_invocation:\s*false")
 
+    def test_skill_descriptions_fit_codex_validation_limits(self):
+        # The Agent Skills spec caps description at 1024 characters, Codex cuts
+        # longer catalog lines, and skill validators reject angle brackets; an
+        # unquoted YAML scalar must not contain ": " or " #" or it fails to parse.
+        for skill_md in sorted(SKILLS.glob("*/SKILL.md")):
+            skill = skill_md.parent.name
+            frontmatter = skill_md.read_text(encoding="utf-8").split("---", 2)[1]
+            line = next(l for l in frontmatter.splitlines() if l.startswith("description:"))
+            value = line.removeprefix("description:").strip()
+            if value.startswith('"'):
+                self.assertTrue(value.endswith('"'), skill)
+                description = value[1:-1]
+            else:
+                self.assertNotIn(": ", value, f"{skill}: quote a description that contains a colon")
+                self.assertNotIn(" #", value, skill)
+                description = value
+            self.assertLessEqual(len(description), 1024, skill)
+            self.assertNotRegex(description, r"[<>]", skill)
+
     def test_manager_uses_progressive_disclosure(self):
         manager = MANAGER_SKILL.read_text(encoding="utf-8")
         self.assertNotIn("### Phase 1: Load context", manager)

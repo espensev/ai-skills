@@ -4,8 +4,9 @@ description: "Use when selecting or running targeted tests for changed files. Ma
 {{#claude}}
 argument-hint: "<files|--diff|--map> — run targeted tests or show the source-to-test map"
 user-invocable: true
-extracted-from: WinOverSight
-portable-since: 2026-03-26
+metadata:
+  extracted-from: WinOverSight
+  portable-since: 2026-03-26
 {{/claude}}
 ---
 

@@ -4,8 +4,9 @@ description: "Use when reviewing token/cost usage, budgets, rate-limit forecasts
 {{#claude}}
 argument-hint: "<summary|window|closeout|cost|breakdown|budget|forecast|history|tools|agents|timeline|compare|efficiency|trends|export> — usage, cost & agent analytics"
 user-invocable: true
-extracted-from: Ai-Skills
-portable-since: 2026-08-17
+metadata:
+  extracted-from: Ai-Skills
+  portable-since: 2026-08-17
 {{/claude}}
 ---
 

@@ -24,11 +24,19 @@ If `CODEX_HOME` or `CLAUDE_HOME` is set, the script also uses
 
 ### Automatic selection
 
-`diagnosing-bugs`, `docs-sync`, `skill-authoring`, `smart-test`, and
-`usage-stats` support selection from ordinary task requests. Users can still
-invoke them by name. Skill selection uses the task description and preserves
-the task's action limits: documentation checks stay read-only, test-selection
-questions do not run tests, and closeouts do not write history or memory.
+Every packaged development skill except `delegate` supports selection from
+ordinary task requests; `delegate` keeps an explicit-only boundary. Users can
+still invoke any skill by name. Skill selection uses the task description and
+preserves the task's action limits: documentation checks stay read-only,
+test-selection questions do not run tests, and closeouts do not write history
+or memory. A selected skill with subcommands maps the request to the command
+that does the work: `ship` commits and normally pushes without a second
+confirmation, and `manager` runs `go` or `plan` rather than `status`.
+
+No model-selectable skill carries an `allowed-tools` grant. In Claude Code
+that field pre-approves tools for the invoking turn, so a skill the model can
+select on its own would let it grant itself access; pre-approve tools through
+provider permission settings when a workflow needs it.
 
 After installing those skills, check the effective provider settings:
 
@@ -36,8 +44,13 @@ After installing those skills, check the effective provider settings:
   `SKILL.md` path. Enable the canonical installed copy, preserving disables
   for duplicate copies. `agents/openai.yaml` must not set
   `policy.allow_implicit_invocation: false` for an automatic skill.
-- Claude: `skillOverrides` must allow the skill (`on` or no override), and
-  its frontmatter must not set `disable-model-invocation: true`.
+- Claude: `skillOverrides` must allow the skill (`on` or no override; the
+  `name-only`, `user-invocable-only`, and `off` states hide the description
+  from Claude), and its frontmatter must not set
+  `disable-model-invocation: true`. The skill listing shares a budget of about
+  one percent of the context window; above it Claude Code drops the
+  descriptions of the least-used skills, so keep descriptions short and turn
+  off skills that are not in use. `/doctor` reports the listing cost.
 
 Restart Codex after changing its config. Test a fresh session with a request
 that omits the skill name, then inspect whether it loads the intended skill

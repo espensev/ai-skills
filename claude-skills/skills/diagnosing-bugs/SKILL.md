@@ -3,7 +3,6 @@ name: diagnosing-bugs
 description: "Use when the user wants the cause or fix for a reproducible bug, runtime or hook error, flaky behavior, or performance regression. Builds a red-capable feedback loop before changing code. Do not use merely to run or classify a known test suite (use qa), review a diff (use review), or audit runtime efficiency broadly (use deep-audit)."
 argument-hint: "[<symptom|command>] - loop | perf | fix | postmortem"
 user-invocable: true
-agent-invocable: true
 ---
 
 # Diagnosing Bugs - Tight Feedback Loop

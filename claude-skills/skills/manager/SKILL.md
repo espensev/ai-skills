@@ -2,7 +2,6 @@
 name: manager
 description: "Use when the user explicitly wants a multi-agent campaign executed or managed: parallel worktrees, agent launches, dependency-aware progress, merges, verification, or campaign status. Do not use for plan-only design without execution, bounded codebase research, or one tight local change."
 argument-hint: "<command> [args] — go | plan | run | merge | verify | status | analyze | review"
-allowed-tools: Read, Glob, Grep, Bash, Agent, Edit, Write
 user-invocable: true
 ---
 
@@ -48,7 +47,12 @@ backend primitives now include `go`, `attach`, `result`, `recover`, `merge`,
 | `review` | `/manager review <agent>` | Review a completed agent's work: read spec, check diff, mark complete |
 | `next` | `/manager next` | Auto-advance: launch whatever is ready |
 
-Default to `status` if no command given.
+Default to `status` when invoked by name without a command. When this skill
+is selected from an ordinary request rather than by name, map the request to a
+command: a description of work to execute maps to `go` (`plan` when the user
+wants to review the decomposition before launch); a question about campaign
+progress, agents, or dependencies maps to `status`; a finished agent to check
+maps to `review`. Never answer a work request with `status` alone.
 
 ### When to use `go` vs `plan` + `run`
 

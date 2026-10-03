@@ -1,8 +1,7 @@
 ---
 name: ship
-description: "Stage, commit, and normally push validated work. Handles multi-file campaigns, commit grouping, message drafting, and exclusion of temp/sensitive files. Use when the user asks to commit, package, land, or push, or when validated repository work reaches its delivery phase."
+description: "Use when the user asks to commit, land, package, or push changes, or when validated repository work reaches its delivery phase. Stages only validated files, groups multi-file changes into focused commits, drafts commit messages, excludes temp and sensitive files, and normally pushes the current branch without a second confirmation. Do not use to run tests first (use qa) or to review a diff (use review)."
 argument-hint: "<command> [args] — commit | split | preview | push"
-allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true
 ---
 
@@ -27,7 +26,11 @@ for a second confirmation.**
 | `preview` | `/ship preview` | Dry-run: show what would be committed without doing it |
 | `push` | `/ship push` | Push current branch to remote without a second prompt |
 
-Default to `commit` if no command given.
+Default to `commit` if no command given. When this skill is selected from an
+ordinary request rather than by name, map the request to a command: "commit"
+or "land" maps to `commit` (`split` when the changes span several concerns);
+"push", "ship", or "deliver" maps to `commit` followed by `push`; "what would
+be committed" maps to `preview`.
 
 ---
 
@@ -238,6 +241,9 @@ does not require another confirmation.
 - **Never force-push** unless the user explicitly requests it
 - **Do not request another confirmation** for a normal push, including the
   current default branch when repository rules allow it
+- **Always show** what will be pushed before doing it
+- **Push only to `origin`** when the clone also has an `upstream` remote;
+  opening an upstream pull request needs an explicit request
 - **Stop and preserve the local commit** if non-interactive authentication is
   unavailable or ownership/ancestry is ambiguous
 - **Never include unrelated dirty files**; stage only validated files owned by

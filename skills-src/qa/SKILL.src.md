@@ -3,7 +3,6 @@ name: qa
 description: Use when the user wants tests run, coverage checked, failures classified, a configured app smoke-tested, or regression tests added. Do not use for findings-first diff review (use review), a hard bug needing a new reproduction-and-fix loop (use diagnosing-bugs), or a broad runtime-efficiency audit (use deep-audit).
 {{#claude}}
 argument-hint: "<command> [args] — run | smoke | coverage | triage | regtest"
-allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true
 {{/claude}}
 ---

@@ -4,8 +4,9 @@ name: docs-sync
 description: "Use when checking README or documentation against code for stale claims, paths, versions, or contradictions. Defaults to a read-only consistency check. Do not use for general prose editing or a code review."
 argument-hint: "<check|surface|fix> — documentation consistency checker"
 user-invocable: true
-extracted-from: WinOverSight
-portable-since: 2026-03-26
+metadata:
+  extracted-from: WinOverSight
+  portable-since: 2026-03-26
 {{/claude}}
 {{#codex}}
 description: "Use when checking README or documentation against code for stale claims, paths, versions, or contradictions. Defaults to a read-only consistency check. Do not use for general prose editing or a code review."

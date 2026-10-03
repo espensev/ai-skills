@@ -4,7 +4,6 @@ description: "Use when the user wants the cause or fix for a reproducible bug, r
 {{#claude}}
 argument-hint: "[<symptom|command>] - loop | perf | fix | postmortem"
 user-invocable: true
-agent-invocable: true
 {{/claude}}
 ---
 

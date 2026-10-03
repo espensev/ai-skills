@@ -3,8 +3,9 @@ name: usage-stats
 description: "Use when reviewing token/cost usage, budgets, rate-limit forecasts, session tool or timeline activity, agent/campaign efficiency, or execution closeouts. Prefers measured telemetry with an explicitly estimated fallback. Do not use to operate a live telemetry deployment."
 argument-hint: "<summary|window|closeout|cost|breakdown|budget|forecast|history|tools|agents|timeline|compare|efficiency|trends|export> — usage, cost & agent analytics"
 user-invocable: true
-extracted-from: Ai-Skills
-portable-since: 2026-08-17
+metadata:
+  extracted-from: Ai-Skills
+  portable-since: 2026-08-17
 ---
 
 # Usage Stats

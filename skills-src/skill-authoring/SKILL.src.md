@@ -1,6 +1,6 @@
 ---
 name: skill-authoring
-description: "Create or revise Agent Skills with concise discovery metadata, progressive disclosure, and portable support files. Use when adding a new SKILL.md, changing skill frontmatter, splitting long instructions into references, or preparing Codex/Claude skill packages."
+description: "Use when adding a new SKILL.md, changing skill frontmatter or descriptions, tuning when a skill gets selected, splitting long instructions into references, or preparing Codex/Claude skill packages. Creates or revises Agent Skills with concise discovery metadata, progressive disclosure, and portable support files. Do not use for plugins, hooks, MCP servers, or product code that a skill merely mentions."
 {{#claude}}
 argument-hint: "<new|revise|audit> <skill-name>"
 user-invocable: true
@@ -72,8 +72,9 @@ portable across {{Provider}} and {{Provider-other}}.
    - include exclusions or boundaries when trigger overlap is likely
 {{#claude}}
    - add Claude-specific fields only when needed, such as `argument-hint`,
-     `user-invocable`, `allowed-tools`, `disallowed-tools`, `agent`, or
-     `context`
+     `user-invocable`, `when_to_use`, `paths`, `disallowed-tools`, `agent`,
+     or `context`; put provenance or tooling notes under `metadata`, since
+     Claude Code silently ignores unknown keys
 {{/claude}}
 4. Keep the body operational:
    - scope
@@ -103,14 +104,25 @@ portable across {{Provider}} and {{Provider-other}}.
 - Include concrete trigger nouns: `SKILL.md`, frontmatter, manifest, package,
   provider, docs, eval, hooks.
 - Keep the first sentence useful if later text is truncated.
+- Keep the description at or under 1024 characters with no angle brackets:
+  the Agent Skills spec caps it there, Codex truncates longer catalog lines,
+  and skill validators reject angle brackets. Quote it when it contains a
+  colon so the YAML still parses.
 
 ## Automatic Selection and Evidence
 
 - Select the skill when the task matches its description; the user need not
   know its command name. Loading instructions does not grant extra authority.
+- When a skill has subcommands, state how an ordinary request maps to them.
+  A request to do work must map to the command that does the work, never to
+  a passive default such as `status`.
 - Keep ordinary development skills available for automatic selection. For
   Claude, omit `disable-model-invocation: true`; for Codex, do not set
   `policy.allow_implicit_invocation: false` in `agents/openai.yaml`.
+- Both providers show the model only skill names and descriptions each turn,
+  inside a small budget (Claude about one percent of the context window,
+  Codex about two percent). Above it, descriptions are shortened or dropped
+  without an error, so keep descriptions short and disable unused skills.
 - Check the installed copy and provider settings as well as source metadata.
   A disabled skill cannot be repaired by rewriting its description. Preserve
   duplicate-copy disables and unrelated operator choices when enabling one.
@@ -130,8 +142,10 @@ portable across {{Provider}} and {{Provider-other}}.
 - Keep provider-specific invocation syntax out of shared bodies unless the
   package needs it.
 {{#claude}}
-- Do not grant tool permissions by default; add `allowed-tools` only when the
-  skill genuinely needs pre-approved tools.
+- Do not grant tool permissions by default. `allowed-tools` pre-approves tools
+  for one turn and lets a skill grant itself access, so a skill Claude may
+  select on its own carries no grant; pre-approve through permission settings
+  instead. Reserve narrow grants for explicit-only skills.
 {{/claude}}
 {{#codex}}
 - Do not grant tool permissions by default; add provider-specific tool

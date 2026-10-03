@@ -1,6 +1,6 @@
 ---
 name: discover
-description: Use when a bounded codebase question must be answered before planning or editing: dependencies, feasibility, constraints, patterns, or optimization opportunities. Produces findings that decide the next step: a direct change, a plan, or an explicit campaign. Do not use for implementation, current web research, findings-first diff review, or a multi-pass runtime-efficiency audit.
+description: "Use when a bounded codebase question must be answered before planning or editing: dependencies, feasibility, constraints, patterns, or optimization opportunities. Produces findings that decide the next step: a direct change, a plan, or an explicit campaign. Do not use for implementation, current web research, findings-first diff review, or a multi-pass runtime-efficiency audit."
 ---
 
 # Discover — Pre-Planning Research

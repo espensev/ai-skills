@@ -2,7 +2,6 @@
 name: review-controller
 description: "Use when the user wants a led, multi-lens review of a product, feature, system, or user journey — usability, information architecture, journey, functional correctness, risk/edge-case, accessibility — where the controller plans and judges and Opus review-specialist agents do bounded inspection over a frozen evidence set. Triggers: 'review controller', 'controlled review', 'multi-lens review', 'review this flow/journey/screens with agents'. Do not use for a branch/PR/diff review (review), test runs (qa), runtime efficiency (deep-audit), or build-verify loops (chief-operator)."
 argument-hint: "<objective> [--evidence <paths|urls>] [--solo] [--plan-only] [--out <path>]"
-allowed-tools: Read, Glob, Grep, Bash, Agent, SendMessage, Write
 user-invocable: true
 ---
 

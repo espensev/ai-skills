@@ -3,8 +3,9 @@ name: smart-test
 description: "Use when selecting or running targeted tests for changed files. Maps changes to the smallest useful test subset. Do not use for a full QA campaign (use qa) or to diagnose a failing test's cause (use diagnosing-bugs)."
 argument-hint: "<files|--diff|--map> — run targeted tests or show the source-to-test map"
 user-invocable: true
-extracted-from: WinOverSight
-portable-since: 2026-03-26
+metadata:
+  extracted-from: WinOverSight
+  portable-since: 2026-03-26
 ---
 
 # Smart Test — Targeted Test Selector

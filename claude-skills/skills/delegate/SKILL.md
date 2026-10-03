@@ -5,7 +5,6 @@ disable-model-invocation: true
 argument-hint: "<command|task> — guidance | check | batch | <task description>"
 allowed-tools: Read, Glob, Grep, mcp__ollama-delegate__ollama_usage_guidance, mcp__ollama-delegate__ollama_readiness, mcp__ollama-delegate__ollama_delegate, mcp__ollama-delegate__ollama_batch_delegate, mcp__ollama-delegate__ollama_fleet_status
 user-invocable: true
-agent-invocable: true
 ---
 
 # Delegate — Route Bounded Sub-Tasks to a Local Ollama Model

@@ -2,7 +2,6 @@
 name: skill-authoring
 description: "Create or revise Agent Skills with concise discovery metadata, progressive disclosure, and portable support files. Use when adding a new SKILL.md, changing skill frontmatter, splitting long instructions into references, or preparing Codex/Claude skill packages."
 {{#claude}}
-disable-model-invocation: true
 argument-hint: "<new|revise|audit> <skill-name>"
 user-invocable: true
 {{/claude}}
@@ -104,6 +103,27 @@ portable across {{Provider}} and {{Provider-other}}.
 - Include concrete trigger nouns: `SKILL.md`, frontmatter, manifest, package,
   provider, docs, eval, hooks.
 - Keep the first sentence useful if later text is truncated.
+
+## Automatic Selection and Evidence
+
+- Select the skill when the task matches its description; the user need not
+  know its command name. Loading instructions does not grant extra authority.
+- Keep ordinary development skills available for automatic selection. For
+  Claude, omit `disable-model-invocation: true`; for Codex, do not set
+  `policy.allow_implicit_invocation: false` in `agents/openai.yaml`.
+- Check the installed copy and provider settings as well as source metadata.
+  A disabled skill cannot be repaired by rewriting its description. Preserve
+  duplicate-copy disables and unrelated operator choices when enabling one.
+- Resolve bundled scripts relative to the selected skill directory. Run the
+  relevant helper within the authorized task, check its exit status, and
+  inspect its output. Do not launch the skill recursively to run a helper.
+- Test with ordinary requests that omit the skill name and nearby requests
+  that should select another skill or none. Observe the selected skill and
+  resulting actions in a fresh session; keyword fixtures alone do not test
+  agent routing. Include explicit invocation as a compatibility check.
+- Record provider, prompt, source revision, selection, observed result, and
+  validation. Keep fixture scores separate from actual runs. Compare quality
+  and effort on the same tasks before claiming an improvement.
 
 ## Portability Rules
 

@@ -109,7 +109,12 @@ def evaluate_case(case: dict[str, Any], response: dict[str, Any]) -> dict[str, A
         "scores": scores,
         "total": total,
         "max_total": 5.0,
-        "pass": total >= 4.0 and scores["trigger"] == 1.0 and scores["contract"] == 1.0,
+        "pass": (
+            total >= 4.0
+            and scores["trigger"] == 1.0
+            and scores["contract"] == 1.0
+            and acceptability_score > 0.0
+        ),
         "failures": failures,
         "notes": str(response.get("notes", "") or ""),
     }

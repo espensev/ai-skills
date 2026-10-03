@@ -26,6 +26,10 @@ diagnostic note listing what evidence is missing.
 Default to `fix` when the user reports a concrete bug and has not requested a
 diagnosis-only pass.
 
+Select this skill from a bug report even when the user does not name it.
+Carry out the requested diagnosis or fix within the current task's authority;
+loading the skill does not authorize service restarts or other live changes.
+
 ---
 
 ## Core Rule

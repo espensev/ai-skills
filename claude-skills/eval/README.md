@@ -16,6 +16,17 @@ artifacts and language, and avoid provider leakage (`.codex`, `.gemini` paths).
 
 ## Scoring
 
+Each case scores skill selection, required language, artifacts, verification,
+and manual acceptability. `accept` contributes `1.0`, `minor-fix` contributes
+`0.5`, and other labels contribute `0.0`, for a maximum total of `5.0`.
+A pass requires a total of at least `4.0`, correct skill selection, all language
+checks, and an `accept` or `minor-fix` label. Missing, unknown, and `reject`
+labels fail even when the other checks total `4.0`.
+
+The mock fixture checks package contracts; its score does not measure live
+skill selection or effectiveness. Use recorded runs with reviewed labels for
+those conclusions.
+
 Run the shared scorer from a sibling package:
 
 ```powershell

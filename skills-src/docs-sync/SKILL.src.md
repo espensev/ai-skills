@@ -1,16 +1,14 @@
 ---
 name: docs-sync
 {{#claude}}
-description: "Detect cross-document contradictions, stale claims, path mismatches, and merge conflict markers across key documentation surfaces. Use when checking README, docs, status, or architecture consistency."
-disable-model-invocation: true
+description: "Use when checking README or documentation against code for stale claims, paths, versions, or contradictions. Defaults to a read-only consistency check. Do not use for general prose editing or a code review."
 argument-hint: "<check|surface|fix> — documentation consistency checker"
-allowed-tools: Read, Glob, Grep, Bash, Edit
 user-invocable: true
 extracted-from: WinOverSight
 portable-since: 2026-03-26
 {{/claude}}
 {{#codex}}
-description: "Detect documentation drift, stale claims, path mismatches, and merge conflict markers. Use when checking README, docs, status, or architecture consistency."
+description: "Use when checking README or documentation against code for stale claims, paths, versions, or contradictions. Defaults to a read-only consistency check. Do not use for general prose editing or a code review."
 {{/codex}}
 ---
 
@@ -35,6 +33,10 @@ markers, and version mismatches across the documentation surface.
 | `fix` | `{{cmd}}docs-sync fix` | Auto-fix trivial inconsistencies |
 
 Default to `check` if no command given.
+
+Select this skill when the task calls for documentation consistency, without
+requiring its command name. Use `fix` only when the user requested corrections;
+a request to check or review documentation stays read-only.
 
 ---
 

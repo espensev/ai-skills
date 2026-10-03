@@ -2,9 +2,7 @@
 name: diagnosing-bugs
 description: "Use when the user wants the cause or fix for a reproducible bug, runtime or hook error, flaky behavior, or performance regression. Builds a red-capable feedback loop before changing code. Do not use merely to run or classify a known test suite (use qa), review a diff (use review), or audit runtime efficiency broadly (use deep-audit)."
 {{#claude}}
-disable-model-invocation: true
 argument-hint: "[<symptom|command>] - loop | perf | fix | postmortem"
-allowed-tools: Read, Glob, Grep, Bash, Write
 user-invocable: true
 agent-invocable: true
 {{/claude}}
@@ -32,6 +30,10 @@ diagnostic note listing what evidence is missing.
 
 Default to `fix` when the user reports a concrete bug and has not requested a
 diagnosis-only pass.
+
+Select this skill from a bug report even when the user does not name it.
+Carry out the requested diagnosis or fix within the current task's authority;
+loading the skill does not authorize service restarts or other live changes.
 
 ---
 

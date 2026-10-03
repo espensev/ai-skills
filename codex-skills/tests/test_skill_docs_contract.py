@@ -302,8 +302,8 @@ class TestSkillDocsContract(unittest.TestCase):
         ):
             self.assertIn(former, text)
 
-    def test_claude_only_invocation_demotion_does_not_leak_into_codex(self):
-        demoted = (
+    def test_development_skills_remain_available_for_implicit_invocation(self):
+        automatic = (
             "delegate",
             "diagnosing-bugs",
             "docs-sync",
@@ -311,9 +311,13 @@ class TestSkillDocsContract(unittest.TestCase):
             "smart-test",
             "usage-stats",
         )
-        for skill in demoted:
+        for skill in automatic:
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
-            self.assertNotIn("disable-model-invocation:", text, skill)
+            self.assertNotIn("disable-model-invocation:", text.split("---", 2)[1], skill)
+            policy = SKILLS / skill / "agents" / "openai.yaml"
+            if policy.exists():
+                self.assertNotRegex(policy.read_text(encoding="utf-8"),
+                                    r"allow_implicit_invocation:\s*false")
 
     def test_manager_uses_progressive_disclosure(self):
         manager = MANAGER_SKILL.read_text(encoding="utf-8")

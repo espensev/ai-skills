@@ -22,6 +22,15 @@ The total score is the sum of those five checks. `acceptability` is weighted as:
 - `minor-fix` = `0.5`
 - `reject` = `0.0`
 
+A case passes only when its total is at least `4.0`, both `trigger` and
+`contract` score `1.0`, and the manual label is `accept` or `minor-fix`.
+Missing, unknown, and `reject` labels fail even when the other checks total
+`4.0`. A `minor-fix` label still needs a total of at least `4.0`.
+
+The mock fixture checks package contracts; its score does not measure live
+skill selection or effectiveness. Use recorded runs with reviewed labels for
+those conclusions.
+
 ## Files
 
 - `eval/cases/light-skill-cases.json` contains the starter cases
@@ -116,3 +125,7 @@ python scripts/skill_feedback_loop.py ^
   --eval eval/results/latest.json ^
   --out docs/skill-improvement-report.md
 ```
+
+The eval contribution to priority is `40 * (1 - average_score / 5)`. Adding
+cases with the same average leaves this contribution unchanged; perfect eval
+scores do not cancel priority from observed regressions or blockers.

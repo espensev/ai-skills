@@ -175,18 +175,23 @@ class TestSkillDocsContract(unittest.TestCase):
             "Installable skills must not also be excluded as source-only",
         )
 
-    def test_always_off_skills_disable_model_invocation(self):
-        demoted = (
-            "delegate",
+    def test_development_skills_allow_automatic_invocation_without_tool_grants(self):
+        automatic = (
             "diagnosing-bugs",
             "docs-sync",
             "skill-authoring",
             "smart-test",
             "usage-stats",
         )
-        for skill in demoted:
+        for skill in automatic:
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
-            self.assertIn("disable-model-invocation: true", text, skill)
+            frontmatter = text.split("---", 2)[1]
+            self.assertNotIn("disable-model-invocation: true", frontmatter, skill)
+            self.assertNotIn("allowed-tools:", frontmatter, skill)
+
+    def test_local_model_delegation_keeps_explicit_invocation_boundary(self):
+        text = (SKILLS / "delegate" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("disable-model-invocation: true", text)
 
     def test_manager_uses_progressive_disclosure(self):
         manager = MANAGER_SKILL.read_text(encoding="utf-8")
@@ -304,6 +309,10 @@ class TestSkillDocsContract(unittest.TestCase):
 
     def test_usage_stats_closeout_contract_is_portable(self):
         usage_text = USAGE_STATS_SKILL.read_text(encoding="utf-8")
+        self.assertIn("Claude native `input_tokens` excludes", usage_text)
+        self.assertIn("`cache_read_input_tokens`", usage_text)
+        self.assertIn("`cache_creation_input_tokens`", usage_text)
+        self.assertIn("Add those three lanes to form total input", usage_text)
         self.assertIn("## Command: `closeout`", usage_text)
         self.assertIn("current user message timestamp", usage_text)
         self.assertIn("unambiguously bound the current turn", usage_text)

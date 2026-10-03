@@ -1,9 +1,7 @@
 ---
 name: smart-test
-description: "Map changed files to the minimal useful test subset instead of running the full suite. Use for fast feedback before full QA, commit, merge, or build validation."
-disable-model-invocation: true
+description: "Use when selecting or running targeted tests for changed files. Maps changes to the smallest useful test subset. Do not use for a full QA campaign (use qa) or to diagnose a failing test's cause (use diagnosing-bugs)."
 argument-hint: "<files|--diff|--map> — run targeted tests or show the source-to-test map"
-allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true
 extracted-from: WinOverSight
 portable-since: 2026-03-26
@@ -31,13 +29,20 @@ and builds source-to-test mappings dynamically.
 
 Default to `diff` if no arguments given.
 
+Select this skill for targeted verification during authorized implementation,
+even when the user does not name it. If the request only asks which tests to
+run, use `map` and report the selection without executing tests. Preserve any
+repository-required full checks before delivery.
+
 ---
 
 ## Setup: Load Config
 
 Before any command:
 
-1. Read `.claude/skills/project.toml`
+1. Read `.claude/skills/project.toml` when present. Otherwise inspect
+   repository instructions and test configuration, then use the convention
+   and import mapping fallbacks below; do not create config just to select tests.
 2. Extract `[modules]` — maps module names to source file lists
 3. Extract `[commands].test` — the test runner command
 4. Extract `[smart-test]` section if present (optional overrides)

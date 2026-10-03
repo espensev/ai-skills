@@ -140,6 +140,13 @@ Invoke-Step "Provider parity enforcement" {
 }
 
 if (-not $SkipUnitTests) {
+    Invoke-Step "Repository telemetry and invocation tests" {
+        python -B -m unittest discover -s scripts/tests -p 'test_*.py'
+        if ($LASTEXITCODE -ne 0) {
+            throw "Repository telemetry and invocation tests failed"
+        }
+    }
+
     Invoke-Step "Codex, Claude, and local plugin contract tests" {
         python -m unittest codex-skills.tests.test_skill_docs_contract codex-skills.tests.test_local_plugin_contract claude-skills.tests.test_skill_docs_contract
         if ($LASTEXITCODE -ne 0) {

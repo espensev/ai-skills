@@ -109,8 +109,9 @@ and an unrequested pricing aside to its initial token explanation.
 - Raw streams, summaries, installed hashes, and independent verification files
   remain local under `aiskills-routing-next-ihl_kts5` in system temp. They are
   not committed. The original negative results were preserved during repeats.
-- The specification is a replayable case definition, not an automatic CI runner
-  or part of the existing saved-output scorer.
+- At the time of these probes, the specification had no permanent runner.
+  The later [replay tool](../skill-invocation-checks.md) consumes it separately
+  from the existing saved-output scorer; task-result acceptance still needs review.
 - Each request has only one initial sample per provider; only two negative
   prompts have repeats. Some prompts explicitly limit actions. Inherited global
   routing, constrained tools, synthetic data, and installed-version differences

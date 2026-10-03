@@ -86,6 +86,14 @@ non-default transcript root, and `--json` for machine-readable output. See
 metrics and format assumptions; tests live in
 [`scripts/tests/test_measure_hook_cost.py`](scripts/tests/test_measure_hook_cost.py).
 
+### Check automatic skill selection
+
+Replay saved positive and negative requests with fresh provider CLI sessions
+using [`scripts/run_skill_invocation_checks.py`](scripts/run_skill_invocation_checks.py).
+The [runner guide](docs/skill-invocation-checks.md) covers installed-root inputs,
+routing verdicts, preserved evidence, and task-result review. Live checks are
+opt-in; the release gate runs deterministic tests without provider calls.
+
 ## What's Inside
 
 ### Core campaign skills (shared across packages)

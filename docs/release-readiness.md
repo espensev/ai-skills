@@ -28,13 +28,17 @@ Run the full local release gate before shipping. The repo scripts require
 ```
 
 The wrapper runs ready-package validation, README manifest count checks, the
-single-source skill regeneration check, provider parity enforcement, Codex and Claude contract tests, isolated machine-local lifecycle catalog/cache/runtime
+single-source skill regeneration check, provider parity enforcement, offline
+repository telemetry and invocation tests, Codex and Claude contract tests,
+isolated machine-local lifecycle catalog/cache/runtime
 contracts, provider parity reporting, and git whitespace checks. Parity
 *enforcement* is a separate, non-skippable step: `-SkipParityReport` silences
 the human-readable table but never the gate. The lifecycle
 Pester tests use disposable fixtures; this source-only gate does not invoke the
 installed Claude Remember plugin or prove that the user has trusted the Codex
 SessionStart hook.
+Live [skill-selection replays](skill-invocation-checks.md) are opt-in and are
+never launched by this wrapper.
 Use `-IncludeLiveRootCompare` after syncing local Codex and Claude skill roots.
 
 Individual checks are also available when narrowing a failure:

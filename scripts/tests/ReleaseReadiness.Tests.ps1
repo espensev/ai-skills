@@ -5,7 +5,8 @@ BeforeAll {
         param (
             [Parameter(Mandatory)][string]$Root,
             [switch]$ControllerIsCheckout,
-            [switch]$PluginShouldPass
+            [switch]$PluginShouldPass,
+            [switch]$RepositoryTestsShouldFail
         )
 
         $repoRoot = Join-Path $Root "repo"
@@ -60,7 +61,16 @@ Describe "controller-only plugin-cache contracts" {
             Set-Content -LiteralPath (Join-Path $scriptRoot "tests\$name") -Encoding utf8 -Value 'Describe "portable fixture contract" { It "passes" { $true | Should -BeTrue } }'
         }
         Set-Content -LiteralPath (Join-Path $scriptRoot "tests\ReleaseReadiness.Tests.ps1") -Encoding utf8 -Value 'Describe "fixture readiness contract" { It "passes without recursion" { $true | Should -BeTrue } }'
-        Set-Content -LiteralPath (Join-Path $binRoot "python.cmd") -Encoding ascii -Value '@exit /b 0'
+        $repositoryMarker = Join-Path $Root "repository-tests-ran.txt"
+        $repositoryExit = if ($RepositoryTestsShouldFail) { 7 } else { 0 }
+        Set-Content -LiteralPath (Join-Path $binRoot "python.cmd") -Encoding ascii -Value @"
+@echo off
+if "%4"=="discover" (
+  echo ran>"$repositoryMarker"
+  exit /b $repositoryExit
+)
+exit /b 0
+"@
         Set-Content -LiteralPath (Join-Path $binRoot "git.cmd") -Encoding ascii -Value '@exit /b 0'
 
         [pscustomobject]@{
@@ -68,18 +78,21 @@ Describe "controller-only plugin-cache contracts" {
             HooksMarker = $hooksMarker
             HooksPath = Join-Path $lifecycleRoot "hooks\hooks.json"
             LifecycleRoot = $lifecycleRoot
+            RepositoryMarker = $repositoryMarker
             Marker = $pluginMarker
             Script = Join-Path $scriptRoot "Test-ReleaseReadiness.ps1"
         }
     }
 
     function Invoke-ReadinessFixture {
-        param ([Parameter(Mandatory)]$Fixture)
+        param ([Parameter(Mandatory)]$Fixture, [switch]$SkipUnitTests)
 
         $savedPath = $env:PATH
         try {
             $env:PATH = "$($Fixture.BinRoot);$savedPath"
-            $output = (& pwsh -NoProfile -File $Fixture.Script -SkipParityReport 2>&1) | Out-String
+            $arguments = @('-NoProfile', '-File', $Fixture.Script, '-SkipParityReport')
+            if ($SkipUnitTests) { $arguments += '-SkipUnitTests' }
+            $output = (& pwsh @arguments 2>&1) | Out-String
             $exitCode = $LASTEXITCODE
         }
         finally {
@@ -101,6 +114,7 @@ Describe "release readiness lifecycle authority" {
         $result.Output | Should -Match "== Installer retirement contracts =="
         $result.Output | Should -Match "== AI environment wanted-state contracts =="
         $result.Output | Should -Match "== Telemetry repository resolution contracts =="
+        Test-Path -LiteralPath $fixture.RepositoryMarker | Should -BeTrue
         $result.Output | Should -Match "PASS - release readiness checks completed"
 
         $hooksManifest = Get-Content -Raw -LiteralPath $fixture.HooksPath | ConvertFrom-Json
@@ -139,5 +153,27 @@ Describe "release readiness lifecycle authority" {
             $result.Output | Should -Match "Lifecycle SessionStart $variantName must be nonblank and declare -SourcePackageRoot"
             Test-Path -LiteralPath $fixture.Marker | Should -BeFalse
         }
+    }
+}
+
+Describe "release readiness repository tests" {
+    It "rejects repository test failures before later contracts" {
+        $fixture = New-ReadinessFixture -Root (Join-Path $TestDrive "repository-fail") -RepositoryTestsShouldFail
+        $result = Invoke-ReadinessFixture -Fixture $fixture
+
+        $result.ExitCode | Should -Not -Be 0
+        Test-Path -LiteralPath $fixture.RepositoryMarker | Should -BeTrue
+        Test-Path -LiteralPath $fixture.HooksMarker | Should -BeFalse
+        $result.Output | Should -Match "Repository telemetry and invocation tests failed"
+        $result.Output | Should -Not -Match "PASS - release readiness checks completed"
+    }
+
+    It "keeps repository tests behind the existing unit-test skip" {
+        $fixture = New-ReadinessFixture -Root (Join-Path $TestDrive "repository-skip") -RepositoryTestsShouldFail
+        $result = Invoke-ReadinessFixture -Fixture $fixture -SkipUnitTests
+
+        $result.ExitCode | Should -Be 0 -Because $result.Output
+        Test-Path -LiteralPath $fixture.RepositoryMarker | Should -BeFalse
+        $result.Output | Should -Match "PASS - release readiness checks completed"
     }
 }

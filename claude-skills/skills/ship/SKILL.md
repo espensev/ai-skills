@@ -32,6 +32,12 @@ or "land" maps to `commit` (`split` when the changes span several concerns);
 "push", "ship", or "deliver" maps to `commit` followed by `push`; "what would
 be committed" maps to `preview`.
 
+Complete authorized repository work through verification, commit, and normal
+push. Merge the branch or PR when needed for delivery after required checks and
+reviews pass and the target is clear. A commit step is not the end of delivery
+unless the user explicitly requested commit-only work. Honor explicit holds and
+read-only requests; preserve unrelated changes and report genuine blockers.
+
 ---
 
 ## Setup: Load Config

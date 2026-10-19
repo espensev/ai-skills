@@ -52,7 +52,9 @@ contains facts, decisions, commands, constraints, or unresolved work.
   reference.
 - Target: most docs under ~100 lines. A doc that cannot justify its length is
   cut.
-- Apply changes directly. Do not commit unless asked.
+- Apply changes directly. Verify the cleanup, then use `ship` to commit and push
+  task-owned changes, merging when needed for delivery. Honor explicit holds
+  and review-only requests; do not ask for redundant delivery approval.
 
 ## Output
 

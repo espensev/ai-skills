@@ -168,6 +168,15 @@ function Copy-CleanDirectory {
         Remove-Item -Recurse -Force
 }
 
+function Test-FullyQualifiedPath {
+    param ([string]$Path)
+
+    # Root-relative ("\state\claude") and drive-relative ("C:state") paths
+    # resolve against the process's current drive or directory, so a target
+    # that is not fully qualified can silently redirect writes.
+    return ($Path -match '^[A-Za-z]:[\\/]' -or $Path.StartsWith('\\'))
+}
+
 function Get-UniquePaths {
     param ([string[]]$Paths)
 
@@ -180,8 +189,23 @@ function Get-UniquePaths {
         }
 
         $Expanded = [Environment]::ExpandEnvironmentVariables($Path)
-        $FullPath = [System.IO.Path]::GetFullPath($Expanded)
-        $Key = (Get-PathIdentity $FullPath).ToLowerInvariant()
+        if (-not (Test-FullyQualifiedPath $Expanded)) {
+            throw "Target paths must be fully qualified (drive or UNC): $Path"
+        }
+        $FullPath = [System.IO.Path]::GetFullPath($Expanded).TrimEnd(
+            [System.IO.Path]::DirectorySeparatorChar,
+            [System.IO.Path]::AltDirectorySeparatorChar
+        )
+        if ($FullPath -ceq [System.IO.Path]::GetPathRoot($FullPath).TrimEnd(
+                [System.IO.Path]::DirectorySeparatorChar,
+                [System.IO.Path]::AltDirectorySeparatorChar
+            )) {
+            throw "Refusing a filesystem root as a target: $FullPath"
+        }
+        $Key = (Get-PathIdentity $FullPath).TrimEnd(
+            [System.IO.Path]::DirectorySeparatorChar,
+            [System.IO.Path]::AltDirectorySeparatorChar
+        ).ToLowerInvariant()
         if (-not $Seen.ContainsKey($Key)) {
             $Seen[$Key] = $true
             $Result += $FullPath
@@ -211,6 +235,13 @@ function Get-DefaultCodexTargets {
 function Get-DefaultClaudeTargets {
     $Paths = @()
 
+    # CLAUDE_CONFIG_DIR is the native selector set by the Claude account
+    # launchers (Invoke-ClaudeAlternateShortcut), so an operator running from
+    # a selected alternate account gets that account's skills root. Explicit
+    # -ClaudeTargets still bypasses this function entirely.
+    if (-not [string]::IsNullOrWhiteSpace($env:CLAUDE_CONFIG_DIR)) {
+        $Paths += (Join-Path $env:CLAUDE_CONFIG_DIR "skills")
+    }
     if (-not [string]::IsNullOrWhiteSpace($env:CLAUDE_HOME)) {
         $Paths += (Join-Path $env:CLAUDE_HOME "skills")
     }

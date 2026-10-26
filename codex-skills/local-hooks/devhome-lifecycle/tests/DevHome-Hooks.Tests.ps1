@@ -2949,3 +2949,81 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
         }
     }
 }
+
+Describe 'concurrent-safe hooks.json publication' {
+    BeforeAll {
+        $script:PackageRoot = Split-Path -Parent $PSScriptRoot
+        $script:HooksInstaller = Join-Path $script:PackageRoot 'Install-DevHomeCodexHooks.ps1'
+
+        function Get-HooksPublishFunction {
+            $text = Get-Content -Raw -LiteralPath $script:HooksInstaller
+            $tokens = $null
+            $errors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseInput($text, [ref]$tokens, [ref]$errors)
+            $functions = @(
+                $ast.FindAll({
+                    param($node)
+                    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+                    @('Set-HooksConfigContent', 'Get-HooksConfigBytes') -ccontains $node.Name
+                }, $true) | ForEach-Object { $_.Extent.Text }
+            )
+            if ($functions.Count -lt 2) {
+                throw 'Install-DevHomeCodexHooks.ps1 lacks its concurrent-safe hooks.json publication functions.'
+            }
+            return [scriptblock]::Create(($functions -join "`n"))
+        }
+    }
+
+    It 'does not write hooks.json with a bare full-file write' {
+        $text = Get-Content -Raw -LiteralPath $script:HooksInstaller
+        $text | Should -Not -Match 'WriteAllText\(\s*\$targetConfigPath'
+        $text | Should -Match '\[System\.IO\.File\]::Replace'
+    }
+
+    It 'refuses to replace hooks.json that changed after it was read' {
+        . (Get-HooksPublishFunction)
+        $target = Join-Path $TestDrive 'conflict\hooks.json'
+        $null = New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force
+        [System.IO.File]::WriteAllText($target, 'current concurrent content')
+        $staleBytes = [System.Text.Encoding]::UTF8.GetBytes('content as it was when drift was measured')
+
+        { Set-HooksConfigContent -TargetConfigPath $target -ExpectedExistingBytes $staleBytes -Content 'rendered expected config' -Encoding ([System.Text.UTF8Encoding]::new($false)) } |
+            Should -Throw '*oncurrent modification*'
+        (Get-Content -Raw -LiteralPath $target) | Should -BeExactly 'current concurrent content'
+        @(Get-ChildItem -LiteralPath (Split-Path -Parent $target) -Filter '*.tmp' -Force) | Should -HaveCount 0
+    }
+
+    It 'atomically replaces matching content and leaves no temporary file' {
+        . (Get-HooksPublishFunction)
+        $target = Join-Path $TestDrive 'clean\hooks.json'
+        $null = New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force
+        [System.IO.File]::WriteAllText($target, 'previous owned config')
+        $expectedBytes = [System.IO.File]::ReadAllBytes($target)
+
+        Set-HooksConfigContent -TargetConfigPath $target -ExpectedExistingBytes $expectedBytes -Content 'rendered expected config' -Encoding ([System.Text.UTF8Encoding]::new($false))
+
+        (Get-Content -Raw -LiteralPath $target) | Should -BeExactly 'rendered expected config'
+        @(Get-ChildItem -LiteralPath (Split-Path -Parent $target) -Filter '*.tmp' -Force) | Should -HaveCount 0
+    }
+
+    It 'creates a missing hooks.json without a conflict claim' {
+        . (Get-HooksPublishFunction)
+        $target = Join-Path $TestDrive 'fresh\hooks.json'
+        $null = New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force
+
+        Set-HooksConfigContent -TargetConfigPath $target -ExpectedExistingBytes $null -Content 'rendered expected config' -Encoding ([System.Text.UTF8Encoding]::new($false))
+
+        (Get-Content -Raw -LiteralPath $target) | Should -BeExactly 'rendered expected config'
+    }
+
+    It 'refuses when the destination appeared after it was read' {
+        . (Get-HooksPublishFunction)
+        $target = Join-Path $TestDrive 'appeared\hooks.json'
+        $null = New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force
+        [System.IO.File]::WriteAllText($target, 'created concurrently')
+
+        { Set-HooksConfigContent -TargetConfigPath $target -ExpectedExistingBytes $null -Content 'rendered expected config' -Encoding ([System.Text.UTF8Encoding]::new($false)) } |
+            Should -Throw '*oncurrent modification*'
+        (Get-Content -Raw -LiteralPath $target) | Should -BeExactly 'created concurrently'
+    }
+}

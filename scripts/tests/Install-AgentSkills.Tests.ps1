@@ -344,3 +344,102 @@ Describe "retired skill installation contract" {
         $greenOutput | Should -Match "PASS - local agent skill roots match manifest-listed files"
     }
 }
+
+$script:ResolverScenarios = @(
+    @{ Script = (Join-Path $PSScriptRoot '..\Install-AgentSkills.ps1'); Kind = 'installer' }
+    @{ Script = (Join-Path $PSScriptRoot '..\Compare-AgentSkillRoots.ps1'); Kind = 'comparison' }
+)
+
+Describe "default target selection" -Tag 'TargetResolution' {
+    BeforeAll {
+        # Extract only the target-resolution functions so the resolver can be
+        # evaluated without running either script's install/check pipeline.
+        function Get-ResolverFunctions {
+            param ([string]$ScriptPath)
+
+            $text = Get-Content -Raw -LiteralPath $ScriptPath
+            $tokens = $null
+            $errors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseInput($text, [ref]$tokens, [ref]$errors)
+            if ($errors.Count -gt 0) {
+                throw "Could not parse $ScriptPath"
+            }
+            $names = @('Get-PathIdentity', 'Test-FullyQualifiedPath', 'Get-UniquePaths', 'Get-DefaultCodexTargets', 'Get-DefaultClaudeTargets')
+            $definitions = @(
+                $ast.FindAll({
+                    param($node)
+                    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+                    $names -ccontains $node.Name
+                }, $true) | ForEach-Object { $_.Extent.Text }
+            )
+            if ($definitions.Count -lt 4) {
+                throw "Resolver functions missing from $ScriptPath"
+            }
+            return [scriptblock]::Create(($definitions -join "`n"))
+        }
+
+        # The selected alternate account home, as the account launchers set it.
+        $script:AccountHome = Join-Path $TestDrive 'claude-accounts\account3'
+        $script:AccountSkills = Join-Path $script:AccountHome 'skills'
+        $null = New-Item -ItemType Directory -Path $script:AccountSkills -Force
+
+    }
+
+    It "covers the Claude account selected through CLAUDE_CONFIG_DIR (<Kind>)" -ForEach $script:ResolverScenarios {
+        $previousConfigDir = [Environment]::GetEnvironmentVariable('CLAUDE_CONFIG_DIR', 'Process')
+        $previousClaudeHome = [Environment]::GetEnvironmentVariable('CLAUDE_HOME', 'Process')
+        $previousHome = $env:HOME
+        $isolatedHome = Join-Path $TestDrive "isolated-home-$Kind"
+        $null = New-Item -ItemType Directory -Path (Join-Path $isolatedHome '.claude'), (Join-Path $isolatedHome '.claude\skills') -Force
+        try {
+            [Environment]::SetEnvironmentVariable('CLAUDE_CONFIG_DIR', $script:AccountHome, 'Process')
+            [Environment]::SetEnvironmentVariable('CLAUDE_HOME', $null, 'Process')
+            Set-Item Env:HOME $isolatedHome
+
+            . (Get-ResolverFunctions -ScriptPath $_.Script)
+            $targets = @(Get-DefaultClaudeTargets)
+
+            (@($targets | Where-Object { $_ -ceq $script:AccountSkills }).Count) | Should -Be 1
+        }
+        finally {
+            [Environment]::SetEnvironmentVariable('CLAUDE_CONFIG_DIR', $previousConfigDir, 'Process')
+            [Environment]::SetEnvironmentVariable('CLAUDE_HOME', $previousClaudeHome, 'Process')
+            if ($null -eq $previousHome) { Remove-Item Env:HOME -ErrorAction SilentlyContinue } else { Set-Item Env:HOME $previousHome }
+        }
+    }
+
+    It "keeps explicit Claude target overrides authoritative over CLAUDE_CONFIG_DIR" {
+        $explicit = Join-Path $TestDrive 'explicit-claude-target'
+        $previousConfigDir = [Environment]::GetEnvironmentVariable('CLAUDE_CONFIG_DIR', 'Process')
+        try {
+            [Environment]::SetEnvironmentVariable('CLAUDE_CONFIG_DIR', $script:AccountHome, 'Process')
+            & $script:Installer -Provider Claude -ClaudeTargets $explicit -SkillNames handoff -Force | Out-Null
+        }
+        finally {
+            [Environment]::SetEnvironmentVariable('CLAUDE_CONFIG_DIR', $previousConfigDir, 'Process')
+        }
+
+        Test-Path -LiteralPath (Join-Path $explicit 'handoff\SKILL.md') | Should -BeTrue
+        Test-Path -LiteralPath (Join-Path $script:AccountSkills 'handoff\SKILL.md') | Should -BeFalse
+    }
+
+    It "rejects targets that are not fully qualified (<Kind>)" -ForEach $script:ResolverScenarios {
+        . (Get-ResolverFunctions -ScriptPath $_.Script)
+        { Get-UniquePaths @('\root-relative\skills') } | Should -Throw '*fully qualified*'
+        { Get-UniquePaths @('relative\skills') } | Should -Throw '*fully qualified*'
+        { Get-UniquePaths @('C:drive-relative\skills') } | Should -Throw '*fully qualified*'
+    }
+
+    It "rejects a filesystem root as a target (<Kind>)" -ForEach $script:ResolverScenarios {
+        . (Get-ResolverFunctions -ScriptPath $_.Script)
+        { Get-UniquePaths @('C:\') } | Should -Throw '*filesystem root*'
+    }
+
+    It "deduplicates case, slash, and trailing-separator variants (<Kind>)" -ForEach $script:ResolverScenarios {
+        . (Get-ResolverFunctions -ScriptPath $_.Script)
+        $base = (Join-Path $TestDrive ("Dedupe-$Kind" -replace '-', '_')).TrimEnd('\', '/')
+        $result = @(Get-UniquePaths @(($base + '\Skills\'), ($base + '/skills')))
+        $result | Should -HaveCount 1
+        $result[0] | Should -BeExactly ($base + '\Skills')
+    }
+}

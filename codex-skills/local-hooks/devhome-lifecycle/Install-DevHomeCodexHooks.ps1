@@ -52,6 +52,57 @@ function Get-ExpectedHooksConfig {
     return $rendered
 }
 
+function Get-HooksConfigBytes {
+    param([Parameter(Mandatory)][string] $Path)
+
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        return , [System.IO.File]::ReadAllBytes($Path)
+    }
+    return , [byte[]] $null
+}
+
+function Set-HooksConfigContent {
+    param(
+        [Parameter(Mandatory)][string] $TargetConfigPath,
+        # Byte-for-byte pre-state captured when drift was measured; a mismatch
+        # means another writer touched hooks.json in the read-to-write window.
+        [Parameter(Mandatory)][AllowNull()][byte[]] $ExpectedExistingBytes,
+        [Parameter(Mandatory)][string] $Content,
+        [Parameter(Mandatory)][System.Text.Encoding] $Encoding
+    )
+
+    $currentBytes = Get-HooksConfigBytes -Path $TargetConfigPath
+    if ($null -ne $currentBytes) {
+        if ($null -eq $ExpectedExistingBytes) {
+            throw "Concurrent modification of hooks.json detected: the destination appeared after it was read: $TargetConfigPath"
+        }
+        if (-not [System.Linq.Enumerable]::SequenceEqual([byte[]] $currentBytes, [byte[]] $ExpectedExistingBytes)) {
+            throw "Concurrent modification of hooks.json detected: refusing to replace a destination changed since it was read: $TargetConfigPath"
+        }
+    }
+    elseif ($null -ne $ExpectedExistingBytes) {
+        throw "Concurrent modification of hooks.json detected: the destination disappeared after it was read: $TargetConfigPath"
+    }
+
+    $tempPath = "$TargetConfigPath.$PID.$([guid]::NewGuid().ToString('N')).tmp"
+    try {
+        [System.IO.File]::WriteAllText($tempPath, $Content, $Encoding)
+        if ($null -ne $currentBytes) {
+            # [NullString]::Value keeps the no-backup overload usable from
+            # both PowerShell engines; a plain $null binds as an empty path.
+            [System.IO.File]::Replace($tempPath, $TargetConfigPath, [NullString]::Value)
+        }
+        else {
+            [System.IO.File]::Move($tempPath, $TargetConfigPath)
+        }
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempPath -PathType Leaf) {
+            Remove-Item -LiteralPath $tempPath -Force
+        }
+    }
+}
+
 function Get-HookDrift {
     param(
         [Parameter(Mandatory)][string] $ResolvedTargetRoot,
@@ -146,6 +197,7 @@ if (
 
 $ExpectedConfig = Get-ExpectedHooksConfig -ResolvedTargetRoot $ResolvedTargetRoot
 $InitialDrift = @(Get-HookDrift -ResolvedTargetRoot $ResolvedTargetRoot -ExpectedConfig $ExpectedConfig)
+$PreWriteConfigBytes = Get-HooksConfigBytes -Path (Join-Path $ResolvedTargetRoot 'hooks.json')
 
 if ($Check) {
     if ($InitialDrift.Count -gt 0) {
@@ -198,7 +250,11 @@ foreach ($relativePath in @('hooks.json') + @($OwnedHookFiles | ForEach-Object {
 
 New-Item -ItemType Directory -Path $ResolvedTargetRoot,$targetHooksRoot -Force | Out-Null
 $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-[System.IO.File]::WriteAllText($targetConfigPath, $ExpectedConfig, $utf8NoBom)
+Set-HooksConfigContent `
+    -TargetConfigPath $targetConfigPath `
+    -ExpectedExistingBytes $PreWriteConfigBytes `
+    -Content $ExpectedConfig `
+    -Encoding $utf8NoBom
 foreach ($fileName in $OwnedHookFiles) {
     Copy-Item -LiteralPath (Join-Path $SourceHooksRoot $fileName) `
         -Destination (Join-Path $targetHooksRoot $fileName) `

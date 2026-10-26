@@ -455,6 +455,58 @@ Describe 'AI environment module contract' {
             Should -BeTrue
     }
 
+    It 'observes the external startup hook without a payload lock: <Mutation>' -ForEach @(
+        @{ Mutation = 'none'; Expected = $true }
+        @{ Mutation = 'missing'; Expected = $false }
+        @{ Mutation = 'event'; Expected = $false }
+        @{ Mutation = 'matcher'; Expected = $false }
+        @{ Mutation = 'command'; Expected = $false }
+        @{ Mutation = 'timeout'; Expected = $false }
+        @{ Mutation = 'async'; Expected = $false }
+        @{ Mutation = 'duplicate'; Expected = $false }
+        @{ Mutation = 'disableAllHooks'; Expected = $false }
+        @{ Mutation = 'script'; Expected = $false }
+    ) {
+        $profile = Get-Content -Raw -LiteralPath $script:Fixture.ProfilePath | ConvertFrom-Json -Depth 100
+        $settingsPath = Join-Path $script:Fixture.ClaudeHome 'settings.json'
+        $settings = Get-Content -Raw -LiteralPath $settingsPath | ConvertFrom-Json -Depth 100
+        $scriptPath = Join-Path $script:Fixture.Root 'verify-note.ps1'
+        Set-Content -LiteralPath $scriptPath -Value "throw 'The observer must never run this script.'"
+        $command = 'pwsh -NoProfile -File "' + $scriptPath + '" -Summary'
+        $profile.resources += [pscustomobject]@{
+            id = 'hook:claude-handoff-verify'; provider = 'claude'; kind = 'hook'; ownership = 'observed'
+            desired = [pscustomobject]@{
+                event = 'SessionStart'; matcher = 'startup|resume|clear'
+                command = $command; scriptPath = $scriptPath; timeout = 10
+            }
+        }
+        $handler = [pscustomobject]@{ type = 'command'; command = $command; timeout = 10 }
+        $registration = [pscustomobject]@{ matcher = 'startup|resume|clear'; hooks = @($handler) }
+        $settings.hooks | Add-Member -NotePropertyName SessionStart -NotePropertyValue @($registration)
+        switch ($Mutation) {
+            'missing' { $settings.PSObject.Properties.Remove('hooks') }
+            'event' { $settings.hooks.PSObject.Properties.Remove('SessionStart'); $settings.hooks.Stop += $registration }
+            'matcher' { $registration.matcher = 'compact' }
+            'command' { $handler.command += ' -Unexpected' }
+            'timeout' { $handler.timeout = 1 }
+            'async' { $handler | Add-Member -NotePropertyName async -NotePropertyValue $true }
+            'duplicate' { $settings.hooks.SessionStart += $registration }
+            'disableAllHooks' { $settings | Add-Member -NotePropertyName disableAllHooks -NotePropertyValue $true }
+            'script' { Remove-Item -LiteralPath $scriptPath }
+        }
+        Write-TestJson -Path $script:Fixture.ProfilePath -Value $profile
+        Write-TestJson -Path $settingsPath -Value $settings
+        $settingsDigest = (Get-FileHash -LiteralPath $settingsPath).Hash
+        $state = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $hook = @($state.Providers.Claude.Hooks | Where-Object Id -eq 'hook:claude-handoff-verify')[0]
+        $hook.RegistrationPresent | Should -Be $Expected
+        $hook.Payload | Should -BeNullOrEmpty
+        @($state.Reasons | Where-Object { $_.ResourceId -eq $hook.Id -and $_.Code -eq 'CLAUDE_STARTUP_HOOK_DRIFT' }).Count |
+            Should -Be $(if ($Expected) { 0 } else { 1 })
+        @($state.Reasons | Where-Object Code -eq 'RESOURCE_LOCK_MISSING') | Should -HaveCount 0
+        (Get-FileHash -LiteralPath $settingsPath).Hash | Should -BeExactly $settingsDigest
+    }
+
     It 'derives the managed Codex plugin cache target from lock version without profile edits' {
         $profile = Get-Content -Raw -LiteralPath $script:Fixture.ProfilePath | ConvertFrom-Json -Depth 100
         $lock = Get-Content -Raw -LiteralPath $script:Fixture.LockPath | ConvertFrom-Json -Depth 100

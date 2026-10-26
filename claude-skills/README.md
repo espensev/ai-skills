@@ -52,6 +52,11 @@ vendor into their own `.claude/skills` runtime tree.
 | Deep Audit | `/deep-audit` | Run evidence-first, resumable runtime-efficiency audits while keeping product code read-only by default |
 | Skill Authoring | `/skill-authoring` | Create and revise Agent Skills with focused discovery metadata, progressive disclosure, and package wiring |
 
+`verify` remains a source-only DevHome shell recipe, generated from the same
+source as the Codex version. It separates source tests from installed console
+acceptance. Maintain its existing local copy with the explicit opt-in commands
+in [Local Agent Skill Access](../docs/local-agent-skill-access.md#maintain-the-local-devhome-verification-recipe).
+
 ## Workflow
 
 The generic campaign workflow moves through four stages:

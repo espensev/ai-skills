@@ -51,7 +51,7 @@ agent skill roots:
 To update selected skills in an existing provider installation:
 
 ```powershell
-.\scripts\Install-AgentSkills.ps1 -Provider Codex -SkillNames handoff -CodexTargets 'D:\DevHome\state\codex\skills' -Force
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -SkillNames handoff -CodexTargets (Join-Path $env:CODEX_HOME 'skills') -Force
 ```
 
 `-SkillNames` requires one provider, validates every selected name before

@@ -106,8 +106,14 @@ function Get-DefaultCodexTargets {
         $Paths += (Join-Path $env:CODEX_HOME "skills")
     }
     $Paths += (Join-Path $HOME ".codex\skills")
-    if (Test-Path "D:\DevHome\state\codex") {
-        $Paths += "D:\DevHome\state\codex\skills"
+    if (-not [string]::IsNullOrWhiteSpace($env:MACHINE_CODE_ROOT)) {
+        if (-not (Test-FullyQualifiedPath $env:MACHINE_CODE_ROOT)) {
+            throw 'MACHINE_CODE_ROOT must be fully qualified'
+        }
+        $StateRoot = Join-Path $env:MACHINE_CODE_ROOT 'DevHome/state/codex'
+        if (Test-Path -LiteralPath $StateRoot) {
+            $Paths += (Join-Path $StateRoot 'skills')
+        }
     }
     return Get-UniquePaths @($Paths)
 }
@@ -125,8 +131,14 @@ function Get-DefaultClaudeTargets {
         $Paths += (Join-Path $env:CLAUDE_HOME "skills")
     }
     $Paths += (Join-Path $HOME ".claude\skills")
-    if (Test-Path "D:\DevHome\state\claude") {
-        $Paths += "D:\DevHome\state\claude\skills"
+    if (-not [string]::IsNullOrWhiteSpace($env:MACHINE_CODE_ROOT)) {
+        if (-not (Test-FullyQualifiedPath $env:MACHINE_CODE_ROOT)) {
+            throw 'MACHINE_CODE_ROOT must be fully qualified'
+        }
+        $StateRoot = Join-Path $env:MACHINE_CODE_ROOT 'DevHome/state/claude'
+        if (Test-Path -LiteralPath $StateRoot) {
+            $Paths += (Join-Path $StateRoot 'skills')
+        }
     }
     return Get-UniquePaths @($Paths)
 }
@@ -343,7 +355,7 @@ function Compare-ProviderPackage {
                 -not $_.Name.StartsWith(".") -and $_.Name -notin $OwnedDirs
             })
             foreach ($SourceOnly in @($RootDirs | Where-Object { $_.Name -in $SourceOnlySkills })) {
-                Add-Row $ProviderName $TargetRoot "Skill" $SourceOnly.Name "SourceOnlyInstalled" "Listed in source_only_skills; not managed by installer"
+                Add-Row $ProviderName $TargetRoot "Skill" $SourceOnly.Name "SourceOnlyInstalled" "Excluded from full installs; check through explicit SkillNames and AllowSourceOnly"
             }
             foreach ($Extra in @($RootDirs | Where-Object { $_.Name -notin $Skills -and $_.Name -notin $SourceOnlySkills })) {
                 $Detail = if (Test-Path -LiteralPath (Join-Path $Extra.FullName "SKILL.md") -PathType Leaf) { "" } else { "No SKILL.md" }

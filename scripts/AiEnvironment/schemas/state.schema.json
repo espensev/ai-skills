@@ -279,7 +279,7 @@
         "Id": { "type": "string", "minLength": 1 },
         "Ownership": { "$ref": "#/$defs/ownership" },
         "RegistrationPresent": { "type": "boolean" },
-        "Payload": { "$ref": "#/$defs/payload" }
+        "Payload": { "anyOf": [{ "$ref": "#/$defs/payload" }, { "type": "null" }] }
       }
     },
     "resource": {

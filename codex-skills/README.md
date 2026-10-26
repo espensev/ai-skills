@@ -103,6 +103,12 @@ package installer.
 ZCode dynamic workflows and the `dynamic-workflows` companion skill, so it is
 not copied by the Codex package installer.
 
+`verify` is the source-only DevHome shell recipe shared with Claude. It
+distinguishes source tests from installed console acceptance. Its existing
+local discovery root is maintained through the explicit opt-in commands in
+[`Local Agent Skill Access`](../docs/local-agent-skill-access.md#maintain-the-local-devhome-verification-recipe),
+not through full package installs or portable exports.
+
 ## Workflow
 
 The generic campaign workflow moves through four stages:

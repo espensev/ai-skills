@@ -9,16 +9,18 @@ The script targets the local roots that exist on this workstation:
 
 | Provider | Default roots |
 |---|---|
-| Codex | `C:\Users\Sev\.codex\skills`, `D:\DevHome\state\codex\skills` |
-| Claude | `C:\Users\Sev\.claude\skills`, `D:\DevHome\state\claude\skills` |
+| Codex | `$env:CODEX_HOME/skills`, `$HOME/.codex/skills`, and `DevHome/state/codex/skills` below `MACHINE_CODE_ROOT` when present |
+| Claude | `$env:CLAUDE_CONFIG_DIR/skills`, legacy `$env:CLAUDE_HOME/skills`, `$HOME/.claude/skills`, and `DevHome/state/claude/skills` below `MACHINE_CODE_ROOT` when present |
 
 On enrolled `snd-desk`, the profile paths are junctions to the matching
-`D:\DevHome\state` roots. The installer resolves those link identities and
+`DevHome/state` roots. The installer resolves those link identities and
 de-duplicates them; the table shows both discovery paths, not two physical
 copies.
 
-If `CODEX_HOME` or `CLAUDE_HOME` is set, the script also uses
-`$env:CODEX_HOME\skills` or `$env:CLAUDE_HOME\skills`.
+The script also uses `$env:CODEX_HOME\skills` and the native Claude selector
+`$env:CLAUDE_CONFIG_DIR\skills` when set. `CLAUDE_HOME` remains an additional
+legacy compatibility root. Explicit target arguments select only the requested
+roots.
 
 ## Commands
 
@@ -104,7 +106,27 @@ roots; extras are intentionally ignored by the default compare.
 The script copies only the skills, support files, runtime files, and runtime
 directories listed in each provider's `package/install-manifest.json`. It does
 not delete unrelated local skills, and it does not copy source-only package
-material such as `telemetry-live-ops`.
+material such as `telemetry-live-ops` by default.
+
+### Maintain the local DevHome verification recipe
+
+`verify` is a machine-specific, source-only skill generated for both providers
+from `skills-src/verify/SKILL.src.md`. Its existing Codex discovery path is the
+shared agents root; its Claude path is below `CLAUDE_CONFIG_DIR`. Preserve these
+paths so existing discovery and explicit reads continue to work:
+
+```powershell
+$agentsRoot = Join-Path $env:MACHINE_CODE_ROOT 'DevHome/state/agents/skills'
+$claudeRoot = Join-Path $env:CLAUDE_CONFIG_DIR 'skills'
+.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexTargets $agentsRoot -SkillNames verify -AllowSourceOnly -Force
+.\scripts\Install-AgentSkills.ps1 -Provider Claude -ClaudeTargets $claudeRoot -SkillNames verify -AllowSourceOnly -Force
+```
+
+Replace `-Force` with `-Check` for a read-only drift check, or with `-DryRun`
+for a preview. `-AllowSourceOnly` requires named skills, one provider, and an
+explicit destination. It adds only declared source-only skills to the allowed
+selection; full installs and portable exports continue to exclude them. Other
+skills, shared runtime files, and provider enablement settings are preserved.
 
 ## Local Codex plugin choice
 

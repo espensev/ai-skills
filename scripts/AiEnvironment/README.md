@@ -18,6 +18,16 @@ $verification = $state | Test-AiEnvironment
 `New-AiEnvironmentPlan` and `Test-AiEnvironment` are pure projections of that
 snapshot. Provider adapters remain private to the module.
 
+The Claude adapter also observes the existing `Test-HandoffNote.ps1`
+SessionStart registration: event, matcher, exact command, timeout, synchronous
+execution, script existence, duplicate registrations, and `disableAllHooks`.
+This is an observed resource owned by DevHome, so it needs no Ai-Skills payload
+lock and grants no repair authority. The observer expands `%NAME%` references
+in its profile's expected command and script path at read time; Claude's
+`settings.json` still contains a concrete command. A passing observation proves
+the selected settings file, not effective policy from other settings layers
+or execution in a fresh Claude session.
+
 The observer fails closed when a managed marketplace is incomplete, a provider
 command times out, Git cannot be observed, a Claude plugin lacks a registry
 record, or a persisted Codex hook trust hash differs from the lock. Foreign

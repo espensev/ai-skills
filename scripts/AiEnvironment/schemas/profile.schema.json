@@ -168,6 +168,14 @@
         {
           "properties": {
             "provider": { "const": "claude" },
+            "kind": { "const": "hook" },
+            "ownership": { "const": "observed" },
+            "desired": { "$ref": "#/$defs/claudeObservedHookDesired" }
+          }
+        },
+        {
+          "properties": {
+            "provider": { "const": "claude" },
             "kind": { "const": "skill-policy" },
             "ownership": { "const": "observed" },
             "desired": { "$ref": "#/$defs/emptyDesired" }
@@ -241,6 +249,18 @@
         "targetRoot": { "type": "string", "minLength": 1 },
         "registrationContains": { "type": "string", "minLength": 1 },
         "projectionReasonCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" }
+      }
+    },
+    "claudeObservedHookDesired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event", "matcher", "command", "scriptPath", "timeout"],
+      "properties": {
+        "event": { "const": "SessionStart" },
+        "matcher": { "type": "string", "minLength": 1 },
+        "command": { "type": "string", "minLength": 1 },
+        "scriptPath": { "type": "string", "minLength": 1 },
+        "timeout": { "type": "integer", "minimum": 1 }
       }
     },
     "emptyDesired": {

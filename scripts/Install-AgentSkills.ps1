@@ -14,6 +14,9 @@ param (
     [string[]]$SkillNames,
 
     [Parameter(Mandatory=$false)]
+    [switch]$AllowSourceOnly,
+
+    [Parameter(Mandatory=$false)]
     [ValidateSet("None", "DevHomeLifecycle")]
     [string]$CodexLocalPlugin = "None",
 
@@ -41,6 +44,11 @@ if ($SkillNames -and $Provider -eq "Both") {
 }
 if ($SkillNames -and $CodexLocalPlugin -ne "None") {
     throw "Synchronize the local plugin in a separate invocation from selected skills"
+}
+if ($AllowSourceOnly -and (-not $SkillNames -or
+        ($Provider -eq 'Codex' -and -not $CodexTargets) -or
+        ($Provider -eq 'Claude' -and -not $ClaudeTargets))) {
+    throw "AllowSourceOnly requires SkillNames and explicit targets for the selected provider"
 }
 if ($PSBoundParameters.ContainsKey('CodexLocalPluginAccount') -and $CodexLocalPlugin -eq "None") {
     throw "CodexLocalPluginAccount requires a CodexLocalPlugin choice"
@@ -224,9 +232,14 @@ function Get-DefaultCodexTargets {
 
     $Paths += (Join-Path $HOME ".codex\skills")
 
-    $StateRoot = "D:\DevHome\state\codex"
-    if (Test-Path $StateRoot) {
-        $Paths += (Join-Path $StateRoot "skills")
+    if (-not [string]::IsNullOrWhiteSpace($env:MACHINE_CODE_ROOT)) {
+        if (-not (Test-FullyQualifiedPath $env:MACHINE_CODE_ROOT)) {
+            throw 'MACHINE_CODE_ROOT must be fully qualified'
+        }
+        $StateRoot = Join-Path $env:MACHINE_CODE_ROOT 'DevHome/state/codex'
+        if (Test-Path -LiteralPath $StateRoot) {
+            $Paths += (Join-Path $StateRoot 'skills')
+        }
     }
 
     return Get-UniquePaths @($Paths)
@@ -248,9 +261,14 @@ function Get-DefaultClaudeTargets {
 
     $Paths += (Join-Path $HOME ".claude\skills")
 
-    $StateRoot = "D:\DevHome\state\claude"
-    if (Test-Path $StateRoot) {
-        $Paths += (Join-Path $StateRoot "skills")
+    if (-not [string]::IsNullOrWhiteSpace($env:MACHINE_CODE_ROOT)) {
+        if (-not (Test-FullyQualifiedPath $env:MACHINE_CODE_ROOT)) {
+            throw 'MACHINE_CODE_ROOT must be fully qualified'
+        }
+        $StateRoot = Join-Path $env:MACHINE_CODE_ROOT 'DevHome/state/claude'
+        if (Test-Path -LiteralPath $StateRoot) {
+            $Paths += (Join-Path $StateRoot 'skills')
+        }
     }
 
     return Get-UniquePaths @($Paths)
@@ -451,8 +469,12 @@ function Get-ProviderSelection {
     $SupportFiles = @($Manifest.contract_files) + @($Manifest.optional_contract_files) + @($Manifest.runtime_files)
     $SupportDirectories = @($Manifest.runtime_directories)
     if ($SkillNames) {
+        $AllowedSkills = @($Skills)
+        if ($AllowSourceOnly) {
+            $AllowedSkills += @($Manifest.source_only_skills)
+        }
         foreach ($Name in $SkillNames) {
-            if ($Name -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$' -or $Name -notin $Skills) {
+            if ($Name -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$' -or $Name -notin $AllowedSkills) {
                 throw "Invalid selected skill '$Name' for $ProviderName"
             }
             if (-not (Test-Path -LiteralPath (Join-Path $PackageRoot "skills\$Name\SKILL.md") -PathType Leaf)) {

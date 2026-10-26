@@ -84,6 +84,19 @@
       }
     },
     {
+      "id": "hook:claude-handoff-verify",
+      "provider": "claude",
+      "kind": "hook",
+      "ownership": "observed",
+      "desired": {
+        "event": "SessionStart",
+        "matcher": "startup|resume|clear",
+        "command": "pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"%MACHINE_CODE_ROOT%DevHome/shell/powershell/scripts/Test-HandoffNote.ps1\" -Summary",
+        "scriptPath": "%MACHINE_CODE_ROOT%DevHome/shell/powershell/scripts/Test-HandoffNote.ps1",
+        "timeout": 10
+      }
+    },
+    {
       "id": "plugin:remember",
       "provider": "claude",
       "kind": "plugin",

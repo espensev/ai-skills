@@ -116,6 +116,42 @@ function Get-ClaudeEnvironmentObservation {
 
     $hookRows = [System.Collections.Generic.List[object]]::new()
     foreach ($resource in @($Profile.resources | Where-Object { $_.provider -ceq 'claude' -and $_.kind -ceq 'hook' } | Sort-Object id)) {
+        if ([string]$resource.ownership -ceq 'observed') {
+            # Observe an externally owned startup command without inventing a
+            # payload lock or an installer for its source in another repository.
+            $desired = $resource.desired
+            $expectedCommand = [Environment]::ExpandEnvironmentVariables([string]$desired.command).Replace('\', '/')
+            $scriptPresent = Test-Path -LiteralPath (Resolve-AiPath ([string]$desired.scriptPath)) -PathType Leaf
+            $hooksEnabled = -not [bool](Get-AiProperty $settings 'disableAllHooks' $false)
+            $registrations = @(Get-AiProperty (Get-AiProperty $settings 'hooks') ([string]$desired.event) @())
+            $matchingHandlers = @(
+                foreach ($registration in $registrations) {
+                    if ([string](Get-AiProperty $registration 'matcher') -cne [string]$desired.matcher) { continue }
+                    foreach ($handler in @(Get-AiProperty $registration 'hooks' @())) {
+                        $command = ([string](Get-AiProperty $handler 'command')).Replace('\', '/')
+                        if ([string](Get-AiProperty $handler 'type') -ceq 'command' -and
+                            $command -ceq $expectedCommand -and
+                            (Get-AiProperty $handler 'timeout') -eq $desired.timeout -and
+                            -not [bool](Get-AiProperty $handler 'async' $false)) {
+                            $handler
+                        }
+                    }
+                }
+            )
+            $registrationPresent = $matchingHandlers.Count -eq 1 -and $scriptPresent -and $hooksEnabled
+            $evidence = "event=$($desired.event);matches=$($matchingHandlers.Count);scriptPresent=$scriptPresent;hooksEnabled=$hooksEnabled"
+            if (-not $registrationPresent) {
+                Add-AiReason -Reasons $Reasons -Code 'CLAUDE_STARTUP_HOOK_DRIFT' -Status 'DRIFTED' -Severity 'WARNING' -Lane 'activation' -Provider 'claude' -ResourceId ([string]$resource.id) -Detail 'The observed Claude startup hook is missing, duplicated, disabled, or differs from its expected command, matcher, timeout, or script.' -Evidence $evidence
+            }
+            Add-AiCheck -Checks $Checks -Id "resource.$($resource.id).registration" -Result $(if ($registrationPresent) { 'PASS' } else { 'FAIL' }) -Severity $(if ($registrationPresent) { 'INFO' } else { 'WARNING' }) -ReasonCode $(if ($registrationPresent) { 'CLAUDE_STARTUP_HOOK_CURRENT' } else { 'CLAUDE_STARTUP_HOOK_DRIFT' }) -Owned $false -Evidence $evidence
+            $hookRows.Add([pscustomobject][ordered]@{
+                Id = [string]$resource.id
+                Ownership = [string]$resource.ownership
+                RegistrationPresent = $registrationPresent
+                Payload = $null
+            }) | Out-Null
+            continue
+        }
         $payload = Compare-AiLockedPayload -ProfileResource $resource -LockResource (Get-AiLockResource -Lock $Lock -Id ([string]$resource.id)) -Reasons $Reasons -Checks $Checks
         $registrationContains = ([string](Get-AiProperty $resource.desired 'registrationContains')).Replace('\', '/')
         $registrationPresent = $true

@@ -46,6 +46,40 @@ Describe "selective skill installation" -Tag 'SelectiveSkills' {
         & $script:Installer -Provider Codex -CodexTargets $target -SkillNames handoff -Force -DryRun | Out-Null
         Test-Path -LiteralPath $target | Should -BeFalse
     }
+
+    It "requires explicit selection, destination and opt-in for source-only skills" {
+        $target = Join-Path $TestDrive 'source-only'
+        { & $script:Installer -Provider Codex -CodexTargets $target -SkillNames verify } |
+            Should -Throw '*Invalid selected skill*'
+        { & $script:Installer -Provider Codex -CodexTargets $target -AllowSourceOnly } |
+            Should -Throw '*requires SkillNames and explicit targets*'
+        { & $script:Installer -Provider Codex -SkillNames verify -AllowSourceOnly } |
+            Should -Throw '*requires SkillNames and explicit targets*'
+        { & $script:Installer -Provider Codex -CodexTargets $target -SkillNames @('verify', '../escape') -AllowSourceOnly } |
+            Should -Throw '*Invalid selected skill*'
+        Test-Path -LiteralPath $target | Should -BeFalse
+    }
+
+    It "installs and checks only explicitly selected source-only skills for <Provider>" -ForEach @(
+        @{ Provider = 'Codex'; Package = 'codex-skills'; TargetParameter = 'CodexTargets' }
+        @{ Provider = 'Claude'; Package = 'claude-skills'; TargetParameter = 'ClaudeTargets' }
+    ) {
+        $target = Join-Path $TestDrive "local-$Provider"
+        $selection = @{ Provider = $Provider; SkillNames = 'verify'; AllowSourceOnly = $true }
+        $selection[$TargetParameter] = $target
+        & $script:Installer @selection -DryRun | Out-Null
+        Test-Path -LiteralPath $target | Should -BeFalse
+        & $script:Installer @selection | Out-Null
+        @(Get-ChildItem -LiteralPath $target) | Should -HaveCount 1
+        (Get-FileHash -LiteralPath (Join-Path $target 'verify/SKILL.md')).Hash |
+            Should -BeExactly (Get-FileHash -LiteralPath (Join-Path $script:RepoRoot "$Package/skills/verify/SKILL.md")).Hash
+        & $script:Installer @selection -Check | Out-Null
+        $LASTEXITCODE | Should -Be 0
+        Add-Content -LiteralPath (Join-Path $target 'verify/SKILL.md') -Value 'local drift'
+        { & $script:Installer @selection -Check | Out-Null } | Should -Throw '*1 drifted*'
+        & $script:Installer @selection -Force | Out-Null
+        & $script:Installer @selection -Check | Out-Null
+    }
 }
 
 Describe "account-specific local plugin dispatch" -Tag 'LocalPluginAccount' {
@@ -421,6 +455,24 @@ Describe "default target selection" -Tag 'TargetResolution' {
 
         Test-Path -LiteralPath (Join-Path $explicit 'handoff\SKILL.md') | Should -BeTrue
         Test-Path -LiteralPath (Join-Path $script:AccountSkills 'handoff\SKILL.md') | Should -BeFalse
+    }
+
+    It "derives both provider state roots from MACHINE_CODE_ROOT (<Kind>)" -ForEach $script:ResolverScenarios {
+        $previousCodeRoot = $env:MACHINE_CODE_ROOT
+        $fixtureCodeRoot = Join-Path $TestDrive "code-root-$Kind"
+        $codexSkills = Join-Path $fixtureCodeRoot 'DevHome/state/codex/skills'
+        $claudeSkills = Join-Path $fixtureCodeRoot 'DevHome/state/claude/skills'
+        New-Item -ItemType Directory -Path $codexSkills, $claudeSkills -Force | Out-Null
+        try {
+            $env:MACHINE_CODE_ROOT = $fixtureCodeRoot
+            . (Get-ResolverFunctions -ScriptPath $_.Script)
+            @(Get-DefaultCodexTargets) | Should -Contain $codexSkills
+            @(Get-DefaultClaudeTargets) | Should -Contain $claudeSkills
+            $env:MACHINE_CODE_ROOT = 'relative-code-root'
+            { Get-DefaultCodexTargets } | Should -Throw '*MACHINE_CODE_ROOT must be fully qualified*'
+            { Get-DefaultClaudeTargets } | Should -Throw '*MACHINE_CODE_ROOT must be fully qualified*'
+        }
+        finally { $env:MACHINE_CODE_ROOT = $previousCodeRoot }
     }
 
     It "rejects targets that are not fully qualified (<Kind>)" -ForEach $script:ResolverScenarios {

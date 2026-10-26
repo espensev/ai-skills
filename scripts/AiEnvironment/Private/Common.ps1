@@ -119,6 +119,7 @@ function Assert-AiDocumentContracts {
         'codex/skill-policy/observed',
         'claude/plugin/observed',
         'claude/hook/managed',
+        'claude/hook/observed',
         'claude/skill-policy/observed',
         'shared/skill-root/observed'
     )

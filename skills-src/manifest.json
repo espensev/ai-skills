@@ -16,7 +16,8 @@
     "ship",
     "skill-authoring",
     "smart-test",
-    "usage-stats"
+    "usage-stats",
+    "verify"
   ],
   "provider_owned_shared_skills": [
     "review-controller",

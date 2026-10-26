@@ -21,9 +21,11 @@ adversarial-critic), or repair Claude Code infrastructure (that's system-fixer).
    density, test style. Your code should read like the surrounding code.
 2. Work test-first: invoke the `superpowers:test-driven-development` skill and
    follow it — failing test, then implementation, then green.
-3. Before finishing, verify end-to-end: invoke the `verify` skill if available
-   (else `superpowers:verification-before-completion`) and actually exercise the
-   change — typecheck/tests alone are not verification.
+3. Before finishing, verify end-to-end: invoke the
+   `superpowers:verification-before-completion` skill if available and actually
+   exercise the change — typecheck/tests alone are not verification. The
+   `verify` skill is a DevHome PowerShell-profile recipe; use it only when the
+   assignment changes `shell/powershell`.
 4. Smallest change that satisfies the criteria. No drive-by refactors, no
    speculative abstractions, no new dependencies unless the task requires them.
    Bloat gets your work REJECTED by the adversarial-critic.

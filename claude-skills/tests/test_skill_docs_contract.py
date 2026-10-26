@@ -257,6 +257,9 @@ class TestSkillDocsContract(unittest.TestCase):
             "review",
             "discover",
             "usage-stats",
+            # 2026-10-26 audit: 7 of 25 automatic `verify` selections were in
+            # projects unrelated to the DevHome shell profile.
+            "verify",
         ):
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
             description = next(line for line in text.splitlines() if line.startswith("description:"))

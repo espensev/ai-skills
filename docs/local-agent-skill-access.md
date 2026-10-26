@@ -22,6 +22,47 @@ If `CODEX_HOME` or `CLAUDE_HOME` is set, the script also uses
 
 ## Commands
 
+### Automatic selection
+
+Every packaged development skill except `delegate` supports selection from
+ordinary task requests; `delegate` keeps an explicit-only boundary. Users can
+still invoke any skill by name. Skill selection uses the task description and
+preserves the task's action limits: documentation checks stay read-only,
+test-selection questions do not run tests, and closeouts do not write history
+or memory. A selected skill with subcommands maps the request to the command
+that does the work: `ship` commits and normally pushes without a second
+confirmation, and `manager` runs `go` or `plan` rather than `status`.
+
+No model-selectable skill carries an `allowed-tools` grant. In Claude Code
+that field pre-approves tools for the invoking turn, so a skill the model can
+select on its own would let it grant itself access; pre-approve tools through
+provider permission settings when a workflow needs it.
+
+After installing those skills, check the effective provider settings:
+
+- Codex: an `enabled = false` entry in `[[skills.config]]` hides that exact
+  `SKILL.md` path. Enable the canonical installed copy, preserving disables
+  for duplicate copies. `agents/openai.yaml` must not set
+  `policy.allow_implicit_invocation: false` for an automatic skill.
+- Claude: `skillOverrides` must allow the skill (`on` or no override; the
+  `name-only`, `user-invocable-only`, and `off` states hide the description
+  from Claude), and its frontmatter must not set
+  `disable-model-invocation: true`. The skill listing shares a budget of about
+  one percent of the context window; above it Claude Code drops the
+  descriptions of the least-used skills, so keep descriptions short and turn
+  off skills that are not in use. `/doctor` reports the listing cost.
+
+Restart Codex after changing its config. Test a fresh session with a request
+that omits the skill name, then inspect whether it loads the intended skill
+and completes the requested action. Include nearby requests that should not
+select it. An installer or fixture pass proves file integrity, not model
+selection. Local-model `delegate` retains its separate invocation boundary.
+
+Provider contracts: [Codex skills](https://learn.chatgpt.com/docs/build-skills)
+and [Claude skills](https://code.claude.com/docs/en/skills).
+
+### Install and compare
+
 Preview what would be copied:
 
 ```powershell

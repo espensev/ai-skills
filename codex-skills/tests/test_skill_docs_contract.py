@@ -302,8 +302,8 @@ class TestSkillDocsContract(unittest.TestCase):
         ):
             self.assertIn(former, text)
 
-    def test_claude_only_invocation_demotion_does_not_leak_into_codex(self):
-        demoted = (
+    def test_development_skills_remain_available_for_implicit_invocation(self):
+        automatic = (
             "delegate",
             "diagnosing-bugs",
             "docs-sync",
@@ -311,9 +311,32 @@ class TestSkillDocsContract(unittest.TestCase):
             "smart-test",
             "usage-stats",
         )
-        for skill in demoted:
+        for skill in automatic:
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
-            self.assertNotIn("disable-model-invocation:", text, skill)
+            self.assertNotIn("disable-model-invocation:", text.split("---", 2)[1], skill)
+            policy = SKILLS / skill / "agents" / "openai.yaml"
+            if policy.exists():
+                self.assertNotRegex(policy.read_text(encoding="utf-8"),
+                                    r"allow_implicit_invocation:\s*false")
+
+    def test_skill_descriptions_fit_codex_validation_limits(self):
+        # The Agent Skills spec caps description at 1024 characters, Codex cuts
+        # longer catalog lines, and skill validators reject angle brackets; an
+        # unquoted YAML scalar must not contain ": " or " #" or it fails to parse.
+        for skill_md in sorted(SKILLS.glob("*/SKILL.md")):
+            skill = skill_md.parent.name
+            frontmatter = skill_md.read_text(encoding="utf-8").split("---", 2)[1]
+            line = next(l for l in frontmatter.splitlines() if l.startswith("description:"))
+            value = line.removeprefix("description:").strip()
+            if value.startswith('"'):
+                self.assertTrue(value.endswith('"'), skill)
+                description = value[1:-1]
+            else:
+                self.assertNotIn(": ", value, f"{skill}: quote a description that contains a colon")
+                self.assertNotIn(" #", value, skill)
+                description = value
+            self.assertLessEqual(len(description), 1024, skill)
+            self.assertNotRegex(description, r"[<>]", skill)
 
     def test_manager_uses_progressive_disclosure(self):
         manager = MANAGER_SKILL.read_text(encoding="utf-8")

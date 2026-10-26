@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "purpose": "Fresh-session automatic-selection controls; expectations require review of provider traces and task results.",
+  "fixtures": {
+    "README.md": "# Calculator\n\nA tiny library that adds two numbers.\n\nPackage version: 2.0.0\n",
+    "pyproject.toml": "[project]\nname = \"calculation-fixture\"\nversion = \"2.0.0\"\n",
+    "calculator.py": "def add(a, b):\n    return a + b\n",
+    "review-checklist.md": "Inspect the diff, identify concrete defects with file and line evidence, and state which tests were checked.\n",
+    "usage-snapshot.json": {
+      "source": "synthetic Claude native counter fixture",
+      "coverage": "one completed response; no other sessions included",
+      "usage": {
+        "input_tokens": 1200,
+        "cache_read_input_tokens": 3000,
+        "cache_creation_input_tokens": 800,
+        "output_tokens": 250
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "usage-positive",
+      "providers": ["claude"],
+      "prompt": "Summarize the synthetic Claude native usage counters in usage-snapshot.json. Report total input, cache reads and cache writes as subsets, output, overall token total, and source coverage. Do not estimate dollar cost or change files.",
+      "expected_skill": "usage-stats",
+      "expected_result": {
+        "total_input": 5000,
+        "cache_read_subset": 3000,
+        "cache_write_subset": 800,
+        "output": 250,
+        "overall_total": 5250,
+        "coverage": "synthetic fixture; one completed response"
+      }
+    },
+    {
+      "id": "docs_summary",
+      "providers": ["codex", "claude"],
+      "prompt": "Read README.md and summarize what the calculator does in one sentence. Do not compare project metadata or change files.",
+      "forbidden_skill": "docs-sync"
+    },
+    {
+      "id": "tests_wording",
+      "providers": ["codex", "claude"],
+      "prompt": "Rewrite this sentence more clearly: \"The test passed because the expected number and the computed number were equal.\" Return only the rewritten sentence.",
+      "forbidden_skill": "smart-test"
+    },
+    {
+      "id": "code_explanation",
+      "providers": ["codex", "claude"],
+      "prompt": "Explain this code in plain English: def add(a, b): return a + b. No bug has been reported; just describe its behavior.",
+      "forbidden_skill": "diagnosing-bugs"
+    },
+    {
+      "id": "checklist_prose",
+      "providers": ["codex", "claude"],
+      "prompt": "Read review-checklist.md and rewrite it as one friendly plain-English paragraph for a teammate. Keep it as prose; do not create a reusable agent workflow or change files.",
+      "forbidden_skill": "skill-authoring"
+    },
+    {
+      "id": "token_concept",
+      "providers": ["codex", "claude"],
+      "prompt": "Conceptually, what is the difference between input tokens and output tokens? Give two short sentences. Do not inspect local usage or report measurements.",
+      "forbidden_skill": "usage-stats"
+    }
+  ],
+  "verification": {
+    "completion_required": true,
+    "positive": "Require successful skill loading, the requested fixture read, correct arithmetic, and explicit synthetic coverage.",
+    "negative": "Require successful completion and absence of the forbidden skill; retain every other selected skill in evidence.",
+    "files": "Compare original fixture file sets and hashes; account for provider hook metadata separately.",
+    "versions": "Record installed skill hashes before and after each batch; these controls do not imply stable results across other versions or instructions."
+  }
+}

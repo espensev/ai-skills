@@ -1,6 +1,6 @@
 ---
 name: memory-management
-description: "Govern Codex native memory reads and explicitly authorized update notes with typed routing, index budgets, generated-surface health, and verified machine provenance. Use when recording lessons or decisions, updating or pruning memory, auditing memory health, or deciding whether a fact belongs in memory, rules, code comments, or always-loaded context."
+description: "Use when recording lessons or decisions into Codex memory, updating or pruning memory, auditing memory health, or deciding whether a fact belongs in memory, rules, code comments, or always-loaded context. Governs Codex native memory reads and explicitly authorized update notes with typed routing, index budgets, generated-surface health, and verified machine provenance. Do not use for the repo observation log or for ordinary code comments and docs."
 ---
 
 # Memory Management — Durable Memory Hygiene

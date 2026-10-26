@@ -2,7 +2,6 @@
 name: resolving-merge-conflicts
 description: "Resolve an in-progress git merge or rebase conflict from the original intent of each change, then verify and finish. Use when the user is mid-merge/mid-rebase with conflicts, or asks to resolve, finish, or untangle a conflicted merge/rebase."
 argument-hint: "[during a merge/rebase conflict]"
-allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true
 ---
 

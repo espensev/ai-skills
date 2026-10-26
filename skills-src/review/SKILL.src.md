@@ -3,7 +3,6 @@ name: review
 description: "Use when the user asks for a findings-first review or asks you to review and advise — on a branch, pull request, worktree, staged diff, or fixed-point diff, or on a written artifact such as a plan, design doc, handoff note, spec, or proposal — against repo standards, specs, and regression risk. Do not use to implement a fix, run a test campaign (use qa), diagnose one bug (use diagnosing-bugs), or audit runtime efficiency (use deep-audit)."
 {{#claude}}
 argument-hint: "[<fixed-point>] — branch | --working | --staged | --spec <path> | --doc <path>"
-allowed-tools: Read, Glob, Grep, Bash, Write
 user-invocable: true
 {{/claude}}
 ---

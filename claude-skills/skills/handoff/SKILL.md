@@ -2,7 +2,6 @@
 name: handoff
 description: "Use when the session opens by pointing back at earlier work instead of describing new work: resume, continue, take over, follow up, pick this up, read the handoff, or a path to a handoff/state/plan file. Reconciles the latest user direction with the prior state, verifies the claims the next action relies on, and continues through the workflow that owns the work. Do not use for a fresh task with no prior state, or for handoff authoring."
 argument-hint: "[<handoff path>] - or nothing, to find the state yourself"
-allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true
 ---
 

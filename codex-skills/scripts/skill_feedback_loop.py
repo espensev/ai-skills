@@ -51,7 +51,7 @@ class SkillHealth:
         score = 0.0
         # Eval failures are strong signals
         if self.eval_cases > 0:
-            score += (1.0 - self.eval_score / 5.0) * 40
+            score += (1.0 - self.eval_score / (self.eval_cases * 5.0)) * 40
         # Regressions are critical
         score += self.regression_count * 15
         # Blockers are urgent
@@ -292,7 +292,10 @@ def format_report_markdown(ranked: list[SkillHealth]) -> str:
     actionable = [h for h in ranked if h.priority_score > 0 or h.coverage_gaps]
 
     if not actionable:
-        lines.append("All skills are healthy. No improvements needed.")
+        lines.append(
+            "No actionable issues found in supplied data; "
+            "this does not establish real-world effectiveness."
+        )
         return "\n".join(lines)
 
     lines.append("| Rank | Skill | Priority | Regressions | Blockers | Drift | Eval Score |")

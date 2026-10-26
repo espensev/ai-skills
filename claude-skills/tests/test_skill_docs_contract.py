@@ -175,18 +175,55 @@ class TestSkillDocsContract(unittest.TestCase):
             "Installable skills must not also be excluded as source-only",
         )
 
-    def test_always_off_skills_disable_model_invocation(self):
-        demoted = (
-            "delegate",
+    def test_development_skills_allow_automatic_invocation_without_tool_grants(self):
+        automatic = (
             "diagnosing-bugs",
             "docs-sync",
             "skill-authoring",
             "smart-test",
             "usage-stats",
         )
-        for skill in demoted:
+        for skill in automatic:
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
-            self.assertIn("disable-model-invocation: true", text, skill)
+            frontmatter = text.split("---", 2)[1]
+            self.assertNotIn("disable-model-invocation: true", frontmatter, skill)
+            self.assertNotIn("allowed-tools:", frontmatter, skill)
+
+    def test_local_model_delegation_keeps_explicit_invocation_boundary(self):
+        text = (SKILLS / "delegate" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("disable-model-invocation: true", text)
+
+    def test_model_invocable_skills_carry_no_tool_grants_or_unknown_keys(self):
+        # allowed-tools pre-approves tools for the invoking turn, so a skill Claude
+        # may select on its own must not carry one; Claude Code silently ignores
+        # unknown keys such as agent-invocable, so provenance lives under metadata.
+        for skill_md in sorted(SKILLS.glob("*/SKILL.md")):
+            skill = skill_md.parent.name
+            frontmatter = skill_md.read_text(encoding="utf-8").split("---", 2)[1]
+            self.assertNotIn("agent-invocable", frontmatter, skill)
+            self.assertNotRegex(frontmatter, r"(?m)^(extracted-from|portable-since):", skill)
+            if "disable-model-invocation: true" in frontmatter:
+                continue
+            self.assertNotIn("allowed-tools:", frontmatter, skill)
+
+    def test_skill_descriptions_fit_listing_and_spec_limits(self):
+        # The open Agent Skills spec and claude.ai upload cap description at 1024
+        # characters with no angle brackets; an unquoted YAML scalar must not
+        # contain ": " or " #" or the frontmatter fails to parse.
+        for skill_md in sorted(SKILLS.glob("*/SKILL.md")):
+            skill = skill_md.parent.name
+            frontmatter = skill_md.read_text(encoding="utf-8").split("---", 2)[1]
+            line = next(l for l in frontmatter.splitlines() if l.startswith("description:"))
+            value = line.removeprefix("description:").strip()
+            if value.startswith('"'):
+                self.assertTrue(value.endswith('"'), skill)
+                description = value[1:-1]
+            else:
+                self.assertNotIn(": ", value, f"{skill}: quote a description that contains a colon")
+                self.assertNotIn(" #", value, skill)
+                description = value
+            self.assertLessEqual(len(description), 1024, skill)
+            self.assertNotRegex(description, r"[<>]", skill)
 
     def test_manager_uses_progressive_disclosure(self):
         manager = MANAGER_SKILL.read_text(encoding="utf-8")
@@ -220,6 +257,9 @@ class TestSkillDocsContract(unittest.TestCase):
             "review",
             "discover",
             "usage-stats",
+            # 2026-10-26 audit: 7 of 25 automatic `verify` selections were in
+            # projects unrelated to the DevHome shell profile.
+            "verify",
         ):
             text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
             description = next(line for line in text.splitlines() if line.startswith("description:"))
@@ -304,6 +344,10 @@ class TestSkillDocsContract(unittest.TestCase):
 
     def test_usage_stats_closeout_contract_is_portable(self):
         usage_text = USAGE_STATS_SKILL.read_text(encoding="utf-8")
+        self.assertIn("Claude native `input_tokens` excludes", usage_text)
+        self.assertIn("`cache_read_input_tokens`", usage_text)
+        self.assertIn("`cache_creation_input_tokens`", usage_text)
+        self.assertIn("Add those three lanes to form total input", usage_text)
         self.assertIn("## Command: `closeout`", usage_text)
         self.assertIn("current user message timestamp", usage_text)
         self.assertIn("unambiguously bound the current turn", usage_text)

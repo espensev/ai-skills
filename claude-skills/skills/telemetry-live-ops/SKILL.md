@@ -2,9 +2,7 @@
 name: telemetry-live-ops
 description: "MACHINE-LOCAL ops skill (not a portable skill): start, verify, and inspect the live ollama-telemetry deployment spanning observer_hub on MAINDESK and host_agent on snd-host. Retarget it with the OLLAMA_TELEMETRY_* env overrides. Use when tasks mention snd-host, observer_hub, MachineTelemetryHostStack, live telemetry deployment, remote telemetry health, or machine-wide telemetry verification."
 argument-hint: "[verify|start|status] — live telemetry operations for MAINDESK and snd-host"
-allowed-tools: Read, Glob, Grep, Bash
 user-invocable: true
-agent-invocable: true
 ---
 
 # Telemetry Live Ops

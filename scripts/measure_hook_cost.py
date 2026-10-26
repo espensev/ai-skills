@@ -9,8 +9,20 @@ Usage:
         [--claude-root PATH] [--codex-root PATH] [--json]
 
 Defaults to both providers, a 30-day window, and a human-readable report.
-Files older than the window (by mtime) are skipped; malformed JSONL lines are
-tolerated; files are streamed line-by-line rather than loaded whole.
+Metrics include records whose outer timestamp is at or after the cutoff,
+regardless of file mtime. Missing, malformed, or timezone-free timestamps are
+excluded. Metadata may classify a session regardless of its timestamp, but a
+session is counted only when it has an eligible non-metadata record. Files are
+streamed line-by-line; malformed JSONL lines are tolerated.
+
+Stop continuations require both endpoints in the window. Excluded records
+reset pending continuations so partial spans do not leak into durations or
+token totals. Codex token deltas additionally require in-window cumulative
+snapshots before and after the prompt; missing snapshots contribute no tokens,
+while complete durations still count. Thus token totals cover measured spans,
+not necessarily every counted continuation. token_measured_n and
+token_unmeasured_n expose that coverage. Missing or invalid counters and
+decreasing cumulative counters make a span unmeasured.
 
 Tests, from the repo root:
     python -m unittest scripts.tests.test_measure_hook_cost
@@ -40,7 +52,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import sys
 import time
@@ -61,23 +72,11 @@ HOOK_ATTACHMENT_TYPES = {
     "hook_cancelled",
 }
 
-SKILL_PATH_RE = re.compile(r"skills[\\/]([A-Za-z0-9_.-]+)[\\/]SKILL\.md")
+SKILL_PATH_RE = re.compile(r"skills[\\/]+([A-Za-z0-9_.-]+)[\\/]+SKILL\.md")
 
 
-def _within_window(path: Path, cutoff_ts: float) -> bool:
-    try:
-        return os.path.getmtime(path) >= cutoff_ts
-    except OSError:
-        return False
-
-
-def _iter_jsonl(path: Path, cutoff_ts: float) -> Iterator[dict]:
-    """Stream parsed records from a JSONL file, skipping malformed lines.
-
-    Yields nothing if the file's mtime predates the cutoff.
-    """
-    if not _within_window(path, cutoff_ts):
-        return
+def _iter_jsonl(path: Path) -> Iterator[dict]:
+    """Stream all parsed records, preserving metadata before the cutoff."""
     try:
         fh = open(path, encoding="utf-8", errors="replace")
     except OSError:
@@ -96,19 +95,26 @@ def _iter_jsonl(path: Path, cutoff_ts: float) -> Iterator[dict]:
 
 
 def _parse_ts(ts: Optional[str]) -> Optional[datetime]:
-    if not ts:
+    if not isinstance(ts, str) or not ts:
         return None
     try:
-        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
-    except (ValueError, AttributeError):
+        parsed = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except ValueError:
         return None
+    return parsed if parsed.tzinfo is not None else None
+
+
+def _within_window(rec: dict, cutoff_ts: float) -> bool:
+    timestamp = _parse_ts(rec.get("timestamp"))
+    return timestamp is not None and timestamp.timestamp() >= cutoff_ts
 
 
 def _seconds_between(start: Optional[str], end: Optional[str]) -> Optional[float]:
     t0, t1 = _parse_ts(start), _parse_ts(end)
     if t0 is None or t1 is None:
         return None
-    return (t1 - t0).total_seconds()
+    seconds = (t1 - t0).total_seconds()
+    return seconds if seconds >= 0 else None
 
 
 def _duration_stats(seconds: Iterable[float]) -> dict:
@@ -155,15 +161,18 @@ def collect_claude(root: Path, cutoff_ts: float) -> dict:
     for proj_dir in sorted(p for p in projects_dir.iterdir() if p.is_dir()):
         project = proj_dir.name
         for path in sorted(proj_dir.glob("*.jsonl")):
-            if not _within_window(path, cutoff_ts):
-                continue
             entrypoint: Optional[str] = None
+            has_events = False
             pending_stop_ctx: Optional[str] = None
-            for rec in _iter_jsonl(path, cutoff_ts):
+            for rec in _iter_jsonl(path):
                 if entrypoint is None:
                     ep = rec.get("entrypoint")
                     if ep is not None:
                         entrypoint = ep
+                if not _within_window(rec, cutoff_ts):
+                    pending_stop_ctx = None
+                    continue
+                has_events = True
                 rtype = rec.get("type")
                 if rtype == "attachment":
                     att = rec.get("attachment") or {}
@@ -203,7 +212,8 @@ def collect_claude(root: Path, cutoff_ts: float) -> dict:
                             subagent_type = inp.get("subagent_type") or "(unspecified)"
                             model = inp.get("model") or "(default)"
                             agent_launches[(subagent_type, model)] += 1
-            sessions_by_entrypoint[entrypoint or "unknown"] += 1
+            if has_events:
+                sessions_by_entrypoint[entrypoint or "unknown"] += 1
 
     return {
         "sessions_by_entrypoint": dict(sessions_by_entrypoint),
@@ -230,6 +240,8 @@ def _empty_codex_result() -> dict:
     stats.update(
         noncached_input_tokens_total=0,
         output_tokens_total=0,
+        token_measured_n=0,
+        token_unmeasured_n=0,
     )
     return {
         "sessions_by_kind": {},
@@ -248,6 +260,20 @@ def _codex_session_kind(payload: dict) -> str:
     if payload.get("originator") == "codex_exec" or payload.get("source") == "exec":
         return "exec"
     return "interactive"
+
+
+def _codex_token_totals(payload: dict) -> Optional[dict[str, int]]:
+    info = payload.get("info")
+    if not isinstance(info, dict):
+        return None
+    usage = info.get("total_token_usage")
+    if not isinstance(usage, dict):
+        return None
+    totals = {"total": usage.get("total_tokens"), "in": usage.get("input_tokens"),
+              "cached": usage.get("cached_input_tokens"), "out": usage.get("output_tokens")}
+    if any(type(value) is not int or value < 0 for value in totals.values()):
+        return None
+    return totals if totals["cached"] <= totals["in"] else None
 
 
 def _injected_context_kind(text: str) -> Optional[str]:
@@ -292,48 +318,62 @@ def collect_codex(root: Path, cutoff_ts: float) -> dict:
     injected_context: dict[str, dict[str, int]] = {}
     skill_usage: Counter = Counter()
     total_secs: list[float] = []
-    total_tokens: list[int] = []
     noncached_input_tokens: list[int] = []
     output_tokens: list[int] = []
 
     for path in sorted(sessions_dir.glob("**/*.jsonl")):
-        if not _within_window(path, cutoff_ts):
-            continue
         kind: Optional[str] = None
-        last_tokens = {"total": 0, "in": 0, "cached": 0, "out": 0}
+        has_events = False
+        last_tokens: Optional[dict] = None
         hook_at: Optional[str] = None
         hook_tokens: Optional[dict] = None
-        for rec in _iter_jsonl(path, cutoff_ts):
+        hook_observed_tokens = False
+        for rec in _iter_jsonl(path):
             rtype = rec.get("type")
             payload = rec.get("payload") or {}
             if not isinstance(payload, dict):
                 continue
             ptype = payload.get("type")
             ts = rec.get("timestamp") or ""
-            if rtype == "session_meta" and kind is None:
-                kind = _codex_session_kind(payload)
-            elif rtype == "event_msg":
+            if rtype == "session_meta":
+                if kind is None:
+                    kind = _codex_session_kind(payload)
+                continue
+            if not _within_window(rec, cutoff_ts):
+                last_tokens = None
+                hook_at = None
+                hook_tokens = None
+                hook_observed_tokens = False
+                continue
+            has_events = True
+            if rtype == "event_msg":
                 if ptype == "token_count":
-                    tu = (payload.get("info") or {}).get("total_token_usage") or {}
-                    last_tokens = {
-                        "total": tu.get("total_tokens", 0),
-                        "in": tu.get("input_tokens", 0),
-                        "cached": tu.get("cached_input_tokens", 0),
-                        "out": tu.get("output_tokens", 0),
-                    }
+                    current_tokens = _codex_token_totals(payload)
+                    if current_tokens is None or (
+                        last_tokens is not None and (
+                            any(current_tokens[key] < last_tokens[key] for key in last_tokens)
+                            or current_tokens["in"] - current_tokens["cached"]
+                            < last_tokens["in"] - last_tokens["cached"]
+                        )
+                    ):
+                        hook_tokens = None
+                    last_tokens = current_tokens
+                    if hook_at and current_tokens is not None:
+                        hook_observed_tokens = True
                 elif ptype in ("task_complete", "turn_aborted") and hook_at:
                     secs = _seconds_between(hook_at, ts)
-                    if secs is not None and hook_tokens is not None:
+                    if secs is not None:
                         total_secs.append(secs)
-                        total_tokens.append(last_tokens["total"] - hook_tokens["total"])
-                        noncached_input_tokens.append(
-                            (last_tokens["in"] - last_tokens["cached"])
-                            - (hook_tokens["in"] - hook_tokens["cached"])
-                        )
-                        output_tokens.append(last_tokens["out"] - hook_tokens["out"])
                         continuations_by_kind[kind or "unknown"] += 1
+                        if hook_tokens is not None and last_tokens is not None and hook_observed_tokens:
+                            deltas = {key: last_tokens[key] - hook_tokens[key] for key in last_tokens}
+                            noncached = deltas["in"] - deltas["cached"]
+                            if min(deltas.values()) >= 0 and noncached >= 0:
+                                noncached_input_tokens.append(noncached)
+                                output_tokens.append(deltas["out"])
                     hook_at = None
                     hook_tokens = None
+                    hook_observed_tokens = False
             elif rtype == "response_item":
                 if ptype == "message":
                     role = payload.get("role")
@@ -353,17 +393,21 @@ def collect_codex(root: Path, cutoff_ts: float) -> dict:
                             entry["bytes"] += nbytes
                     elif role == "user" and "<hook_prompt" in text:
                         hook_at = ts
-                        hook_tokens = dict(last_tokens)
+                        hook_tokens = dict(last_tokens) if last_tokens is not None else None
+                        hook_observed_tokens = False
                 elif ptype in ("function_call", "custom_tool_call", "local_shell_call"):
                     dumped = json.dumps(payload)
                     for m in SKILL_PATH_RE.finditer(dumped):
                         skill_usage[m.group(1)] += 1
-        sessions_by_kind[kind or "unknown"] += 1
+        if has_events:
+            sessions_by_kind[kind or "unknown"] += 1
 
     stats = _duration_stats(total_secs)
     stats.update(
         noncached_input_tokens_total=sum(noncached_input_tokens),
         output_tokens_total=sum(output_tokens),
+        token_measured_n=len(output_tokens),
+        token_unmeasured_n=len(total_secs) - len(output_tokens),
     )
     return {
         "sessions_by_kind": dict(sessions_by_kind),
@@ -417,7 +461,9 @@ def render_text(results: dict, days: int) -> str:
         s = x["stop_continuations"]
         extra = (
             f" noncached_input_tokens={s['noncached_input_tokens_total']} "
-            f"output_tokens={s['output_tokens_total']}"
+            f"output_tokens={s['output_tokens_total']} "
+            f"token_measured_n={s['token_measured_n']} "
+            f"token_unmeasured_n={s['token_unmeasured_n']}"
             if s["n"]
             else ""
         )

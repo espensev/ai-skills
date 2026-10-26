@@ -1,15 +1,15 @@
 ---
 name: memory-management
 {{#claude}}
-description: "Govern the agent memory store with a typed write schema, locality routing, and a hard index budget. Use when recording lessons or decisions, compressing or pruning memory, filtering out stale, false, or irrelevant entries, auditing memory health, or deciding whether a fact belongs in memory, rules, code comments, or always-loaded context."
+description: "Use when recording lessons or decisions into agent memory, compressing or pruning memory, filtering out stale, false, or irrelevant entries, auditing memory health, or deciding whether a fact belongs in memory, rules, code comments, or always-loaded context. Governs the agent memory store with a typed write schema, locality routing, and a hard index budget. Do not use for the repo observation log or for ordinary code comments and docs."
 argument-hint: "<record|update|audit|route|compress> — memory hygiene operation"
-allowed-tools: Read, Glob, Grep, Bash, Edit, Write
 user-invocable: true
-extracted-from: jau123/claude-memory-manager
-portable-since: 2026-07-02
+metadata:
+  extracted-from: jau123/claude-memory-manager
+  portable-since: 2026-07-02
 {{/claude}}
 {{#codex}}
-description: "Govern Codex native memory reads and explicitly authorized update notes with typed routing, index budgets, generated-surface health, and verified machine provenance. Use when recording lessons or decisions, updating or pruning memory, auditing memory health, or deciding whether a fact belongs in memory, rules, code comments, or always-loaded context."
+description: "Use when recording lessons or decisions into Codex memory, updating or pruning memory, auditing memory health, or deciding whether a fact belongs in memory, rules, code comments, or always-loaded context. Governs Codex native memory reads and explicitly authorized update notes with typed routing, index budgets, generated-surface health, and verified machine provenance. Do not use for the repo observation log or for ordinary code comments and docs."
 {{/codex}}
 ---
 

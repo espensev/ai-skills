@@ -27,6 +27,11 @@ Run the full local release gate before shipping. The repo scripts require
 .\scripts\Test-ReleaseReadiness.ps1
 ```
 
+The offline GitHub workflow `.github/workflows/ci.yml` runs that same command
+on pull requests and on `main`. It does not pass `-IncludeLiveRootCompare`.
+The controller-only plugin-cache lane runs only when the checkout is the
+declared `-SourcePackageRoot`.
+
 The wrapper runs ready-package validation, README manifest count checks, the
 single-source skill regeneration check, provider parity enforcement, offline
 repository telemetry and invocation tests, Codex and Claude contract tests,

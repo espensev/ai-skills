@@ -1,0 +1,31 @@
+name: Offline checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline:
+    name: Release readiness
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Run the existing release gate
+        shell: pwsh
+        run: |
+          # windows-2025 also ships Pester 3.4.0. Load 5.x so Invoke-Pester
+          # matches the suite. The command itself stays Test-ReleaseReadiness.ps1.
+          Import-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.999.0
+          ./scripts/Test-ReleaseReadiness.ps1

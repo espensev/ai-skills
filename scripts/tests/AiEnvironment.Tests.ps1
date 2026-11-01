@@ -380,6 +380,27 @@ Describe 'AI environment module contract' {
         $expectedPayloadCount | Should -BeGreaterThan 0
         $expectedVersionCount | Should -BeGreaterThan 0
 
+        # The checked-in profile names this workstation. Prove the lock blobs
+        # against the clone under test when that path is somewhere else.
+        $recordedRoot = [System.IO.Path]::TrimEndingDirectorySeparator([string]$profile.source.repositoryRoot)
+        $checkoutRoot = [System.IO.Path]::TrimEndingDirectorySeparator($script:RepoRoot)
+        if (-not [string]::Equals($recordedRoot, $checkoutRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $profile.source.repositoryRoot = $checkoutRoot
+            foreach ($resource in @($profile.resources)) {
+                $sourceRoot = [string]$resource.desired.sourceRoot
+                if ([string]::IsNullOrWhiteSpace($sourceRoot)) { continue }
+                $normalized = [System.IO.Path]::TrimEndingDirectorySeparator($sourceRoot)
+                if (-not $normalized.StartsWith($recordedRoot, [System.StringComparison]::OrdinalIgnoreCase)) { continue }
+                $suffix = $normalized.Substring($recordedRoot.Length).TrimStart('\', '/')
+                $resource.desired.sourceRoot = if ([string]::IsNullOrWhiteSpace($suffix)) {
+                    $checkoutRoot
+                }
+                else {
+                    Join-Path $checkoutRoot $suffix
+                }
+            }
+        }
+
         $module = Get-Module AiEnvironment
         $observation = & $module {
             param($CandidateProfile, $CandidateLock)

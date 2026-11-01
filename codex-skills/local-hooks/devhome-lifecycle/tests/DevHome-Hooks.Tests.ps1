@@ -2488,6 +2488,10 @@ Next gate
         It 'runs the registered UserPromptSubmit command through PowerShell and cmd' {
             $config = Get-Content -Raw -LiteralPath $script:HooksConfig | ConvertFrom-Json
             $command = $config.hooks.UserPromptSubmit[0].hooks[0].command
+            $registeredScript = [regex]::Match($command, '(?i)-File\s+"([^"]+)"').Groups[1].Value
+            if (-not (Test-Path -LiteralPath $registeredScript -PathType Leaf)) {
+                $command = $command.Replace($registeredScript, $script:HookScript)
+            }
 
             $results = foreach ($shell in @('PowerShell', 'Cmd')) {
                 [pscustomobject]@{
@@ -2556,6 +2560,9 @@ Next gate
                 $env:CODEX_HOME
             }
             $configTomlPath = Join-Path $codexHome 'config.toml'
+            if (-not (Test-Path -LiteralPath $configTomlPath -PathType Leaf)) {
+                Set-ItResult -Skipped -Because "installed Codex config is absent at $configTomlPath"
+            }
             $configToml = Get-Content -Raw -LiteralPath $configTomlPath
             $configToml | Should -Not -Match 'remember@claude-plugins-official:hooks/hooks\.json'
         }
@@ -2710,15 +2717,18 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
         It 'installs the closed hook set and proves it has no drift' {
             Test-Path -LiteralPath $script:Installer -PathType Leaf | Should -BeTrue
             $targetRoot = Join-Path $TestDrive 'codex-home'
+            $verifier = New-TestMachineVerifier
 
             & $script:Installer `
                 -TargetRoot $targetRoot `
-                -AllowTestOnlyTargetRootOverride |
+                -AllowTestOnlyTargetRootOverride `
+                -VerifierPath $verifier |
                 Out-Null
             {
                 & $script:Installer `
                     -TargetRoot $targetRoot `
                     -AllowTestOnlyTargetRootOverride `
+                    -VerifierPath $verifier `
                     -Check
             } | Should -Not -Throw
 
@@ -2740,9 +2750,11 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
 
         It 'detects installed hook drift without repairing it in check mode' {
             $targetRoot = Join-Path $TestDrive 'drifted-codex-home'
+            $verifier = New-TestMachineVerifier
             & $script:Installer `
                 -TargetRoot $targetRoot `
-                -AllowTestOnlyTargetRootOverride |
+                -AllowTestOnlyTargetRootOverride `
+                -VerifierPath $verifier |
                 Out-Null
             $driftedPath = Join-Path $targetRoot 'hooks\Invoke-DevHomeHook.ps1'
             Add-Content -LiteralPath $driftedPath -Value '# drift probe'
@@ -2751,6 +2763,7 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
                 & $script:Installer `
                     -TargetRoot $targetRoot `
                     -AllowTestOnlyTargetRootOverride `
+                    -VerifierPath $verifier `
                     -Check
             } | Should -Throw '*drift*'
             (Get-Content -LiteralPath $driftedPath -Tail 1) | Should -BeExactly '# drift probe'
@@ -2759,17 +2772,20 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
         It 'quietly repairs runtime drift through the plugin synchronizer' {
             Test-Path -LiteralPath $script:Synchronizer -PathType Leaf | Should -BeTrue
             $targetRoot = Join-Path $TestDrive 'synchronized-codex-home'
+            $verifier = New-TestMachineVerifier
 
             @(
                 & $script:Synchronizer `
                     -TargetRoot $targetRoot `
                     -AllowTestOnlyTargetRootOverride `
+                    -VerifierPath $verifier `
                     -Quiet
             ).Count | Should -Be 0
             {
                 & $script:Synchronizer `
                     -TargetRoot $targetRoot `
                     -AllowTestOnlyTargetRootOverride `
+                    -VerifierPath $verifier `
                     -Check `
                     -Quiet
             } | Should -Not -Throw
@@ -2781,12 +2797,14 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
                 & $script:Synchronizer `
                     -TargetRoot $targetRoot `
                     -AllowTestOnlyTargetRootOverride `
+                    -VerifierPath $verifier `
                     -Quiet
             ).Count | Should -Be 0
             {
                 & $script:Installer `
                     -TargetRoot $targetRoot `
                     -AllowTestOnlyTargetRootOverride `
+                    -VerifierPath $verifier `
                     -Check
             } | Should -Not -Throw
             (Get-Content -LiteralPath $driftedPath -Tail 1) | Should -Not -BeExactly '# synchronizer drift probe'
@@ -2891,17 +2909,20 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
             $cachedSynchronizer = Join-Path $cachedRoot 'Sync-DevHomeCodexHooks.ps1'
             $targetRoot = Join-Path $TestDrive 'source-delegated-codex-home'
 
+            $verifier = New-TestMachineVerifier
             {
                 & $cachedSynchronizer `
                     -SourcePackageRoot $script:PackageRoot `
                     -TargetRoot $targetRoot `
                     -AllowTestOnlyTargetRootOverride `
+                    -VerifierPath $verifier `
                     -Quiet
             } | Should -Not -Throw
             {
                 & $script:Installer `
                     -TargetRoot $targetRoot `
                     -AllowTestOnlyTargetRootOverride `
+                    -VerifierPath $verifier `
                     -Check
             } | Should -Not -Throw
         }

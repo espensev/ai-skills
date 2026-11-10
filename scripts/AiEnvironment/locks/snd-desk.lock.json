@@ -2,50 +2,96 @@
   "schema": "ai-skills/ai-environment-lock/v1",
   "profileId": "snd-desk",
   "state": "candidate",
-  "capturedAtUtc": "2026-09-25T02:53:33Z",
+  "capturedAtUtc": "2026-11-10T19:29:31Z",
   "source": {
     "repository": "https://github.com/espensev/ai-skills.git",
-    "commit": "9cfda7583de354a3a2be34d0f4c95d687509c80e",
+    "commit": "1a18ddd183af6052b87ed142e8a62c4dcb9b8ce7",
     "requireCleanWorktree": true
   },
   "providers": {
     "codex": {
-      "testedVersions": ["0.154.0"]
+      "testedVersions": [
+        "0.167.0"
+      ]
     },
     "claude": {
-      "testedVersions": ["2.1.268"]
+      "testedVersions": [
+        "2.1.322"
+      ]
     }
   },
   "resources": [
     {
       "id": "plugin:devhome-lifecycle",
       "version": "0.3.2",
-      "trustHash": "sha256:f86feafe2924b9e0d9f22aaa54056a12a389e5ef69d41e07d5533eef178344ba",
+      "trustHash": "sha256:fc26f9d664e6968cc0f39a0d51e3b6ea2a62696baf6b7cc62abbe9db0d4c0680",
       "payload": [
-        { "path": ".codex-plugin/plugin.json", "sha256": "EF1200B9905D5F73391DB6D1C6AEFB8C1484C4A38DCC6689567A5EA612EB0AE2" },
-        { "path": "hooks/hooks.json", "sha256": "07984C3908DB6766F62B02B2D3E59DC648E7613407DD1F032B3BF0ACE6A3F6A3" },
-        { "path": "Sync-DevHomeLifecyclePlugin.ps1", "sha256": "5060C0CF9C1CE50D55B2B2A2A313F32ACCDD6772469A1308372E891910501335" },
-        { "path": "Sync-DevHomeCodexHooks.ps1", "sha256": "95C363AD376CC8E616F1234C297D10B821CABC598A43B36EE6A7AC3B707A31A5" },
-        { "path": "Install-DevHomeCodexHooks.ps1", "sha256": "279B496B980E0D16F2B16F4CCD841274CFE85D679D6DF58F6A0B147C16A7E850" },
-        { "path": "Install-DevHomeClaudeHandoffRelay.ps1", "sha256": "662C93A78BCE313E514AEDDE0AB33166A0A641800602DA2236F0FA0D492AB871" },
-        { "path": "hooks.json", "sha256": "6A26247DB0A27B0F99AB58308134FE6F3C077134F63E7DA79E4DA86575A9F9E0" },
-        { "path": "hooks/Invoke-DevHomeHook.ps1", "sha256": "94E22CD4084D6AB85957219F4FF83430E7935A145AFE745A2788D6BB09DF0484" },
-        { "path": "hooks/Invoke-HandoffRelay.ps1", "sha256": "E7AFB286647082B3F99FBA3C6204219EAD4B06AB9AF8B7B019AE8251794A9FBB" },
-        { "path": "skills/devhome-lifecycle/SKILL.md", "sha256": "5E47DF2791855D3C79AA4E0E87FC4DA591B2F8D7DD63EDC59E5D293A7006E786" }
+        {
+          "path": ".codex-plugin/plugin.json",
+          "sha256": "EF1200B9905D5F73391DB6D1C6AEFB8C1484C4A38DCC6689567A5EA612EB0AE2"
+        },
+        {
+          "path": "hooks/hooks.json",
+          "sha256": "78DB07C937E495695E9A352E81C81EA4BAF96CE95A79580F38BF3580844EEFCD"
+        },
+        {
+          "path": "Sync-DevHomeLifecyclePlugin.ps1",
+          "sha256": "A19A52FC033D11417F10E3014A34DE97AB7E96ACA3DA5F9610C030B031FB46C8"
+        },
+        {
+          "path": "Sync-DevHomeCodexHooks.ps1",
+          "sha256": "95C363AD376CC8E616F1234C297D10B821CABC598A43B36EE6A7AC3B707A31A5"
+        },
+        {
+          "path": "Install-DevHomeCodexHooks.ps1",
+          "sha256": "48AD7824DADEF25A51B154073D0FB2CDFDC39C2610215ADCD9F4023DCCBDDD3C"
+        },
+        {
+          "path": "Install-DevHomeClaudeHandoffRelay.ps1",
+          "sha256": "662C93A78BCE313E514AEDDE0AB33166A0A641800602DA2236F0FA0D492AB871"
+        },
+        {
+          "path": "hooks.json",
+          "sha256": "6A26247DB0A27B0F99AB58308134FE6F3C077134F63E7DA79E4DA86575A9F9E0"
+        },
+        {
+          "path": "hooks/Invoke-DevHomeHook.ps1",
+          "sha256": "94E22CD4084D6AB85957219F4FF83430E7935A145AFE745A2788D6BB09DF0484"
+        },
+        {
+          "path": "hooks/Invoke-HandoffRelay.ps1",
+          "sha256": "E7AFB286647082B3F99FBA3C6204219EAD4B06AB9AF8B7B019AE8251794A9FBB"
+        },
+        {
+          "path": "skills/devhome-lifecycle/SKILL.md",
+          "sha256": "281E30A327B6D0C7403A868F9B6D0F98FBD3142E1814CAEF78C4910898CF7E26"
+        }
       ]
     },
     {
       "id": "hook:codex-lifecycle",
       "payload": [
-        { "path": "hooks.json", "sha256": "6A26247DB0A27B0F99AB58308134FE6F3C077134F63E7DA79E4DA86575A9F9E0" },
-        { "path": "hooks/Invoke-DevHomeHook.ps1", "sha256": "94E22CD4084D6AB85957219F4FF83430E7935A145AFE745A2788D6BB09DF0484" },
-        { "path": "hooks/Invoke-HandoffRelay.ps1", "sha256": "E7AFB286647082B3F99FBA3C6204219EAD4B06AB9AF8B7B019AE8251794A9FBB" }
+        {
+          "path": "hooks.json",
+          "sha256": "6A26247DB0A27B0F99AB58308134FE6F3C077134F63E7DA79E4DA86575A9F9E0"
+        },
+        {
+          "path": "hooks/Invoke-DevHomeHook.ps1",
+          "sha256": "94E22CD4084D6AB85957219F4FF83430E7935A145AFE745A2788D6BB09DF0484"
+        },
+        {
+          "path": "hooks/Invoke-HandoffRelay.ps1",
+          "sha256": "E7AFB286647082B3F99FBA3C6204219EAD4B06AB9AF8B7B019AE8251794A9FBB"
+        }
       ]
     },
     {
       "id": "hook:claude-handoff-relay",
       "payload": [
-        { "path": "hooks/Invoke-HandoffRelay.ps1", "sha256": "E7AFB286647082B3F99FBA3C6204219EAD4B06AB9AF8B7B019AE8251794A9FBB" }
+        {
+          "path": "hooks/Invoke-HandoffRelay.ps1",
+          "sha256": "E7AFB286647082B3F99FBA3C6204219EAD4B06AB9AF8B7B019AE8251794A9FBB"
+        }
       ]
     }
   ],

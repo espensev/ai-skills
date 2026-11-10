@@ -2,6 +2,7 @@ BeforeAll {
     $script:RepoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
     $script:ModuleRoot = Join-Path $script:RepoRoot 'scripts\AiEnvironment'
     $script:ModulePath = Join-Path $script:ModuleRoot 'AiEnvironment.psd1'
+    Remove-Module AiEnvironment -Force -ErrorAction SilentlyContinue
     Import-Module $script:ModulePath -Force
 
     function Write-TestJson {

@@ -789,6 +789,33 @@ source = 'https://example.invalid/wt-local.git'
         @($missingRecordActions.Type | Select-Object -Unique) | Should -Be @('REVIEW_OBSERVED_DRIFT')
     }
 
+    It 'observes empty Claude enabledPlugins and empty shared skill lock maps under strict mode' {
+        $claudeSettingsPath = Join-Path $script:Fixture.ClaudeHome 'settings.json'
+        $settings = Get-Content -Raw -LiteralPath $claudeSettingsPath | ConvertFrom-Json -Depth 100
+        $settings.enabledPlugins = [ordered]@{}
+        Write-TestJson -Path $claudeSettingsPath -Value $settings
+
+        Write-TestJson -Path (Join-Path $script:Fixture.AgentsHome '.skill-lock.json') -Value ([ordered]@{
+            version = 3
+            skills = [ordered]@{}
+            dismissed = [ordered]@{}
+        })
+
+        $state = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath -ErrorAction Stop
+        $stateSchema = Join-Path $script:ModuleRoot 'schemas\state.schema.json'
+
+        ($state | ConvertTo-Json -Depth 100) | Test-Json -SchemaFile $stateSchema | Should -BeTrue
+        $state.Status | Should -BeExactly 'DRIFTED'
+        $state.Providers.Claude.PluginRegistry.DeclaredPlugins | Should -Be 0
+        $state.Providers.Claude.Plugins[0].Configured | Should -BeFalse
+        $state.SharedSkills.RecordedCount | Should -Be 0
+        $state.SharedSkills.MissingRecordedPathCount | Should -Be 0
+        $state.SharedSkills.UnrecordedCount | Should -Be 1
+        $state.SharedSkills.Complete | Should -BeFalse
+        $state.Reasons.Code | Should -Contain 'CLAUDE_PLUGIN_DISABLED'
+        $state.Reasons.Code | Should -Contain 'SHARED_SKILL_LOCK_INCOMPLETE'
+    }
+
     It 'bounds a hung provider command and preserves the static fallback' {
         $pidFile = Join-Path $script:Fixture.Root 'hung-provider-child.pid'
         $env:AI_ENV_TEST_CHILD_PID = $pidFile

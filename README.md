@@ -150,12 +150,11 @@ attended acceptance procedure in
 |---|---|
 | **review-controller** | Lead a multi-lens review of a product, feature, or user journey: the Claude controller frames and judges, bundled Opus `review-specialist` agents inspect a frozen evidence set one role each, and Critical/High claims are verified before the report. Claude-only; the agent definition ships under `skills/review-controller/agent-definitions/`. |
 
-### Local-model delegation (new)
+### Local-model delegation
 
 | Skill | Purpose |
 |---|---|
 | **delegate** | Decide whether a narrow, well-scoped sub-task should go to a **local Ollama model** vs stay with the controller, and route it if so. Grounded in the local `ollama-telemetry` MCP delegation tools (`ollama_readiness` / `ollama_delegate` / `ollama_batch_delegate`), with a static-guidance fallback when the MCP server is unavailable. The controller always verifies the result. |
-| **delegation-eval** | Evaluate whether local model routing is worth keeping. Uses `ollama-telemetry` eval runs, judge packets, usage metrics, and `dispatch_recommendations` to compare helper models and propose reviewed `dispatch-rules.json` changes. |
 
 `usage-stats` uses **measured counters first**: native Codex `token_count`
 events when present, otherwise the local `ollama-telemetry` API at
@@ -165,10 +164,10 @@ heuristic estimates remain a clearly labelled last resort.
 
 Telemetry integration is deliberately split by portability:
 
-- `delegate`, `delegation-eval`, and `usage-stats` are portable and depend on API/MCP contracts.
+- `delegate` and `usage-stats` are portable and depend on API/MCP contracts.
 - `telemetry-live-ops` is machine-local, points at a personal live deployment, and is not exported.
-- Deprecated Claude-only aliases `refactor-planner`, `observer-test`, and
-  `worktree-manager` were removed; their behavior is covered by
+- Standalone `delegation-eval` was retired in favor of `usage-stats` (`scripts/retired-skills.json`); deprecated Claude-only aliases `refactor-planner`, `observer-test`, and
+  `worktree-manager` were also removed, with their behavior covered by
   `planner --mode refactor` and `manager` with its task runtime.
 
 See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md) for the integration boundary.

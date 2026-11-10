@@ -28,7 +28,7 @@ function Get-ClaudeEnvironmentObservation {
     $enabledPlugins = Get-AiProperty $settings 'enabledPlugins'
     $declaredPluginNames = @(
         if ($null -ne $enabledPlugins) {
-            $enabledPlugins.PSObject.Properties.Name | Sort-Object -Unique
+            $enabledPlugins.PSObject.Properties | ForEach-Object { [string]$_.Name } | Sort-Object -Unique
         }
     )
 

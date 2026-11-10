@@ -1085,7 +1085,7 @@ function Get-AiSharedSkillObservation {
             $lockVersion = Get-AiProperty $skillLock 'version'
             $skillsObject = Get-AiProperty $skillLock 'skills'
             if ($null -ne $skillsObject) {
-                $recordedNames = @($skillsObject.PSObject.Properties.Name | Sort-Object -Unique)
+                $recordedNames = @($skillsObject.PSObject.Properties | ForEach-Object { [string]$_.Name } | Sort-Object -Unique)
                 foreach ($property in $skillsObject.PSObject.Properties) {
                     $recordedPath = [string](Get-AiProperty $property.Value 'path')
                     if (-not [string]::IsNullOrWhiteSpace($recordedPath) -and -not (Test-Path -LiteralPath (Resolve-AiPath $recordedPath))) {

@@ -13,9 +13,10 @@ Use three layers:
 2. **Measured analytics:** `usage-stats` prefers the local telemetry API at
    `http://127.0.0.1:8099` for measured usage and cost data, then falls back
    to hooks/transcript estimates.
-3. **Evaluation and tuning:** `delegation-eval` uses telemetry eval runs, judge
-   packets, and `dispatch_recommendations` to decide whether model/task routing
-   should change.
+3. **Evaluation and tuning:** `ollama-telemetry` owns eval runs, judge packets,
+   and `dispatch_recommendations` for reviewed routing changes; standalone
+   `delegation-eval` was retired (`scripts/retired-skills.json`), with portable
+   telemetry reporting consolidated into `usage-stats`.
 
 `telemetry-live-ops` remains source-only. It is useful for this machine's live
 deployment, but it contains machine-local assumptions and must not ship in the

@@ -81,6 +81,213 @@ function Assert-AiJsonValueMatchesSchema {
     }
 }
 
+function Write-AiJsonFileAtomic {
+    param(
+        [Parameter(Mandatory)][string] $Path,
+        [Parameter(Mandatory)][object] $Value
+    )
+
+    $resolvedPath = Resolve-AiPath $Path
+    $parentDirectory = [System.IO.Path]::GetDirectoryName($resolvedPath)
+    if (-not [string]::IsNullOrWhiteSpace($parentDirectory)) {
+        [void][System.IO.Directory]::CreateDirectory($parentDirectory)
+    }
+
+    $json = (($Value | ConvertTo-Json -Depth 100) -replace "`r`n", "`n").TrimEnd("`n") + "`n"
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    $tempPath = "$resolvedPath.$PID.$([guid]::NewGuid().ToString('N')).tmp"
+    try {
+        [System.IO.File]::WriteAllText($tempPath, $json, $utf8NoBom)
+        if (Test-Path -LiteralPath $resolvedPath -PathType Leaf) {
+            [System.IO.File]::Replace($tempPath, $resolvedPath, [NullString]::Value)
+        }
+        else {
+            [System.IO.File]::Move($tempPath, $resolvedPath)
+        }
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempPath -PathType Leaf) {
+            Remove-Item -LiteralPath $tempPath -Force
+        }
+    }
+}
+
+function Test-AiPathUnderDevHomeState {
+    param([Parameter(Mandatory)][string] $Path)
+
+    $resolvedTarget = (Resolve-AiPath $Path).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+    $candidateRoots = [System.Collections.Generic.List[string]]::new()
+    if (-not [string]::IsNullOrWhiteSpace($env:DEVHOME_STATE_ROOT)) {
+        $candidateRoots.Add((Resolve-AiPath $env:DEVHOME_STATE_ROOT)) | Out-Null
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:MACHINE_CODE_ROOT)) {
+        $candidateRoots.Add((Resolve-AiPath (Join-Path $env:MACHINE_CODE_ROOT 'DevHome\state'))) | Out-Null
+    }
+    $candidateRoots.Add('D:\DevHome\state') | Out-Null
+
+    foreach ($candidate in $candidateRoots) {
+        $prefix = $candidate.TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+        if ($resolvedTarget.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Assert-AiControllerIdentity {
+    param(
+        [string] $ExpectedMachineId = '',
+        [string] $ExpectedInstanceId = '',
+        [string] $TargetPath = '',
+        [string] $VerifierPath = ''
+    )
+
+    $requiresVerification = (-not [string]::IsNullOrWhiteSpace($VerifierPath)) -or
+        ($ExpectedMachineId -ceq 'snd-desk') -or
+        (-not [string]::IsNullOrWhiteSpace($TargetPath) -and (Test-AiPathUnderDevHomeState -Path $TargetPath))
+    if (-not $requiresVerification) {
+        return
+    }
+
+    if ([string]::IsNullOrWhiteSpace($VerifierPath)) {
+        $VerifierPath = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'common_dev\v2\Test-LocalMachineIdentity.ps1'
+    }
+    $resolvedVerifier = Resolve-AiPath $VerifierPath
+    if (-not (Test-Path -LiteralPath $resolvedVerifier -PathType Leaf)) {
+        throw "Local machine identity verifier missing: $resolvedVerifier"
+    }
+
+    $requiredMachine = if ([string]::IsNullOrWhiteSpace($ExpectedMachineId)) { 'snd-desk' } else { $ExpectedMachineId }
+    $identity = @(& $resolvedVerifier)
+    if ($identity.Count -ne 1 -or
+        [string](Get-AiProperty $identity[0] 'status') -cne 'VERIFIED' -or
+        [string](Get-AiProperty $identity[0] 'machineId') -cne $requiredMachine -or
+        (-not [string]::IsNullOrWhiteSpace($ExpectedInstanceId) -and
+            [string](Get-AiProperty $identity[0] 'instanceId') -cne $ExpectedInstanceId)) {
+        throw "Controller machine identity verification failed for '$requiredMachine'."
+    }
+}
+
+function Get-AiManagedRelativeSourceRoots {
+    param(
+        [Parameter(Mandatory)][object] $Profile,
+        [Parameter(Mandatory)][object] $Lock,
+        [Parameter(Mandatory)][string] $RepositoryRoot
+    )
+
+    $resolvedRepositoryRoot = Resolve-AiPath $RepositoryRoot
+    $roots = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $lockedIds = @($Lock.resources | ForEach-Object { [string](Get-AiProperty $_ 'id') })
+
+    foreach ($resource in @($Profile.resources)) {
+        $resourceId = [string](Get-AiProperty $resource 'id')
+        $desired = Get-AiProperty $resource 'desired'
+        $sourceRootValue = [string](Get-AiProperty $desired 'sourceRoot')
+        if ([string]::IsNullOrWhiteSpace($sourceRootValue) -and $resourceId -cnotin $lockedIds) {
+            continue
+        }
+        if ([string]::IsNullOrWhiteSpace($sourceRootValue)) {
+            return [pscustomobject]@{ Scoped = $false; Roots = @() }
+        }
+        try {
+            $resolvedSourceRoot = Resolve-AiPath $sourceRootValue
+            $relative = [System.IO.Path]::GetRelativePath($resolvedRepositoryRoot, $resolvedSourceRoot)
+            if ([System.IO.Path]::IsPathRooted($relative) -or
+                $relative -ceq '.' -or
+                $relative -ceq '..' -or
+                $relative.StartsWith("..$([System.IO.Path]::DirectorySeparatorChar)", [System.StringComparison]::Ordinal)) {
+                return [pscustomobject]@{ Scoped = $false; Roots = @() }
+            }
+            $null = $roots.Add($relative.Replace('\', '/').TrimEnd('/'))
+        }
+        catch {
+            return [pscustomobject]@{ Scoped = $false; Roots = @() }
+        }
+    }
+
+    $sortedRoots = @($roots | Sort-Object)
+    return [pscustomobject]@{
+        Scoped = $sortedRoots.Count -gt 0
+        Roots = $sortedRoots
+    }
+}
+
+function Test-AiSourceHeadMatchesLock {
+    param(
+        [Parameter(Mandatory)][object] $Profile,
+        [Parameter(Mandatory)][object] $Lock,
+        [Parameter(Mandatory)][string] $RepositoryRoot,
+        [AllowNull()][string] $Head
+    )
+
+    $lockCommit = [string](Get-AiProperty $Lock.source 'commit')
+    if ([string]::IsNullOrWhiteSpace($Head) -or [string]::IsNullOrWhiteSpace($lockCommit)) {
+        return [pscustomobject]@{
+            Matches = $false
+            Mode = 'unverified'
+            ObservationFailed = $false
+        }
+    }
+    if ($Head -ceq $lockCommit) {
+        return [pscustomobject]@{
+            Matches = $true
+            Mode = 'exact'
+            ObservationFailed = $false
+        }
+    }
+
+    $resolvedRepositoryRoot = Resolve-AiPath $RepositoryRoot
+    $ancestry = Invoke-AiProcess -Command 'git' -Arguments @('-C', $resolvedRepositoryRoot, 'merge-base', '--is-ancestor', $lockCommit, $Head)
+    if (-not $ancestry.Found -or [bool]$ancestry.TimedOut -or $ancestry.ExitCode -notin @(0, 1)) {
+        return [pscustomobject]@{
+            Matches = $false
+            Mode = 'git-error'
+            ObservationFailed = $true
+        }
+    }
+    if ($ancestry.ExitCode -ne 0) {
+        return [pscustomobject]@{
+            Matches = $false
+            Mode = 'non-ancestor'
+            ObservationFailed = $false
+        }
+    }
+
+    $scopedRoots = Get-AiManagedRelativeSourceRoots -Profile $Profile -Lock $Lock -RepositoryRoot $resolvedRepositoryRoot
+    if (-not [bool]$scopedRoots.Scoped) {
+        return [pscustomobject]@{
+            Matches = $false
+            Mode = 'unscoped-source-root'
+            ObservationFailed = $false
+        }
+    }
+
+    $diffArguments = @('-C', $resolvedRepositoryRoot, 'diff', '--name-only', $lockCommit, $Head, '--') + @($scopedRoots.Roots)
+    $diffResult = Invoke-AiProcess -Command 'git' -Arguments $diffArguments
+    if (-not $diffResult.Found -or [bool]$diffResult.TimedOut -or $diffResult.ExitCode -ne 0) {
+        return [pscustomobject]@{
+            Matches = $false
+            Mode = 'git-error'
+            ObservationFailed = $true
+        }
+    }
+
+    $changedPaths = @($diffResult.StdOut -split '\r?\n' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($changedPaths.Count -eq 0) {
+        return [pscustomobject]@{
+            Matches = $true
+            Mode = 'descendant-source-unchanged'
+            ObservationFailed = $false
+        }
+    }
+
+    return [pscustomobject]@{
+        Matches = $false
+        Mode = 'managed-source-changed'
+        ObservationFailed = $false
+    }
+}
+
 function Assert-AiDocumentContracts {
     param(
         [Parameter(Mandatory)][object] $Profile,
@@ -990,6 +1197,11 @@ function Get-AiGitObservation {
         BlobFailures = 0
         TimedOut = $false
     }
+    $headCompatibility = [pscustomobject]@{
+        Matches = $false
+        Mode = 'unverified'
+        ObservationFailed = $false
+    }
     if (-not $gitMetadataPresent) {
         Add-AiReason -Reasons $Reasons -Code 'SOURCE_GIT_METADATA_MISSING' -Status 'SOURCE_UNTRUSTED' -Severity 'BLOCKER' -Lane 'source' -ResourceId 'source:ai-skills' -Detail 'The source root has no Git metadata.'
         Add-AiCheck -Checks $Checks -Id 'source.git-metadata' -Result 'FAIL' -Severity 'BLOCKER' -ReasonCode 'SOURCE_GIT_METADATA_MISSING' -Owned $true
@@ -1014,12 +1226,18 @@ function Get-AiGitObservation {
                 $gitObservationFailed = $true
             }
         }
+        $lockCommitPayloadObservation = Get-AiLockCommitPayloadObservation -Profile $Profile -Lock $Lock -RepositoryRoot $repositoryRoot
+        if (-not $gitObservationFailed -and $lockCommitPayloadObservation.CommitObjectValid) {
+            $headCompatibility = Test-AiSourceHeadMatchesLock -Profile $Profile -Lock $Lock -RepositoryRoot $repositoryRoot -Head $head
+            if ([bool]$headCompatibility.ObservationFailed) {
+                $gitObservationFailed = $true
+            }
+        }
         Add-AiCheck -Checks $Checks -Id 'source.git-metadata' -Result 'PASS' -Severity 'INFO' -ReasonCode 'SOURCE_GIT_METADATA_PRESENT' -Owned $true -Evidence "head=$head"
         if ($gitObservationFailed) {
             Add-AiReason -Reasons $Reasons -Code 'SOURCE_GIT_OBSERVATION_FAILED' -Status 'SOURCE_UNTRUSTED' -Severity 'BLOCKER' -Lane 'source' -ResourceId 'source:ai-skills' -Detail 'One or more bounded Git observations did not complete successfully.' -Evidence 'complete=false'
         }
         Add-AiCheck -Checks $Checks -Id 'source.git-observation' -Result $(if ($gitObservationFailed) { 'FAIL' } else { 'PASS' }) -Severity $(if ($gitObservationFailed) { 'BLOCKER' } else { 'INFO' }) -ReasonCode 'SOURCE_GIT_OBSERVATION_FAILED' -Owned $true -Evidence "complete=$(-not $gitObservationFailed)"
-        $lockCommitPayloadObservation = Get-AiLockCommitPayloadObservation -Profile $Profile -Lock $Lock -RepositoryRoot $repositoryRoot
     }
 
     $lockCommitEvidence = "commitObjectValid=$($lockCommitPayloadObservation.CommitObjectValid);payloadExpected=$($lockCommitPayloadObservation.PayloadExpected);payloadMatched=$($lockCommitPayloadObservation.PayloadMatched);versionExpected=$($lockCommitPayloadObservation.VersionExpected);versionMatched=$($lockCommitPayloadObservation.VersionMatched);mappingFailures=$($lockCommitPayloadObservation.MappingFailures);blobFailures=$($lockCommitPayloadObservation.BlobFailures);timedOut=$($lockCommitPayloadObservation.TimedOut)"
@@ -1028,9 +1246,9 @@ function Get-AiGitObservation {
     }
     Add-AiCheck -Checks $Checks -Id 'source.lock-commit-payload' -Result $(if ($lockCommitPayloadObservation.Verified) { 'PASS' } else { 'FAIL' }) -Severity $(if ($lockCommitPayloadObservation.Verified) { 'INFO' } else { 'BLOCKER' }) -ReasonCode 'LOCK_COMMIT_PAYLOAD_MISMATCH' -Owned $true -Evidence $lockCommitEvidence
 
-    $headMatchesLock = -not [string]::IsNullOrWhiteSpace($head) -and $head -ceq [string]$Lock.source.commit
+    $headMatchesLock = -not $gitObservationFailed -and [bool]$headCompatibility.Matches
     if ($gitMetadataPresent -and -not $headMatchesLock) {
-        Add-AiReason -Reasons $Reasons -Code 'SOURCE_COMMIT_MISMATCH' -Status 'SOURCE_UNTRUSTED' -Severity 'BLOCKER' -Lane 'source' -ResourceId 'source:ai-skills' -Detail 'The source HEAD does not match the lock commit.' -Evidence "head=$head;lock=$($Lock.source.commit)"
+        Add-AiReason -Reasons $Reasons -Code 'SOURCE_COMMIT_MISMATCH' -Status 'SOURCE_UNTRUSTED' -Severity 'BLOCKER' -Lane 'source' -ResourceId 'source:ai-skills' -Detail 'The source HEAD does not match the lock commit.' -Evidence "head=$head;lock=$($Lock.source.commit);mode=$($headCompatibility.Mode)"
     }
     if ($dirtyCount -gt 0) {
         Add-AiReason -Reasons $Reasons -Code 'SOURCE_WORKTREE_DIRTY' -Status 'SOURCE_UNTRUSTED' -Severity 'ERROR' -Lane 'source' -ResourceId 'source:ai-skills' -Detail 'The source worktree contains unaccepted changes.' -Evidence "substantivePaths=$dirtyCount"

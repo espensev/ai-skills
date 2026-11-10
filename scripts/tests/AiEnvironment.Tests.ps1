@@ -351,12 +351,15 @@ Describe 'AI environment module contract' {
         Remove-Item Env:AI_ENV_SCHEMA_PROBE -ErrorAction SilentlyContinue
     }
 
-    It 'exports only the Phase 1 read-only interface' {
+    It 'exports the Phase 2 observation, planning, and lock lifecycle interface' {
         $exports = @(Get-Command -Module AiEnvironment | Select-Object -ExpandProperty Name | Sort-Object)
         $exports | Should -Be @(
+            'Approve-AiEnvironmentLock',
             'Get-AiEnvironmentState',
             'New-AiEnvironmentPlan',
-            'Test-AiEnvironment'
+            'Save-AiEnvironmentState',
+            'Test-AiEnvironment',
+            'Update-AiEnvironmentLock'
         )
     }
 
@@ -826,7 +829,7 @@ if "%~1"=="--version" (
   exit /b 0
 )
 if "%~1"=="plugin" if "%~2"=="marketplace" if "%~3"=="list" (
-  powershell.exe -NoProfile -Command "$PID | Set-Content -LiteralPath $env:AI_ENV_TEST_CHILD_PID; Start-Sleep -Seconds 30"
+  python -B -c "import os, time; open(os.environ['AI_ENV_TEST_CHILD_PID'], 'w', encoding='ascii').write(str(os.getpid())); time.sleep(30)"
   exit /b 17
 )
 exit /b 64
@@ -1202,5 +1205,303 @@ exit /b 90
         Write-TestJson -Path $script:Fixture.ProfilePath -Value $profile
         { Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath } |
             Should -Throw '*Duplicate profile resource id*'
+    }
+
+    It 'accepts a descendant commit when managed sourceRoots are unchanged and fails closed when they change or roll back' {
+        $docsDir = Join-Path $script:Fixture.Repo 'docs'
+        $null = New-Item -ItemType Directory -Path $docsDir -Force
+        Set-Content -LiteralPath (Join-Path $docsDir 'notes.md') -Value '# unrelated commit' -Encoding utf8NoBOM
+        git -C $script:Fixture.Repo add --all
+        git -C $script:Fixture.Repo commit --quiet -m 'docs commit outside managed sourceRoots'
+
+        $descendantState = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $descendantState.Status | Should -BeExactly 'CURRENT'
+        $descendantState.Source.HeadMatchesLock | Should -BeTrue
+        $descendantState.Source.Reproducible | Should -BeTrue
+        $descendantState.PromotionReady | Should -BeTrue
+
+        $descendantHead = (git -C $script:Fixture.Repo rev-parse HEAD).Trim()
+        $lock = Get-Content -Raw -LiteralPath $script:Fixture.LockPath | ConvertFrom-Json -Depth 100
+        $baseCommit = [string]$lock.source.commit
+        $lock.source.commit = $descendantHead
+        Write-TestJson -Path $script:Fixture.LockPath -Value $lock
+        git -C $script:Fixture.Repo checkout --quiet $baseCommit
+        $rollbackState = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $rollbackState.Source.HeadMatchesLock | Should -BeFalse
+        $rollbackState.Reasons.Code | Should -Contain 'SOURCE_COMMIT_MISMATCH'
+
+        git -C $script:Fixture.Repo checkout --quiet main
+        $lock.source.commit = $baseCommit
+        Write-TestJson -Path $script:Fixture.LockPath -Value $lock
+        Set-Content -LiteralPath (Join-Path $script:Fixture.Repo 'lifecycle-plugin\extra.txt') -Value 'new tracked file in managed sourceRoot' -Encoding utf8NoBOM
+        git -C $script:Fixture.Repo add --all
+        git -C $script:Fixture.Repo commit --quiet -m 'change inside managed sourceRoot'
+
+        $changedRootState = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $changedRootState.Source.HeadMatchesLock | Should -BeFalse
+        $changedRootState.Reasons.Code | Should -Contain 'SOURCE_COMMIT_MISMATCH'
+        $changedRootState.PromotionReady | Should -BeFalse
+    }
+
+    It 'captures a candidate lock with Update-AiEnvironmentLock and promotes to accepted across in-repo commits' {
+        $inRepoLockPath = Join-Path $script:Fixture.Repo 'locks\fixture.lock.json'
+        Copy-Item -LiteralPath $script:Fixture.LockPath -Destination (New-Item -ItemType File -Path $inRepoLockPath -Force).FullName -Force
+        git -C $script:Fixture.Repo add --all
+        git -C $script:Fixture.Repo commit --quiet -m 'seed tracked lock'
+
+        @'
+@echo off
+if "%~1"=="--version" (
+  echo codex-cli 10.1.0
+  exit /b 0
+)
+if "%~1"=="plugin" if "%~2"=="marketplace" if "%~3"=="list" (
+  echo {"marketplaces":[]}
+  exit /b 0
+)
+exit /b 64
+'@ | Set-Content -LiteralPath (Join-Path $script:Fixture.Root 'codex.cmd') -Encoding ascii
+        @'
+@echo off
+if "%~1"=="--version" (
+  echo 9.2.0 (Claude Code^)
+  exit /b 0
+)
+exit /b 64
+'@ | Set-Content -LiteralPath (Join-Path $script:Fixture.Root 'claude.cmd') -Encoding ascii
+        (Get-Content -Raw -LiteralPath $script:Fixture.CodexConfigPath).Replace(
+            'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+        ) | Set-Content -LiteralPath $script:Fixture.CodexConfigPath -Encoding utf8NoBOM
+
+        $stagedLockPath = Join-Path $script:Fixture.Root 'captured.lock.json'
+        Copy-Item -LiteralPath $inRepoLockPath -Destination $stagedLockPath -Force
+        $captureReceipt = Update-AiEnvironmentLock -ProfilePath $script:Fixture.ProfilePath -LockPath $stagedLockPath
+        $captureReceipt.State | Should -BeExactly 'candidate'
+        $captureReceipt.CodexVersion | Should -BeExactly '10.1.0'
+        $captureReceipt.ClaudeVersion | Should -BeExactly '9.2.0'
+
+        Copy-Item -LiteralPath $stagedLockPath -Destination $inRepoLockPath -Force
+        git -C $script:Fixture.Repo add --all
+        git -C $script:Fixture.Repo commit --quiet -m 'commit candidate lock'
+
+        $candidateState = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $inRepoLockPath
+        @($candidateState.Reasons.Code) | Should -Be @('LOCK_NOT_ACCEPTED')
+
+        Copy-Item -LiteralPath $inRepoLockPath -Destination $stagedLockPath -Force
+        $approveReceipt = Approve-AiEnvironmentLock -ProfilePath $script:Fixture.ProfilePath -LockPath $stagedLockPath
+        $approveReceipt.State | Should -BeExactly 'accepted'
+        $approveReceipt.Status | Should -BeExactly 'CURRENT'
+
+        Copy-Item -LiteralPath $stagedLockPath -Destination $inRepoLockPath -Force
+        git -C $script:Fixture.Repo add --all
+        git -C $script:Fixture.Repo commit --quiet -m 'promote lock to accepted'
+
+        $acceptedState = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $inRepoLockPath
+        $acceptedState.Status | Should -BeExactly 'CURRENT'
+        $acceptedState.PromotionReady | Should -BeTrue
+        $acceptedState.Source.HeadMatchesLock | Should -BeTrue
+        ($acceptedState | Test-AiEnvironment).Passed | Should -BeTrue
+    }
+
+    It 'refuses Update-AiEnvironmentLock and Approve-AiEnvironmentLock when fail-closed preconditions fail' {
+        Set-Content -LiteralPath (Join-Path $script:Fixture.Repo 'dirty.txt') -Value 'uncommitted' -Encoding utf8NoBOM
+        { Update-AiEnvironmentLock -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath } |
+            Should -Throw '*dirty Git worktree*'
+        Remove-Item -LiteralPath (Join-Path $script:Fixture.Repo 'dirty.txt') -Force
+
+        Set-Content -LiteralPath (Join-Path $script:Fixture.CodexHome 'hooks.json') -Value '{"hooks":{"drifted":true}}' -Encoding utf8NoBOM
+        { Update-AiEnvironmentLock -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath } |
+            Should -Throw '*Installed target payload missing or drifted*'
+        Copy-TestFile -SourceRoot (Join-Path $script:Fixture.Repo 'codex-hook') -TargetRoot $script:Fixture.CodexHome -RelativePath 'hooks.json'
+
+        $lock = Get-Content -Raw -LiteralPath $script:Fixture.LockPath | ConvertFrom-Json -Depth 100
+        $lock.state = 'candidate'
+        $lock.acceptance[0].status = 'NOT_RUN'
+        Write-TestJson -Path $script:Fixture.LockPath -Value $lock
+        { Approve-AiEnvironmentLock -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath } |
+            Should -Throw '*ACCEPTANCE_NOT_RUN*'
+    }
+
+    It 'writes schema-valid observed state snapshots and enforces machine identity when requested' {
+        $previousStateRoot = $env:DEVHOME_STATE_ROOT
+        try {
+            $stateRoot = Join-Path $script:Fixture.Root 'devhome-state'
+            $env:DEVHOME_STATE_ROOT = $stateRoot
+            $goodVerifier = Join-Path $script:Fixture.Root 'verify-ok.ps1'
+            @'
+[pscustomobject]@{
+    status = 'VERIFIED'
+    machineId = 'test-machine'
+    instanceId = '11111111-1111-4111-8111-111111111111'
+}
+'@ | Set-Content -LiteralPath $goodVerifier -Encoding utf8NoBOM
+
+            $badVerifier = Join-Path $script:Fixture.Root 'verify-bad.ps1'
+            @'
+[pscustomobject]@{
+    status = 'FAILED'
+    machineId = 'other-host'
+    instanceId = '22222222-2222-4222-8222-222222222222'
+}
+'@ | Set-Content -LiteralPath $badVerifier -Encoding utf8NoBOM
+
+            $state = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+            { $state | Save-AiEnvironmentState -VerifierPath $badVerifier } |
+                Should -Throw '*identity verification failed*'
+
+            $receipt = $state | Save-AiEnvironmentState -VerifierPath $goodVerifier
+            Test-Path -LiteralPath $receipt.Path -PathType Leaf | Should -BeTrue
+            $savedJson = Get-Content -Raw -LiteralPath $receipt.Path
+            $savedJson | Test-Json -SchemaFile (Join-Path $script:ModuleRoot 'schemas\state.schema.json') | Should -BeTrue
+        }
+        finally {
+            if ($null -eq $previousStateRoot) {
+                Remove-Item Env:DEVHOME_STATE_ROOT -ErrorAction SilentlyContinue
+            }
+            else {
+                $env:DEVHOME_STATE_ROOT = $previousStateRoot
+            }
+        }
+    }
+}
+
+Describe 'AI environment state hygiene scripts' {
+    BeforeAll {
+        $script:RepairScript = Join-Path $script:RepoRoot 'scripts\Repair-CodexSkillConfig.ps1'
+        $script:SyncLockScript = Join-Path $script:RepoRoot 'scripts\Sync-SharedSkillLock.ps1'
+    }
+
+    BeforeEach {
+        $script:PreviousPath = $env:Path
+        $script:Fixture = New-AiEnvironmentFixture
+        $env:Path = "$($script:Fixture.Root);$($script:PreviousPath)"
+    }
+
+    AfterEach {
+        $env:Path = $script:PreviousPath
+    }
+
+    It 'prunes only missing disabled simple [[skills.config]] blocks and preserves all other TOML content' {
+        $missingDisabledPath = Join-Path $script:Fixture.CodexHome 'skills\retired-skill\SKILL.md'
+        $missingEnabledPath = Join-Path $script:Fixture.CodexHome 'skills\missing-enabled\SKILL.md'
+        Add-Content -LiteralPath $script:Fixture.CodexConfigPath -Encoding utf8NoBOM -Value @"
+
+[[skills.config]]
+name = 'name-only-rule'
+enabled = false
+
+[[skills.config]]
+path = '$missingDisabledPath'
+enabled = false
+
+[[skills.config]]
+path = '$missingEnabledPath'
+enabled = true
+
+# Keep trailing section comment
+[desktop]
+followUpQueueMode = "steer"
+"@
+
+        $checkBefore = & $script:RepairScript -ConfigPath $script:Fixture.CodexConfigPath -Check
+        $LASTEXITCODE | Should -Be 1
+        $checkBefore.PrunedCount | Should -Be 1
+        $checkBefore.RetainedMissingCount | Should -Be 1
+
+        $dryRun = & $script:RepairScript -ConfigPath $script:Fixture.CodexConfigPath -DryRun
+        $dryRun.Status | Should -BeExactly 'DryRun'
+        $dryRun.PrunedCount | Should -Be 1
+        (Get-Content -Raw -LiteralPath $script:Fixture.CodexConfigPath) | Should -Match 'retired-skill'
+
+        $badVerifier = Join-Path $script:Fixture.Root 'bad-verifier.ps1'
+        Set-Content -LiteralPath $badVerifier -Value "[pscustomobject]@{ status = 'FAILED'; machineId = 'wrong' }" -Encoding utf8NoBOM
+        { & $script:RepairScript -ConfigPath $script:Fixture.CodexConfigPath -VerifierPath $badVerifier } |
+            Should -Throw '*identity verification failed*'
+
+        $applied = & $script:RepairScript -ConfigPath $script:Fixture.CodexConfigPath
+        $applied.Status | Should -BeExactly 'Updated'
+        $applied.PrunedCount | Should -Be 1
+        $applied.ByNameBlocks | Should -Be 1
+        $applied.ExistingPathBlocks | Should -Be 1
+        $applied.RetainedMissingCount | Should -Be 1
+        Test-Path -LiteralPath $applied.BackupPath -PathType Leaf | Should -BeTrue
+
+        $afterText = Get-Content -Raw -LiteralPath $script:Fixture.CodexConfigPath
+        $afterText | Should -Not -Match 'retired-skill'
+        $afterText | Should -Match 'name-only-rule'
+        $afterText | Should -Match 'missing-enabled'
+        $afterText | Should -Match '# Keep trailing section comment'
+        $afterText | Should -Match 'followUpQueueMode = "steer"'
+    }
+
+    It 'reconciles shared .skill-lock.json idempotently with seed provenance and clears SHARED_SKILL_LOCK_INCOMPLETE' {
+        $skillsRoot = Join-Path $script:Fixture.AgentsHome 'skills'
+        $lockPath = Join-Path $script:Fixture.AgentsHome '.skill-lock.json'
+        Remove-Item -LiteralPath $lockPath -Force
+
+        foreach ($skillName in @('agents-sdk', 'verify', 'custom-local')) {
+            $skillFile = Join-Path $skillsRoot "$skillName\SKILL.md"
+            $null = New-Item -ItemType Directory -Path (Split-Path -Parent $skillFile) -Force
+            Set-Content -LiteralPath $skillFile -Value "# $skillName" -Encoding utf8NoBOM
+        }
+
+        $seedPath = Join-Path $script:Fixture.Root 'seed.skill-lock.json'
+        Write-TestJson -Path $seedPath -Value ([ordered]@{
+            version = 3
+            skills = [ordered]@{
+                'agents-sdk' = [ordered]@{
+                    source = 'cloudflare/skills'
+                    sourceType = 'github'
+                    sourceUrl = 'https://github.com/cloudflare/skills.git'
+                    skillPath = 'skills/agents-sdk/SKILL.md'
+                    skillFolderHash = '0123456789abcdef0123456789abcdef01234567'
+                    installedAt = '2026-06-26T04:34:02.814Z'
+                    updatedAt = '2026-06-26T04:34:02.814Z'
+                }
+                'uninstalled-legacy' = [ordered]@{
+                    source = 'microsoft/azure-skills'
+                    sourceType = 'github'
+                }
+            }
+            dismissed = [ordered]@{}
+        })
+
+        $beforeState = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $beforeState.Reasons.Code | Should -Contain 'SHARED_SKILL_LOCK_INCOMPLETE'
+
+        $checkBefore = & $script:SyncLockScript -SkillsRoot $skillsRoot -LockPath $lockPath -Check
+        $LASTEXITCODE | Should -Be 1
+        $checkBefore.Status | Should -BeExactly 'Drift'
+
+        $dryRun = & $script:SyncLockScript -SkillsRoot $skillsRoot -LockPath $lockPath -SeedLockPath $seedPath -AiSkillsRepositoryRoot $script:RepoRoot -DryRun
+        $dryRun.Status | Should -BeExactly 'DryRun'
+        Test-Path -LiteralPath $lockPath | Should -BeFalse
+
+        $applied = & $script:SyncLockScript -SkillsRoot $skillsRoot -LockPath $lockPath -SeedLockPath $seedPath -AiSkillsRepositoryRoot $script:RepoRoot
+        $applied.Status | Should -BeExactly 'Updated'
+        $applied.InstalledCount | Should -Be 4
+        $applied.RecordedCount | Should -Be 4
+        $applied.CarriedFromSeed | Should -Be 1
+        $applied.ClassifiedAiSkills | Should -Be 2
+        $applied.ClassifiedLocal | Should -Be 1
+
+        $writtenLock = Get-Content -Raw -LiteralPath $lockPath | ConvertFrom-Json -Depth 50
+        $writtenLock.skills.'agents-sdk'.source | Should -BeExactly 'cloudflare/skills'
+        $writtenLock.skills.verify.source | Should -BeExactly 'espensev/ai-skills'
+        $writtenLock.skills.'custom-local'.source | Should -BeExactly 'local/agents-skills'
+        $writtenLock.skills.PSObject.Properties['uninstalled-legacy'] | Should -BeNullOrEmpty
+
+        $secondRun = & $script:SyncLockScript -SkillsRoot $skillsRoot -LockPath $lockPath -AiSkillsRepositoryRoot $script:RepoRoot
+        $secondRun.Status | Should -BeExactly 'Current'
+        $secondRun.Changed | Should -BeFalse
+
+        $checkAfter = & $script:SyncLockScript -SkillsRoot $skillsRoot -LockPath $lockPath -AiSkillsRepositoryRoot $script:RepoRoot -Check
+        $LASTEXITCODE | Should -Be 0
+        $checkAfter.Status | Should -BeExactly 'Current'
+
+        $afterState = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $afterState.SharedSkills.Complete | Should -BeTrue
+        $afterState.Reasons.Code | Should -Not -Contain 'SHARED_SKILL_LOCK_INCOMPLETE'
     }
 }

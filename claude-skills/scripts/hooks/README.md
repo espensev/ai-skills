@@ -3,6 +3,13 @@
 Hook scripts that integrate with Claude Code's hook system to provide
 observability, analytics, and safety features.
 
+> **Scope & Workstation Disposition:** These six Python scripts are **opt-in,
+> project-scoped campaign templates** configured per repository via
+> `settings-hooks.template.json` (`$CLAUDE_PROJECT_DIR`). They are intentionally
+> **not** auto-registered in workstation-wide `CLAUDE_CONFIG_DIR/settings.json`;
+> global workstation session/handoff hooks are owned separately by
+> `codex-skills/local-hooks/devhome-lifecycle`.
+
 ## Scripts
 
 | Script | Hook Event | Purpose | Required By |

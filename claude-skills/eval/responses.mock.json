@@ -231,5 +231,77 @@
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for skill-authoring."
+  },
+  {
+    "id": "handoff-stale-state-001",
+    "selected_skill": "handoff",
+    "output": "Mock contract response: use read-only intake to verify each handoff claim against current source and the latest direction; preserve unrelated work before continuing.",
+    "created_files": [],
+    "verification_commands": [
+      "git status --short",
+      "git log -5 --oneline"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock; does not establish successful real handoff recovery."
+  },
+  {
+    "id": "browser-control-isolated-001",
+    "selected_skill": "browser-control",
+    "output": "Mock contract response: use devbrowser with an isolated profile and CDP on a loopback endpoint. Probe the headless endpoint before DOM inspection or screenshot capture; an unselected provider profile remains untouched.",
+    "created_files": [],
+    "verification_commands": [
+      "devbrowser -Mode Headless -Port 9001",
+      "node cdp.mjs --port 9001 status"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock; no browser or live profile was exercised."
+  },
+  {
+    "id": "docs-sync-check-only-001",
+    "selected_skill": "docs-sync",
+    "output": "Mock contract response: this read-only source cross-check reports stale claims and path existence with evidence; documentation changes require the requested fix scope.",
+    "created_files": [],
+    "verification_commands": [
+      "rg version README.md package.json",
+      "Test-Path src/parser.py"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock; no actual repository consistency claim."
+  },
+  {
+    "id": "review-controller-product-001",
+    "selected_skill": "review-controller",
+    "output": "Mock contract response: the controller assigns read-only usability, accessibility, and recovery reviews over frozen evidence, then reconciles findings against the supplied screenshots.",
+    "created_files": [
+      "docs/reviews/checkout-review.md"
+    ],
+    "verification_commands": [
+      "cross-check findings against screenshot evidence"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock; file list represents expected output, not an executed review."
+  },
+  {
+    "id": "smart-test-map-only-001",
+    "selected_skill": "smart-test",
+    "output": "Mock contract response: map changed files to targeted tests using imports and the existing test layout. Report the mapping and unmapped files; tests were not run for this map-only request.",
+    "created_files": [],
+    "verification_commands": [
+      "git diff --name-only",
+      "inspect imports and existing tests"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock; no tests or configuration writes were performed."
+  },
+  {
+    "id": "usage-stats-estimate-001",
+    "selected_skill": "usage-stats",
+    "output": "Mock contract response: session identity is checked before reporting coverage. The data source is transcript characters and tool timestamps; tokens are estimated ~approximate. Measured counters and billed cost are not exposed.",
+    "created_files": [],
+    "verification_commands": [
+      "verify session identity and transcript coverage"
+    ],
+    "acceptability": "accept",
+    "notes": "Deterministic mock; estimated values must not be promoted to measured cost or effectiveness."
   }
 ]

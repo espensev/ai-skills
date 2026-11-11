@@ -32,6 +32,14 @@ USAGE_STATS_SKILL = SKILLS / "usage-stats" / "SKILL.md"
 
 
 class TestSkillDocsContract(unittest.TestCase):
+    def test_all_portable_skills_have_eval_cases(self):
+        manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
+        cases = json.loads((ROOT / "eval/cases/light-skill-cases.json").read_text(encoding="utf-8"))
+        portable = set(manifest["default_skills"] + manifest["optional_skills"])
+        covered = {case["skill"] for case in cases}
+
+        self.assertEqual(portable - covered, set(), "Portable skills missing eval coverage")
+
     def test_expected_export_files_exist(self):
         expected = [
             ROOT / "CLAUDE.md",

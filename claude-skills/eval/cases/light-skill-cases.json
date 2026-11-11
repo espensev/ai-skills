@@ -423,5 +423,157 @@
       ],
       "must_create": []
     }
+  },
+  {
+    "id": "handoff-stale-state-001",
+    "skill": "handoff",
+    "prompt": "Continue from docs/handoff.md. It says a repair is blocked, but the branch may have merged since then. Verify the current state and follow my latest direction while preserving unrelated work.",
+    "checks": {
+      "must_mention": [
+        "claim",
+        "read-only",
+        "verify",
+        "current",
+        "latest direction",
+        "unrelated"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini",
+        "reset --hard"
+      ],
+      "verification_any_of": [
+        "git status",
+        "git log"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "browser-control-isolated-001",
+    "skill": "browser-control",
+    "prompt": "Inspect the checkout page DOM and capture a screenshot in an isolated browser. I have not selected a signed-in provider profile; preserve my existing browser session.",
+    "checks": {
+      "must_mention": [
+        "devbrowser",
+        "isolated",
+        "CDP",
+        "loopback",
+        "endpoint"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini",
+        "launched providerbrowser",
+        "launched playwright"
+      ],
+      "verification_any_of": [
+        "cdp.mjs",
+        "json/version"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "docs-sync-check-only-001",
+    "skill": "docs-sync",
+    "prompt": "Check README.md against package.json and the source for stale versions, missing paths, and contradictory commands. Report evidence only; do not edit the documentation.",
+    "checks": {
+      "must_mention": [
+        "read-only",
+        "source",
+        "stale",
+        "path existence",
+        "evidence"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini",
+        "edited README.md"
+      ],
+      "verification_any_of": [
+        "rg",
+        "Test-Path"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "review-controller-product-001",
+    "skill": "review-controller",
+    "prompt": "Lead a multi-lens review of the checkout journey using the supplied screenshots as frozen evidence. Cover usability, accessibility, and failure recovery; keep reviewers read-only and write docs/reviews/checkout-review.md. Do not implement fixes.",
+    "checks": {
+      "must_mention": [
+        "frozen evidence",
+        "read-only",
+        "accessibility",
+        "controller",
+        "findings"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini",
+        "implemented fixes"
+      ],
+      "verification_any_of": [
+        "screenshot",
+        "evidence"
+      ],
+      "must_create": [
+        "docs/reviews/checkout-review.md"
+      ]
+    }
+  },
+  {
+    "id": "smart-test-map-only-001",
+    "skill": "smart-test",
+    "prompt": "Map changed files src/parser.py and src/routes.py to the smallest useful test subset. Show the mapping and any gaps; do not run tests or create configuration just to answer.",
+    "checks": {
+      "must_mention": [
+        "changed files",
+        "targeted",
+        "mapping",
+        "unmapped",
+        "not run"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini",
+        "ran the full suite",
+        "created project.toml"
+      ],
+      "verification_any_of": [
+        "git diff",
+        "imports"
+      ],
+      "must_create": []
+    }
+  },
+  {
+    "id": "usage-stats-estimate-001",
+    "skill": "usage-stats",
+    "prompt": "Report this session usage and closeout. Native token counters and billed-cost data are not exposed; only transcript character counts and tool timestamps are available. Do not change budgets, history, or telemetry services.",
+    "checks": {
+      "must_mention": [
+        "estimated",
+        "~approximate",
+        "not exposed",
+        "data source",
+        "coverage",
+        "session"
+      ],
+      "must_not_mention": [
+        ".codex",
+        ".gemini",
+        "billed cost is exact",
+        "restarted telemetry",
+        "budget updated"
+      ],
+      "verification_any_of": [
+        "session identity",
+        "transcript"
+      ],
+      "must_create": []
+    }
   }
 ]

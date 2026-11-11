@@ -8,7 +8,7 @@ artifacts and language, and avoid provider leakage (`.codex`, `.gemini` paths).
 
 ## Files
 
-- `eval/cases/light-skill-cases.json` — eval cases for all Claude skills
+- `eval/cases/light-skill-cases.json` — eval cases for every default and optional Claude skill in the install manifest
 - `eval/responses.template.json` — blank response template
 - `eval/responses.mock.json` — deterministic passing fixture for package validation
 - `eval/results/` — scored output directory
@@ -26,6 +26,13 @@ labels fail even when the other checks total `4.0`.
 The mock fixture checks package contracts; its score does not measure live
 skill selection or effectiveness. Use recorded runs with reviewed labels for
 those conclusions.
+
+Coverage includes stale-handoff reconciliation, isolated browser routing,
+read-only documentation checks, product-review ownership, test mapping without
+execution, and estimated usage reporting. Contract tests require every portable
+skill to have a case, keep case/mock/template IDs aligned, and verify that these
+boundary cases reject wrong skill selections and prohibited actions or claims.
+Source-only skills are outside this portable coverage gate.
 
 Run the shared scorer from a sibling package:
 

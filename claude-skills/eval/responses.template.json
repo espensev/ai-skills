@@ -1,5 +1,14 @@
 [
   {
+    "id": "browser-control-isolated-001",
+    "selected_skill": "browser-control",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "deep-audit-basic-001",
     "selected_skill": "deep-audit",
     "output": "",
@@ -65,6 +74,24 @@
   {
     "id": "discover-deep-audit-boundary-001",
     "selected_skill": "discover",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "docs-sync-check-only-001",
+    "selected_skill": "docs-sync",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "handoff-stale-state-001",
+    "selected_skill": "handoff",
     "output": "",
     "created_files": [],
     "verification_commands": [],
@@ -144,6 +171,15 @@
     "notes": ""
   },
   {
+    "id": "review-controller-product-001",
+    "selected_skill": "review-controller",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "review-deep-audit-boundary-001",
     "selected_skill": "review",
     "output": "",
@@ -173,6 +209,24 @@
   {
     "id": "skill-authoring-basic-001",
     "selected_skill": "skill-authoring",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "smart-test-map-only-001",
+    "selected_skill": "smart-test",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
+    "id": "usage-stats-estimate-001",
+    "selected_skill": "usage-stats",
     "output": "",
     "created_files": [],
     "verification_commands": [],

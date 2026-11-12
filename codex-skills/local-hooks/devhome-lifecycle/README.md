@@ -318,6 +318,10 @@ Read-only drift check:
 Start a fresh Claude session after installation. Codex likewise needs a fresh
 session and explicit `/hooks` trust review when its hook definition changes.
 
+The Claude Stop registration omits `statusMessage` because Grok also imports
+these settings and reports that display field as unsupported. The command,
+timeout and synchronous behavior remain provider-compatible.
+
 ## Verification
 
 The repository release gate covers isolated marketplace, cache, installer, and

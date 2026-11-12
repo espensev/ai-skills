@@ -2837,6 +2837,7 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
                                     type = 'command'
                                     command = $legacyOwnedCommand
                                     timeout = 5
+                                    statusMessage = 'Legacy provider-specific display text'
                                 }
                             )
                         }
@@ -2875,6 +2876,10 @@ Set-Content -LiteralPath '$verifierMarker' -Value 'called' -Encoding ascii
             @($commands | Where-Object { $_ -match [regex]::Escape(($targetRoot -replace '\\','/')) })[0] |
                 Should -Match '-Provider Claude$'
             ($commands -join "`n") | Should -Match ([regex]::Escape(($targetRoot -replace '\\','/')))
+            $ownedHandler = @($settings.hooks.Stop | ForEach-Object { $_.hooks } |
+                Where-Object { $_.command -match '-Provider Claude$' })[0]
+            $ownedHandler.PSObject.Properties.Name | Should -Not -Contain 'statusMessage' `
+                -Because 'Grok imports the shared Claude registration but cannot use this display field'
             Test-Path -LiteralPath (Join-Path $targetRoot 'hooks\Invoke-HandoffRelay.ps1') -PathType Leaf |
                 Should -BeTrue
         }

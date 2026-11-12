@@ -34,7 +34,6 @@ $PackageRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SourceHookPath = Join-Path $PackageRoot 'hooks\Invoke-HandoffRelay.ps1'
 $DefaultRuntimeRoot = 'D:\DevHome\state\claude'
 $HookRelativePath = 'hooks\Invoke-HandoffRelay.ps1'
-$StatusMessage = 'Handoff Relay: preparing next-session context'
 
 function Resolve-NormalizedPath {
     param([Parameter(Mandatory)][string] $Path)
@@ -150,8 +149,8 @@ function Get-RegistrationDrift {
     if ([int] $handler.timeout -ne 5) {
         $drift.Add('handler timeout differs')
     }
-    if ([string] $handler.statusMessage -cne $StatusMessage) {
-        $drift.Add('handler status message differs')
+    if ($null -ne $handler.PSObject.Properties['statusMessage']) {
+        $drift.Add('shared handler must omit provider-specific statusMessage')
     }
     if ($handler.async -eq $true) {
         $drift.Add('handler must be synchronous')
@@ -239,7 +238,6 @@ function ConvertTo-HandoffRelayRegistration {
                 type = 'command'
                 command = $ExpectedCommand
                 timeout = 5
-                statusMessage = $StatusMessage
             })
         )
     })

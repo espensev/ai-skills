@@ -55,12 +55,12 @@ A task is **delegatable** only if it maps to one of these bounded task types:
 
 | task_type | Good for | Default model* |
 |-----------|----------|----------------|
-| `summarize` | log bursts, build/test output, diffs, notes | qwen3:8b |
-| `classify` | fixed-label routing, severity/commit buckets | qwen3-coder:30b |
-| `extract` | env var names, routes, TODOs, counts, IPs | qwen3-coder:30b |
-| `rewrite` | rough notes -> cleaner factual text | qwen3:8b |
-| `review` | first-pass spotting of OBVIOUS issues only | qwen3:8b |
-| `draft` | compact controller-ready snippets | qwen3:8b |
+| `summarize` | log bursts, build/test output, diffs, notes | gemma4:latest |
+| `classify` | fixed-label routing, severity/commit buckets | gemma4:26b |
+| `extract` | env var names, routes, TODOs, counts, IPs | gemma4:26b |
+| `rewrite` | rough notes -> cleaner factual text | gemma4:latest |
+| `review` | first-pass spotting of OBVIOUS issues only | gemma4:latest |
+| `draft` | compact controller-ready snippets | gemma4:latest |
 
 *Model selection is owned by the MCP server's `dispatch-rules.json`. The table above is
 the current default mapping; do not hardcode it as a routing decision - pass the
@@ -199,7 +199,7 @@ Goal: decide one task and act on it.
 Delegate - Route
 
   Task type   : extract
-  Decision    : ROUTED to local model (qwen3-coder:30b)
+  Decision    : ROUTED to local model (gemma4:26b)
   Status      : ok
   Verify      : <verify_hint - what the controller must confirm>
   Savings     : ~$<sonnet_equivalent_saved_usd> vs Sonnet this session

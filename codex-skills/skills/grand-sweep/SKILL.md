@@ -7,9 +7,9 @@ user-invocable: true
 
 # Grand Sweep
 
-Run multi-agent audit campaigns through ZCode dynamic workflows. This is a
-source-only recipe: the portable Codex package does not install it or supply
-its workflow engine. `audit-gated-subagents` owns authority, lane ownership,
+Run multi-agent audit campaigns through ZCode dynamic workflows. Installed as an
+optional Codex engineering skill; executing live dynamic workflows requires the
+ZCode workflow engine and its bundled `dynamic-workflows` companion. `audit-gated-subagents` owns authority, lane ownership,
 independent plan review, and implementation/verification gates; use both
 together. Load `dynamic-workflows` for engine signatures and authoring rules
 before writing or revising executable workflow scripts.

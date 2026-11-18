@@ -969,5 +969,28 @@
       ],
       "must_create": []
     }
+  },
+  {
+    "id": "grand-sweep-basic-001",
+    "skill": "grand-sweep",
+    "prompt": "Plan and launch a multi-tier grand audit campaign with frozen scope receipts, independent confirmation of medium/high candidates, and per-tier token accounting.",
+    "checks": {
+      "must_mention": [
+        "manifest.json",
+        "STATE.md",
+        "confirmer",
+        "accounting"
+      ],
+      "must_not_mention": [
+        ".claude/skills",
+        "CLAUDE.md"
+      ],
+      "verification_any_of": [
+        "files.glob",
+        "GetWorkflowRun",
+        "CreateWorkflow"
+      ],
+      "must_create": []
+    }
   }
 ]

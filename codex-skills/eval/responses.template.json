@@ -135,6 +135,15 @@
     "notes": ""
   },
   {
+    "id": "grand-sweep-basic-001",
+    "selected_skill": "grand-sweep",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "reject",
+    "notes": ""
+  },
+  {
     "id": "handoff-basic-001",
     "selected_skill": "handoff",
     "output": "",

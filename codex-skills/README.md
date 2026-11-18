@@ -99,10 +99,6 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 machine-local telemetry deployment details and is not copied by the provider
 package installer.
 
-`grand-sweep` is preserved as a source-only import from ZCode. It requires
-ZCode dynamic workflows and the `dynamic-workflows` companion skill, so it is
-not copied by the Codex package installer.
-
 `verify` is the source-only DevHome shell recipe shared with Claude. It
 distinguishes source tests from installed console acceptance. Its existing
 local discovery root is maintained through the explicit opt-in commands in

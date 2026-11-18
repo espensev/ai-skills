@@ -1,9 +1,26 @@
 from __future__ import annotations
 
 import re
+import shlex
+import subprocess
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Callable
+
+_UNSAFE_SHELL_FILE_CHARS = re.compile(r"[\x00\r\n;&|<>`$^%]")
+_SIMPLE_FILE_ARG = re.compile(r"^[A-Za-z0-9_./\\:-]+$")
+
+
+def _format_compile_file_arg(path: str) -> str:
+    """Validate and quote a file path interpolated into a shell compile command."""
+    if not path or _UNSAFE_SHELL_FILE_CHARS.search(path):
+        raise ValueError(f"Unsafe file path for compile command: {path!r}")
+    if _SIMPLE_FILE_ARG.match(path):
+        return path
+    if sys.platform == "win32":
+        return subprocess.list2cmdline([path])
+    return shlex.quote(path)
 
 
 def normalize_string_list(value: object) -> list[str]:
@@ -217,7 +234,7 @@ def configured_runtime_commands(
         if "{files}" in compile_cmd and not files:
             pass  # skip — no files to check
         else:
-            file_arg = " ".join(files or [])
+            file_arg = " ".join(_format_compile_file_arg(str(f)) for f in (files or []))
             commands.append(("compile", compile_cmd.replace("{files}", file_arg)))
     build_cmd = str(command_cfg.get("build", "") or "").strip()
     if build_cmd:

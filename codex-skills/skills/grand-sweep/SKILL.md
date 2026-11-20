@@ -85,18 +85,13 @@ reviewed revision whose missing tiers complete before publication.
 - Assign every in-scope path to one primary breadth unit. Batch small related
   files within the frozen limits; split oversized files with explicit section
   coverage. Queue work within the active-worker ceiling.
-- Model tiering is standing owner-authorized (granted 2026-11-10; quota is not
-  a constraint — owner holds the legacy best Z.ai plan plus Codex and Claude
-  plans — this follows the right-size-effort rule instead). Default tiering
-  per campaign: the mechanical breadth
-  pass (verbatim/existence checks, manifest probing, receipt collection) runs
-  as a separate linked run on the cheapest capable model; integration checks
-  stay on the standard tier; logic/verdict lenses and confirmation of
-  medium/high candidates stay on the session model. ZCode selects one run-wide
-  `subagent_model`; implement tiers as separate linked runs with a shared
-  frozen receipt, never as per-actor overrides. A cheaper model must be
-  capable of its assigned work; cost is independent of evidence quality.
-  Record each run's model in the receipt's actor-to-tier mapping.
+- Keep all review tiers on the session model unless the current request or
+  applicable workspace policy authorizes model changes. Within that authority
+  and the campaign budget, use the cheapest capable model for mechanical
+  checks, the standard tier for integration, and the session model for verdicts
+  and independent confirmation of medium/high candidates. ZCode selects one
+  run-wide `subagent_model`. When using different models, create separate
+  linked runs with a shared frozen receipt and record each run's actual model.
 - Assign session-model lenses to concrete contract seams, callers and
   cross-domain behavior. Lenses may raise any severity supported by evidence.
   List their source/dependency inputs so recovery can check freshness.

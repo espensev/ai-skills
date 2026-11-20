@@ -2,9 +2,8 @@
 
 Lightweight eval harness for `claude-skills`.
 
-Reuses the shared scorer from `codex-skills` to avoid duplication. Cases test
-that Claude skill invocations select the right skill, produce required
-artifacts and language, and avoid provider leakage (`.codex`, `.gemini` paths).
+The package scorer checks recorded skill selections, artifacts and required
+language, including restrictions on provider-specific paths.
 
 ## Files
 
@@ -34,32 +33,24 @@ skill to have a case, keep case/mock/template IDs aligned, and verify that these
 boundary cases reject wrong skill selections and prohibited actions or claims.
 Source-only skills are outside this portable coverage gate.
 
-Run the shared scorer from a sibling package:
+Run the following commands from the Claude package root. Start a response
+file, fill in the observed outputs and selections, then record the reviewer's
+acceptability label. Leave unobserved selections and missing labels blank.
 
-```powershell
-$repo = (Resolve-Path .).Path
-python ..\codex-skills\scripts\eval_skills.py `
-  --cases "$repo\eval\cases\light-skill-cases.json" `
-  --responses "$repo\eval\responses.template.json" `
-  --out "$repo\eval\results\latest.json"
+```sh
+python scripts/eval_skills.py --write-template eval/responses.run.json
 ```
 
-Or from bash:
+Score that run after recording the evidence.
 
-```bash
-python ../codex-skills/scripts/eval_skills.py \
-  --cases eval/cases/light-skill-cases.json \
-  --responses eval/responses.template.json \
-  --out eval/results/latest.json
+```sh
+python scripts/eval_skills.py --responses eval/responses.run.json --out eval/results/run.json
 ```
 
-For a deterministic fixture run:
+To replay the packaged mock fixture and print its scores, run the following.
 
-```bash
-python ../codex-skills/scripts/eval_skills.py \
-  --cases eval/cases/light-skill-cases.json \
-  --responses eval/responses.mock.json \
-  --out "${TMPDIR:-/tmp}/claude-skills-eval-latest.json"
+```sh
+python scripts/eval_skills.py --responses eval/responses.mock.json
 ```
 
 ## Response Format

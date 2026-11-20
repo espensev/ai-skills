@@ -525,7 +525,7 @@
   {
     "id": "grand-sweep-basic-001",
     "selected_skill": "grand-sweep",
-    "output": "Freeze the in-scope manifest.json and crew-audit/v1 STATE.md receipt before launch, probe access with files.glob, confirm medium/high candidates with an independent confirmer, and record per-tier accounting.",
+    "output": "Keep every tier on the session model. Freeze the in-scope manifest.json and crew-audit/v1 STATE.md receipt before launch, probe access with files.glob, confirm medium/high candidates with an independent confirmer, and record per-tier accounting.",
     "created_files": [],
     "verification_commands": [
       "CreateWorkflow",

@@ -67,7 +67,6 @@ function Resolve-StringSetting {
         [Parameter(Mandatory = $true)]
         [string[]]$EnvironmentNames,
 
-        [Parameter(Mandatory = $true)]
         [string]$FallbackValue
     )
 
@@ -101,29 +100,29 @@ $SshHost = Resolve-StringSetting `
     -EnvironmentNames @('OLLAMA_TELEMETRY_REMOTE_HOST') `
     -FallbackValue 'snd-host'
 
-$RemoteBaseUrl = Resolve-StringSetting `
-    -CurrentValue $RemoteBaseUrl `
-    -EnvironmentNames @('OLLAMA_TELEMETRY_REMOTE_URL') `
-    -FallbackValue 'http://192.168.2.5:43217'
+$RemoteBaseUrl = Resolve-StringSetting -CurrentValue $RemoteBaseUrl -EnvironmentNames 'OLLAMA_TELEMETRY_REMOTE_URL'
 
 $ObserverBaseUrl = Resolve-StringSetting `
     -CurrentValue $ObserverBaseUrl `
     -EnvironmentNames @('OLLAMA_TELEMETRY_OBSERVER_URL') `
     -FallbackValue 'http://127.0.0.1:43191'
 
-$remoteUri = [Uri]$RemoteBaseUrl
 $repoScript = Join-Path $RepoRoot 'native\scripts\start-remote-host-stack.ps1'
 
 Assert-PathExists -Path $repoScript
 
 $invokeArgs = @{
     SshHost = $SshHost
-    ApiHost = $remoteUri.Host
-    ApiPort = $remoteUri.Port
     ObserverBaseUrl = $ObserverBaseUrl
     VerificationDirectIterations = $VerificationDirectIterations
     VerificationObserverIterations = $VerificationObserverIterations
     VerificationSensorLimit = $VerificationSensorLimit
+}
+
+if ($RemoteBaseUrl) {
+    $remoteUri = [Uri]$RemoteBaseUrl
+    $invokeArgs.ApiHost = $remoteUri.Host
+    $invokeArgs.ApiPort = $remoteUri.Port
 }
 
 if ($RunVerification) {

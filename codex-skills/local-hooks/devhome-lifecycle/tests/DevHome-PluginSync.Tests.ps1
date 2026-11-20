@@ -394,8 +394,8 @@ exit /b 64
             $env:CODEX_HOME = $ambientCodexHome
             $missing = Invoke-TestSynchronizer -Account 'AcCoUnT3' -Check
             $missing.Account | Should -BeExactly 'account3'
-            $missing.ConvergeCommand | Should -BeLike '*-CodexLocalPluginAccount account3'
-            $missing.NextStep | Should -BeLike '*-CodexLocalPluginAccount account3*'
+            $missing.ConvergeCommand | Should -BeLike '*-Account account3'
+            $missing.NextStep | Should -BeLike '*-Account account3*'
             $env:CODEX_HOME | Should -BeExactly $ambientCodexHome
 
             $installed = Invoke-TestSynchronizer -Account 'account3'
@@ -907,6 +907,34 @@ description: Synthetic cache-only capability used by the convergence test.
 
         $current.Status | Should -BeExactly 'CURRENT'
         $checkExitCode | Should -Be 0
+    }
+
+    It 'reports a plugin-only recovery command usable from another directory for <account>' -ForEach @(
+        @{ account = 'main' }
+        @{ account = 'account3' }
+    ) {
+        Push-Location $script:Fake.Root
+        try {
+            $state = Invoke-TestSynchronizer -Account $account -Check
+            $state.NextStep.Contains($state.ConvergeCommand) | Should -BeTrue
+            $command = [scriptblock]::Create($state.ConvergeCommand)
+            $command.Ast.EndBlock.Statements[0].PipelineElements[0].GetCommandName() |
+                Should -BeExactly $script:Synchronizer
+
+            $fixture = @{
+                CodexHome = $script:Fake.CodexHome
+                CodexCommand = $script:Fake.CodexCommand
+                VerifierPath = $script:Fake.GoodVerifier
+                AllowTestOnlyCodexHomeOverride = $true
+            }
+            $installed = & ([scriptblock]::Create($state.ConvergeCommand + ' @fixture'))
+            $installed.Account | Should -BeExactly $account
+            $installed.Status | Should -BeExactly 'CURRENT'
+            (Get-FakeState).mutations | Should -Be @('marketplace-add', 'plugin-add')
+        }
+        finally {
+            Pop-Location
+        }
     }
 
     It 'reports the Codex it drove, its home, and what the operator does next' {

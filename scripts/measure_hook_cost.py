@@ -51,7 +51,9 @@ rollouts before writing:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import sys
 import time
@@ -59,9 +61,6 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Optional
-
-DEFAULT_CLAUDE_ROOT = Path(r"D:\DevHome\state\claude")
-DEFAULT_CODEX_ROOT = Path(r"D:\DevHome\state\codex")
 
 HOOK_ATTACHMENT_TYPES = {
     "hook_success",
@@ -235,6 +234,38 @@ def collect_claude(root: Path, cutoff_ts: float) -> dict:
     }
 
 
+class CodexSkillReferences:
+    """Count identified path-bearing calls across a root session's rollout files."""
+
+    def __init__(self):
+        self.seen: set[tuple[str, str, bytes]] = set()
+        self.by_skill: Counter = Counter()
+        self.repeated = 0
+        self.unidentified = 0
+
+    def record(self, lineage: Optional[str], payload: dict) -> None:
+        # Exclude transport metadata, which can change when a fork copies a call.
+        fields = ("type", "namespace", "name", "arguments", "input", "action")
+        content = json.dumps({k: payload[k] for k in fields if k in payload}, sort_keys=True)
+        skills = set(SKILL_PATH_RE.findall(content))
+        if not skills:
+            return
+        call_id = payload.get("call_id")
+        if not isinstance(lineage, str) or not lineage or not isinstance(call_id, str) or not call_id:
+            self.unidentified += 1
+            return
+        key = (lineage, call_id, hashlib.sha256(content.encode()).digest())
+        if key in self.seen:
+            self.repeated += 1
+            return
+        self.seen.add(key)
+        self.by_skill.update(sorted(skills))
+
+    def report(self) -> dict:
+        return {"identified_calls": len(self.seen), "repeated_records": self.repeated,
+                "unidentified_records": self.unidentified, "calls_by_skill": dict(self.by_skill)}
+
+
 def _empty_codex_result() -> dict:
     stats = _duration_stats([])
     stats.update(
@@ -249,6 +280,7 @@ def _empty_codex_result() -> dict:
         "continuations_by_kind": {},
         "injected_context": {},
         "skill_usage": {},
+        "skill_path_references": CodexSkillReferences().report(),
     }
 
 
@@ -317,12 +349,14 @@ def collect_codex(root: Path, cutoff_ts: float) -> dict:
     continuations_by_kind: Counter = Counter()
     injected_context: dict[str, dict[str, int]] = {}
     skill_usage: Counter = Counter()
+    references = CodexSkillReferences()
     total_secs: list[float] = []
     noncached_input_tokens: list[int] = []
     output_tokens: list[int] = []
 
     for path in sorted(sessions_dir.glob("**/*.jsonl")):
         kind: Optional[str] = None
+        lineage: Optional[str] = None
         has_events = False
         last_tokens: Optional[dict] = None
         hook_at: Optional[str] = None
@@ -338,6 +372,7 @@ def collect_codex(root: Path, cutoff_ts: float) -> dict:
             if rtype == "session_meta":
                 if kind is None:
                     kind = _codex_session_kind(payload)
+                    lineage = payload.get("session_id") or payload.get("id")
                 continue
             if not _within_window(rec, cutoff_ts):
                 last_tokens = None
@@ -396,9 +431,10 @@ def collect_codex(root: Path, cutoff_ts: float) -> dict:
                         hook_tokens = dict(last_tokens) if last_tokens is not None else None
                         hook_observed_tokens = False
                 elif ptype in ("function_call", "custom_tool_call", "local_shell_call"):
-                    dumped = json.dumps(payload)
-                    for m in SKILL_PATH_RE.finditer(dumped):
-                        skill_usage[m.group(1)] += 1
+                    mentions = SKILL_PATH_RE.findall(json.dumps(payload))
+                    if mentions:
+                        skill_usage.update(mentions)
+                        references.record(lineage, payload)
         if has_events:
             sessions_by_kind[kind or "unknown"] += 1
 
@@ -415,6 +451,7 @@ def collect_codex(root: Path, cutoff_ts: float) -> dict:
         "continuations_by_kind": dict(continuations_by_kind),
         "injected_context": injected_context,
         "skill_usage": dict(skill_usage),
+        "skill_path_references": references.report(),
     }
 
 
@@ -451,7 +488,7 @@ def render_text(results: dict, days: int) -> str:
             )
         lines.append(_stop_line(c["stop_continuations"]))
         _append_counts(lines, "Continuations by project:", c["continuations_by_project"])
-        _append_counts(lines, "Skill usage:", c["skill_usage"])
+        _append_counts(lines, "Skill tool requests:", c["skill_usage"])
         lines.append("Agent launches by (subagent_type, model):")
         for row in c["agent_launches"]:
             lines.append(f"  {row['count']:6d}  {row['subagent_type']} / {row['model']}")
@@ -474,7 +511,11 @@ def render_text(results: dict, days: int) -> str:
         lines.append("Injected context kinds (messages containing kind, bytes; 'other' = rest of those messages):")
         for k, v in sorted(x["injected_context"].items(), key=lambda kv: -kv[1]["count"]):
             lines.append(f"  {v['count']:6d}  {v['bytes']:8d}B  {k}")
-        _append_counts(lines, "Skill usage:", x["skill_usage"])
+        refs = x["skill_path_references"]
+        lines.append(f"Skill path references: {refs['identified_calls']} identified calls, "
+                     f"{refs['repeated_records']} repeated records, "
+                     f"{refs['unidentified_records']} records without identity")
+        _append_counts(lines, "Identified calls mentioning each skill:", refs["calls_by_skill"])
 
     return "\n".join(lines)
 
@@ -485,8 +526,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--days", type=int, default=30)
     p.add_argument("--provider", choices=("claude", "codex", "both"), default="both")
-    p.add_argument("--claude-root", type=Path, default=DEFAULT_CLAUDE_ROOT)
-    p.add_argument("--codex-root", type=Path, default=DEFAULT_CODEX_ROOT)
+    p.add_argument("--claude-root", type=Path, default=os.environ.get("CLAUDE_CONFIG_DIR") or None)
+    p.add_argument("--codex-root", type=Path, default=os.environ.get("CODEX_HOME") or None)
     p.add_argument("--json", action="store_true")
     return p
 
@@ -502,7 +543,12 @@ def run(args: argparse.Namespace) -> dict:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    args = build_arg_parser().parse_args(argv)
+    parser = build_arg_parser()
+    args = parser.parse_args(argv)
+    for provider, root, variable in (("claude", args.claude_root, "CLAUDE_CONFIG_DIR"),
+                                     ("codex", args.codex_root, "CODEX_HOME")):
+        if args.provider in (provider, "both") and (root is None or not root.is_dir()):
+            parser.error(f"Select an existing transcript root with --{provider}-root or {variable}")
     results = run(args)
     if args.json:
         print(json.dumps(results, indent=2))

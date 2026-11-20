@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -45,6 +48,15 @@ class TestEvalAcceptance(unittest.TestCase):
         self.assertEqual(result["total"], 4.0)
         self.assertFalse(result["pass"])
 
+    def test_unobserved_selection_in_template_cannot_earn_trigger_credit(self):
+        template, = scorer.build_template({self.case["id"]: self.case})
+        self.assertEqual(template["selected_skill"], "")
+        self.assertEqual(template["acceptability"], "")
+        response = {**self.response, "selected_skill": template["selected_skill"]}
+        result = scorer.evaluate_case(self.case, response)
+        self.assertEqual(result["scores"]["trigger"], 0.0)
+        self.assertFalse(result["pass"])
+
     def test_accept_passes_at_four_point_threshold(self):
         self.response["verification_commands"] = []
 
@@ -84,6 +96,21 @@ class TestEvalFixtures(unittest.TestCase):
         self.assertEqual(set(case_ids), set(response_ids))
         template = json.loads((ROOT / "eval/responses.template.json").read_text(encoding="utf-8"))
         self.assertEqual(template, scorer.build_template(scorer.as_case_map(self.cases)))
+
+    def test_duplicate_observed_responses_fail_before_writing_scores(self):
+        first = self.responses[0]
+        second = {**first, "acceptability": "reject"}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            responses = Path(temp_dir) / "responses.json"
+            scores = Path(temp_dir) / "scores.json"
+            responses.write_text(json.dumps([first, second]), encoding="utf-8")
+            completed = subprocess.run(
+                [sys.executable, str(SCORER_PATH), "--responses", str(responses), "--out", str(scores)],
+                text=True, capture_output=True,
+            )
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn(f"Duplicate eval id: {first['id']}", completed.stderr)
+            self.assertFalse(scores.exists())
 
     def test_boundary_cases_reject_wrong_routes_and_scope_violations(self):
         boundaries = {

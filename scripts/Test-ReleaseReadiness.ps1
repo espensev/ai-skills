@@ -148,7 +148,14 @@ if (-not $SkipUnitTests) {
     }
 
     Invoke-Step "Codex, Claude, and local plugin contract tests" {
-        python -m unittest codex-skills.tests.test_skill_docs_contract codex-skills.tests.test_local_plugin_contract claude-skills.tests.test_skill_docs_contract
+        $packageTests = @(
+            'codex-skills.tests.test_skill_docs_contract'
+            'codex-skills.tests.test_local_plugin_contract'
+            'codex-skills.tests.test_eval_skills'
+            'claude-skills.tests.test_skill_docs_contract'
+            'claude-skills.tests.test_eval_skills'
+        )
+        python -m unittest @packageTests
         if ($LASTEXITCODE -ne 0) {
             throw "Package contract tests failed"
         }

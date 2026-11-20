@@ -66,9 +66,10 @@ $LoadedPayloadFiles = @(
     'Sync-DevHomeCodexHooks.ps1',
     '.mcp.json'
 )
-$ConvergeCommand = '.\scripts\Install-AgentSkills.ps1 -Provider Codex -CodexLocalPlugin DevHomeLifecycle'
+$quotedScriptPath = [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($PSCommandPath)
+$ConvergeCommand = "& '$quotedScriptPath'"
 if ($Account -ne 'main') {
-    $ConvergeCommand += " -CodexLocalPluginAccount $Account"
+    $ConvergeCommand += " -Account $Account"
 }
 $InstalledVerifierPath = Join-Path `
     ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) `

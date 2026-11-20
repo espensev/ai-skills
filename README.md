@@ -80,8 +80,15 @@ size, and skill/Agent usage from local Claude Code and Codex CLI transcripts:
 python scripts/measure_hook_cost.py --days 30
 ```
 
-Add `--provider claude|codex`, `--claude-root`/`--codex-root` to point at a
-non-default transcript root, and `--json` for machine-readable output. See
+The CLI reads `CLAUDE_CONFIG_DIR` and `CODEX_HOME` for the selected providers.
+Use `--provider claude|codex` to select one and `--claude-root` or
+`--codex-root` to override its directory. In `--json` output, Codex
+`skill_usage` counts raw path mentions for compatibility. For audits, use
+`skill_path_references` to count calls by session lineage, call ID and tool
+input across the in-window records. A call can reference several skills. The
+report counts repeated records and records lacking identity separately. A path
+in a tool input can also come from a search, an edit or an example. Confirming
+a load or a task outcome requires its corresponding result. See
 [`scripts/measure_hook_cost.py`](scripts/measure_hook_cost.py) for the exact
 metrics and format assumptions; tests live in
 [`scripts/tests/test_measure_hook_cost.py`](scripts/tests/test_measure_hook_cost.py).

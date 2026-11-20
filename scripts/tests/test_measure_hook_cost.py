@@ -402,6 +402,32 @@ class TimestampWindowTests(unittest.TestCase):
                 result = self._collect("codex", [self._codex_call(self.START, path)])
                 self.assertEqual(result["skill_usage"], {"review": 1})
 
+    def test_codex_skill_references_account_for_forked_calls(self):
+        def meta(thread, root):
+            return {"type": "session_meta", "payload": {"id": thread, "session_id": root}}
+
+        def call(path, call_id="call-1"):
+            record = self._codex_call(self.START, path)
+            if call_id:
+                record["payload"]["call_id"] = call_id
+            return record
+
+        paths = "skills/qa/SKILL.md skills/qa/SKILL.md skills/review/SKILL.md"
+        self._collect("codex", [meta("root", "root"), call(paths)], name="parent")
+        copy = call(paths)
+        copy["timestamp"] = self.END
+        copy["payload"]["id"] = "child-item"
+        self._collect("codex", [meta("child", "root"), meta("root", "root"), copy,
+                                call("skills/ship/SKILL.md"), call(paths, "retry"),
+                                call(paths, None)], name="child")
+        self._collect("codex", [call(paths)], name="missing-lineage")
+        result = self._collect("codex", [meta("independent", "independent"), call(paths)])
+        self.assertEqual(result["skill_usage"], {"qa": 12, "review": 6, "ship": 1})
+        self.assertEqual(result["skill_path_references"], {
+            "identified_calls": 4, "repeated_records": 1, "unidentified_records": 2,
+            "calls_by_skill": {"qa": 3, "review": 3, "ship": 1},
+        })
+
     def test_event_time_controls_window_independently_of_file_mtime(self):
         for provider in ("codex", "claude"):
             call = getattr(self, f"_{provider}_call")
@@ -669,6 +695,20 @@ class CliJsonTests(ClaudeFixtureMixin, CodexFixtureMixin, unittest.TestCase):
         payload = json.loads(proc.stdout)
         self.assertEqual(payload["claude"]["sessions_by_entrypoint"], expected_claude["sessions_by_entrypoint"])
         self.assertEqual(payload["codex"]["sessions_by_kind"], expected_codex["sessions_by_kind"])
+
+    def test_cli_uses_only_selected_provider_root_and_honors_override(self):
+        command = [sys.executable, str(_REPO_ROOT / "scripts" / "measure_hook_cost.py"),
+                   "--provider", "codex", "--days", "36500", "--json"]
+        env = dict(os.environ, CODEX_HOME=str(self.root / "codex"), CLAUDE_CONFIG_DIR="")
+        selected = subprocess.run(command, env=env, capture_output=True, text=True, check=True)
+        self.assertEqual(sum(json.loads(selected.stdout)["codex"]["sessions_by_kind"].values()), 3)
+        env.pop("CODEX_HOME")
+        missing = subprocess.run(command, env=env, capture_output=True, text=True)
+        self.assertEqual(missing.returncode, 2)
+        self.assertIn("CODEX_HOME", missing.stderr)
+        override = subprocess.run(command + ["--codex-root", str(self.root / "codex")],
+                                  env=env, capture_output=True, text=True, check=True)
+        self.assertEqual(override.stdout, selected.stdout)
 
     def test_main_returns_zero_for_text_report(self):
         with contextlib.redirect_stdout(io.StringIO()) as out:

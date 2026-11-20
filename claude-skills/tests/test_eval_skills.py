@@ -45,6 +45,15 @@ class TestEvalAcceptance(unittest.TestCase):
         self.assertEqual(result["total"], 4.0)
         self.assertFalse(result["pass"])
 
+    def test_unobserved_selection_in_template_cannot_earn_trigger_credit(self):
+        template, = scorer.build_template({self.case["id"]: self.case})
+        self.assertEqual(template["selected_skill"], "")
+        self.assertEqual(template["acceptability"], "")
+        response = {**self.response, "selected_skill": template["selected_skill"]}
+        result = scorer.evaluate_case(self.case, response)
+        self.assertEqual(result["scores"]["trigger"], 0.0)
+        self.assertFalse(result["pass"])
+
     def test_accept_passes_at_four_point_threshold(self):
         self.response["verification_commands"] = []
 

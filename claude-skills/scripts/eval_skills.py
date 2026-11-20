@@ -123,15 +123,14 @@ def evaluate_case(case: dict[str, Any], response: dict[str, Any]) -> dict[str, A
 def build_template(cases: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     template: list[dict[str, Any]] = []
     for case_id in sorted(cases):
-        case = cases[case_id]
         template.append(
             {
                 "id": case_id,
-                "selected_skill": case.get("skill", ""),
+                "selected_skill": "",
                 "output": "",
                 "created_files": [],
                 "verification_commands": [],
-                "acceptability": "reject",
+                "acceptability": "",
                 "notes": "",
             }
         )

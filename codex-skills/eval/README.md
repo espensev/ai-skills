@@ -59,37 +59,28 @@ The scorer expects a response file shaped like this:
 
 ## Usage
 
-Write a starter response file:
+From the Codex package root, create a response file for the run.
 
 ```bash
-python scripts/eval_skills.py --write-template eval/responses.template.json
+python scripts/eval_skills.py --write-template eval/responses.run.json
 ```
 
-Score responses:
+After recording the evidence, score the run.
 
 ```bash
-python scripts/eval_skills.py ^
-  --cases eval/cases/light-skill-cases.json ^
-  --responses eval/responses.template.json ^
-  --out eval/results/latest.json
+python scripts/eval_skills.py --responses eval/responses.run.json --out eval/results/run.json
 ```
 
-Score the packaged mock fixture:
+To print the packaged mock fixture scores, run the following.
 
 ```bash
-python scripts/eval_skills.py ^
-  --cases eval/cases/light-skill-cases.json ^
-  --responses eval/responses.mock.json ^
-  --out %TEMP%\\codex-skills-eval-latest.json
+python scripts/eval_skills.py --responses eval/responses.mock.json
 ```
 
 After changing the cases or mock responses, refresh the committed snapshot:
 
 ```bash
-python scripts/eval_skills.py ^
-  --cases eval/cases/light-skill-cases.json ^
-  --responses eval/responses.mock.json ^
-  --out eval/results/latest.json
+python scripts/eval_skills.py --responses eval/responses.mock.json --out eval/results/latest.json
 ```
 
 The package contract tests reject a stale committed snapshot.
@@ -98,7 +89,8 @@ The package contract tests reject a stale committed snapshot.
 
 1. Run or simulate one output per eval case.
 2. Paste the outputs into a response file.
-3. Set `selected_skill` and `acceptability`.
+3. Record the skill observed in the run under `selected_skill` and the reviewer's
+   label under `acceptability`. Leave fields blank when the evidence is missing.
 4. Run the scorer.
 5. Review the failures list before changing the skills.
 
@@ -111,19 +103,14 @@ Use the light eval harness as the durable end of the feedback loop:
 2. Turn recurring regressions or blockers into eval cases:
 
 ```bash
-python scripts/observe_to_eval.py ^
-  --observations data/observations.jsonl ^
-  --merge eval/cases/light-skill-cases.json
+python scripts/observe_to_eval.py --observations data/observations.jsonl --merge eval/cases/light-skill-cases.json
 ```
 
 3. Re-score the package after skill edits.
 4. Rank the next skill fixes with:
 
 ```bash
-python scripts/skill_feedback_loop.py ^
-  --observations data/observations.jsonl ^
-  --eval eval/results/latest.json ^
-  --out docs/skill-improvement-report.md
+python scripts/skill_feedback_loop.py --observations data/observations.jsonl --eval eval/results/latest.json --out docs/skill-improvement-report.md
 ```
 
 The eval contribution to priority is `40 * (1 - average_score / 5)`. Adding

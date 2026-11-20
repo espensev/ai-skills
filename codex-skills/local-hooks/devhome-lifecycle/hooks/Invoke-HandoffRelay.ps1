@@ -1666,7 +1666,7 @@ Draft: $($Paths.Draft)
 
 This turn's handoff destination is Draft. The canonical declaration remains routing information; do not also write canonical. This is bounded Remember project state, not Codex native memory.
 
-Complete all requested work and verification first. Immediately before your final answer, write the current handoff using a dedicated apply_patch call that adds only Draft. In code mode use only text(await tools.apply_patch(...)); in that call. Then give the normal useful final answer, including any required Run closeout. Do not shorten the requested deliverable or claim publication: Stop validates, hash-checks and atomically publishes afterward. No preparation tool call is needed.
+Complete all requested work and verification first. Immediately before your final answer, write the current handoff using a dedicated apply_patch call that adds only Draft. In code mode use exactly text(await tools.apply_patch("PATCH")); and replace "PATCH" with the full patch as one double-quoted JSON string. Encode each line break as \n. Then give the normal useful final answer, including any required Run closeout. Do not shorten the requested deliverable or claim publication: Stop validates, hash-checks and atomically publishes afterward. No preparation tool call is needed.
 
 If more work or user steering arrives after drafting, finish that work; Stop will request a fresh draft. For a short tool-free Q&A ending in a question mark, with question and reply each at most 500 characters and no handoff request, skip drafting. Background work retains the existing bypass. Missing instructions or an uncertain draft retain Stop recovery.
 

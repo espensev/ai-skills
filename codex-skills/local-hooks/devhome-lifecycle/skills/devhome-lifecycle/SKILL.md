@@ -66,9 +66,10 @@ developer context. Confirm that context in the actual session; an enabled
 administrative definition alone does not prove host adoption. Complete material work
 and verification, add only that draft with a dedicated `apply_patch` call, then
 give the normal final answer and required Run closeout. In code mode use only
-`text(await tools.apply_patch(...));` in the call. First Stop publishes when the
-observed native transcript proves a completed single-file Add with matching
-content and no later work. Mixed calls, shell writes, pending tools, steering,
+`text(await tools.apply_patch("PATCH"));` in the call. Replace `"PATCH"` with the
+full patch as one double-quoted JSON string, using `\n` for line breaks.
+First Stop publishes when the native transcript proves a completed single-file
+Add with matching content and no later work. Mixed calls, shell writes, pending tools, steering,
 post-draft compaction or unknown transcript shapes retain bounded recovery.
 Repeated prompt events and recovery preserve the original canonical baseline.
 The active draft instruction governs authoring; keep the canonical startup

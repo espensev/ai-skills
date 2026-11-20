@@ -45,8 +45,10 @@ directs authoring for this turn.
 
 After completing all work and verification, the agent adds only the draft in a
 dedicated `apply_patch` call, then gives its normal final answer and required Run
-closeout. The observed code-mode wrapper `text(await tools.apply_patch(...));`
-is supported. First Stop accepts this path only when the native transcript
+closeout. In code mode, use `text(await tools.apply_patch("PATCH"));` and
+replace `"PATCH"` with the full patch as one double-quoted JSON string. Encode
+line breaks as `\n`. A JavaScript template literal triggers recovery.
+First Stop accepts this path only when the native transcript
 records a completed single-file Add for this session/turn, the recorded content
 matches the bounded draft, the dedicated call completes, and no later work or
 steering appears. Mixed calls, shell writes, update-only records, pending tools,

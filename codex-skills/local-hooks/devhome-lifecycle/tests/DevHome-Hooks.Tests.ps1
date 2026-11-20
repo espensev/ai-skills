@@ -534,12 +534,20 @@ This paragraph is intentionally ignored.
             }
 
             function Write-PreparedDraft {
-                param([string] $DraftPath, [switch] $MixedWork, [switch] $PendingWork)
+                param(
+                    [string] $DraftPath, [switch] $MixedWork, [switch] $PendingWork,
+                    [string] $CodeTemplate = 'text(await tools.apply_patch("PATCH"));',
+                    [switch] $TemplateLiteral
+                )
                 $draft = Get-ContractHandoffDraft -SummaryItems @('Prepared fixture completed.')
                 Set-Content -LiteralPath $DraftPath -Value $draft -Encoding utf8NoBOM -NoNewline
                 $patch = "*** Begin Patch`n*** Add File: $($DraftPath.Replace('\','/'))`n" +
                     (($draft -split '\r?\n' | ForEach-Object { '+' + $_ }) -join "`n") + "`n*** End Patch"
-                $code = 'text(await tools.apply_patch(' + (ConvertTo-Json -InputObject $patch -Compress) + '));'
+                $argument = ConvertTo-Json -InputObject $patch -Compress
+                if ($TemplateLiteral) {
+                    $argument = '`' + $patch.Replace('\','\\').Replace('`','\`').Replace('${','\${') + '`'
+                }
+                $code = $CodeTemplate.Replace('"PATCH"', $argument)
                 if ($MixedWork) { $code += 'text(await tools.exec_command({cmd:"later work"}));' }
                 if ($PendingWork) {
                     Add-PreparedRecords @(@{ type='response_item'; payload=@{ type='function_call'; name='exec_command'; call_id='pending'; arguments='{}' } })
@@ -562,10 +570,12 @@ This paragraph is intentionally ignored.
                 $out.hookSpecificOutput.hookEventName | Should -BeExactly 'UserPromptSubmit'
                 $out.PSObject.Properties.Name | Should -Not -Contain 'decision'
                 $out.hookSpecificOutput.additionalContext | Should -Match 'Next gate: 2 bullets, 40 words total, 24 words per bullet'
+                $example = [regex]::Match($out.hookSpecificOutput.additionalContext, 'text\(await tools\.apply_patch\("PATCH"\)\);').Value
+                $example | Should -Not -BeNullOrEmpty
                 $draft = Get-HandoffRelayDraftPath -Output $first.Output
                 (Get-Content -Raw -LiteralPath $script:PreparedTarget).Trim() | Should -BeExactly '# baseline'
                 Test-Path -LiteralPath $draft | Should -BeFalse
-                Write-PreparedDraft -DraftPath $draft
+                Write-PreparedDraft -DraftPath $draft -CodeTemplate $example
                 $script:PreparedPayload.hook_event_name = 'Stop'
                 $stop = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
                 ($stop.Output | ConvertFrom-Json).systemMessage | Should -BeExactly 'Handoff Relay: next-session context refreshed.'
@@ -611,13 +621,14 @@ This paragraph is intentionally ignored.
             It 'retains the baseline and requests one recovery for <Case>' -ForEach @(
                 @{ Case='missing' }, @{ Case='steering' }, @{ Case='later-tool' }, @{ Case='compaction' }
                 @{ Case='mixed-work' }, @{ Case='pending-work' }, @{ Case='changed-file' }, @{ Case='malformed-transcript' }
+                @{ Case='template-literal' }
             ) {
                 $first = Invoke-HandoffRelayProcess -RememberProjectsRoot $script:RememberProjectsRoot -Payload $script:PreparedPayload
                 $draft = Get-HandoffRelayDraftPath -Output $first.Output
                 $statePath = $draft -replace '\.draft\.md$', '.state.json'
                 $baseline = (Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json).baselineHash
                 if ($Case -ne 'missing') {
-                    Write-PreparedDraft -DraftPath $draft -MixedWork:($Case -eq 'mixed-work') -PendingWork:($Case -eq 'pending-work')
+                    Write-PreparedDraft -DraftPath $draft -MixedWork:($Case -eq 'mixed-work') -PendingWork:($Case -eq 'pending-work') -TemplateLiteral:($Case -eq 'template-literal')
                 }
                 switch ($Case) {
                     'steering' { Add-PreparedRecords @(@{ type='response_item'; payload=@{ type='message'; role='user'; content=@(@{type='input_text';text='Also fix the second issue.'}) } }) }

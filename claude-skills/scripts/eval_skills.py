@@ -28,7 +28,13 @@ def dump_json(path: Path, payload: Any) -> None:
 
 def as_case_map(payload: Any) -> dict[str, dict[str, Any]]:
     if isinstance(payload, list):
-        return {str(item["id"]): item for item in payload}
+        mapped: dict[str, dict[str, Any]] = {}
+        for item in payload:
+            item_id = str(item["id"])
+            if item_id in mapped:
+                raise ValueError(f"Duplicate eval id: {item_id}")
+            mapped[item_id] = item
+        return mapped
     if isinstance(payload, dict):
         return {str(key): value for key, value in payload.items()}
     raise ValueError("Cases/responses must be a JSON array or object.")

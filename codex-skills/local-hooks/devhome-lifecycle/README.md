@@ -258,7 +258,10 @@ gate reads `$LASTEXITCODE`. The two sibling checks below throw on drift instead.
 Every run prints what it acted on: `CodexExecutable` and `CodexVersion` (the
 resolved application or script, never a same-named alias or function),
 `Account`, `CodexHome`, the plugin's `Enabled` flag as Codex reports it, and a `NextStep`
-line. `Drift` lists every difference in the closed payload. `LoadedDrift` is the
+line. For a plugin-only refresh, the reported `ConvergeCommand` runs this
+synchronizer from any PowerShell directory and targets the selected account.
+The repository installer above also synchronizes portable Codex skills.
+`Drift` lists every difference in the closed payload. `LoadedDrift` is the
 subset Codex itself loads or runs from the cache: the plugin manifest,
 `hooks/hooks.json`, the cached `Sync-DevHomeCodexHooks.ps1`, the `skills/` tree,
 and any `.mcp.json`. The other payload files are inert copies there, because the

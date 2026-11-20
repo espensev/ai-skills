@@ -113,21 +113,18 @@ capped at 32 KiB. The cleaner does not semantically prove a claim.
 
 ## Refresh the plugin choice
 
-Use the resolved Ai-Skills source repository's normal local sync entrypoint. It
-registers the marketplace and proves source-to-cache hash convergence:
-
-```powershell
-& (Join-Path $skillsRepo 'scripts\Install-AgentSkills.ps1') -Provider Codex -CodexLocalPlugin DevHomeLifecycle
-& (Join-Path $skillsRepo 'scripts\Install-AgentSkills.ps1') -Provider Codex -CodexLocalPlugin DevHomeLifecycle -CodexLocalPluginAccount account3
-```
-
-Do not assume a restart refreshes a local plugin cache. Use
-the canonical source synchronizer for a read-only cache check:
+Check the requested account with the source synchronizer. Use the first
+command for the main account or the second for `account3`.
 
 ```powershell
 & (Join-Path $lifecycleSource 'Sync-DevHomeLifecyclePlugin.ps1') -Check
 & (Join-Path $lifecycleSource 'Sync-DevHomeLifecyclePlugin.ps1') -Account account3 -Check
 ```
+
+When a plugin refresh is requested, run the `ConvergeCommand` returned by
+that check. It selects the same plugin account and works from any PowerShell
+directory. Use the repository installer when the request also covers portable
+skills.
 
 The check exits `0` only when `Status` is `CURRENT` and still prints the full
 state. Read `LoadedDrift` before escalating a `STALE` result: it lists only the

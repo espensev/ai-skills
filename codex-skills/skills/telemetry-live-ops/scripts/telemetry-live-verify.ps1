@@ -65,7 +65,6 @@ function Resolve-StringSetting {
         [Parameter(Mandatory = $true)]
         [string[]]$EnvironmentNames,
 
-        [Parameter(Mandatory = $true)]
         [string]$FallbackValue
     )
 
@@ -94,10 +93,7 @@ function Assert-PathExists {
 
 $RepoRoot = Resolve-TelemetryRepositoryRoot -CurrentValue $RepoRoot
 
-$RemoteBaseUrl = Resolve-StringSetting `
-    -CurrentValue $RemoteBaseUrl `
-    -EnvironmentNames @('OLLAMA_TELEMETRY_REMOTE_URL') `
-    -FallbackValue 'http://192.168.2.5:43217'
+$RemoteBaseUrl = Resolve-StringSetting -CurrentValue $RemoteBaseUrl -EnvironmentNames 'OLLAMA_TELEMETRY_REMOTE_URL'
 
 $ObserverBaseUrl = Resolve-StringSetting `
     -CurrentValue $ObserverBaseUrl `
@@ -113,10 +109,15 @@ $repoScript = Join-Path $RepoRoot 'native\scripts\verify-live-deployment.ps1'
 
 Assert-PathExists -Path $repoScript
 
-& $repoScript `
-    -RemoteBaseUrl $RemoteBaseUrl `
-    -ObserverBaseUrl $ObserverBaseUrl `
-    -RemoteTargetName $RemoteTargetName `
-    -DirectIterations $DirectIterations `
-    -ObserverIterations $ObserverIterations `
-    -SensorLimit $SensorLimit
+$invokeArgs = @{
+    ObserverBaseUrl = $ObserverBaseUrl
+    RemoteTargetName = $RemoteTargetName
+    DirectIterations = $DirectIterations
+    ObserverIterations = $ObserverIterations
+    SensorLimit = $SensorLimit
+}
+if ($RemoteBaseUrl) {
+    $invokeArgs.RemoteBaseUrl = $RemoteBaseUrl
+}
+
+& $repoScript @invokeArgs

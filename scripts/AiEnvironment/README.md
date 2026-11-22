@@ -43,9 +43,12 @@ the selected settings file, not effective policy from other settings layers
 or execution in a fresh Claude session.
 
 The observer fails closed when a managed marketplace is incomplete, a provider
-command times out, Git cannot be observed, a Claude plugin lacks a registry
-record, or a persisted Codex hook trust hash differs from the lock. Foreign
-marketplace failures stay in a separate owner-review lane so they do not hide
+command times out, Git cannot be observed, a required Claude plugin record
+is missing, or a persisted Codex hook trust hash differs from the lock.
+The Claude registry check counts every declaration in `enabledPlugins`.
+Only an explicit JSON `false` exempts a declaration from requiring a record.
+Plugins listed in the wanted-state profile have a separate installation check.
+Foreign marketplace failures stay in a separate owner-review lane so they do not hide
 the health of managed payloads.
 
 Every locked payload is also verified against the raw blob at the declared Git

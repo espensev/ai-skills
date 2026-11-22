@@ -793,6 +793,25 @@ source = 'https://example.invalid/wt-local.git'
         @($missingRecordActions.Type | Select-Object -Unique) | Should -Be @('REVIEW_OBSERVED_DRIFT')
     }
 
+    It 'checks an uninstalled Claude plugin declared with <SettingType> false' -ForEach @(
+        @{ SettingType = 'boolean'; Value = $false; Missing = 0; Result = 'PASS'; Code = 'CLAUDE_PLUGIN_REGISTRY_CURRENT' }
+        @{ SettingType = 'string'; Value = 'false'; Missing = 1; Result = 'FAIL'; Code = 'CLAUDE_PLUGIN_RECORD_MISSING' }
+    ) {
+        $settingsPath = Join-Path $script:Fixture.ClaudeHome 'settings.json'
+        $settings = Get-Content -Raw -LiteralPath $settingsPath | ConvertFrom-Json -AsHashtable
+        $settings.enabledPlugins['uninstalled@synced'] = $Value
+        Write-TestJson -Path $settingsPath -Value $settings
+
+        $state = Get-AiEnvironmentState -ProfilePath $script:Fixture.ProfilePath -LockPath $script:Fixture.LockPath
+        $registryCheck = $state.Checks | Where-Object Id -eq 'provider.claude.plugin-registry'
+
+        $state.Providers.Claude.PluginRegistry.DeclaredPlugins | Should -Be 2
+        $state.Providers.Claude.PluginRegistry.MissingDeclaredPluginRecords | Should -Be $Missing
+        $registryCheck.Result | Should -BeExactly $Result
+        $registryCheck.ReasonCode | Should -BeExactly $Code
+        @($state.Reasons | Where-Object Code -eq 'CLAUDE_PLUGIN_RECORD_MISSING') | Should -HaveCount $Missing
+    }
+
     It 'observes empty Claude enabledPlugins and empty shared skill lock maps under strict mode' {
         $claudeSettingsPath = Join-Path $script:Fixture.ClaudeHome 'settings.json'
         $settings = Get-Content -Raw -LiteralPath $claudeSettingsPath | ConvertFrom-Json -Depth 100

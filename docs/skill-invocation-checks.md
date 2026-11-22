@@ -2,7 +2,7 @@
 
 Use `scripts/run_skill_invocation_checks.py` to replay ordinary requests against
 fresh Codex and Claude CLI sessions. The runner reads the
-[saved controls](reviews/fixtures/invocation-controls-2026-10-03.json), records
+[current controls](../scripts/fixtures/skill-invocation-controls.json), records
 actual tool attempts and results, and checks completion and file integrity.
 It tests automatic selection without naming a skill in the prompt.
 

@@ -33,6 +33,20 @@ def claude_skill(skill="usage-stats", error=False, content=None):
     ]
 
 
+class DefaultControlTests(unittest.TestCase):
+    def test_target_skills_ship_in_each_selected_provider(self):
+        cases = json.loads(runner.DEFAULT_SPEC.read_text(encoding="utf-8"))["cases"]
+        for provider in ("claude", "codex"):
+            manifest_path = ROOT / f"{provider}-skills" / "package" / "install-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            installable = set(manifest["default_skills"] + manifest["optional_skills"])
+            for case in cases:
+                if provider in case["providers"]:
+                    with self.subTest(provider=provider, case=case["id"]):
+                        target = case.get("expected_skill") or case["forbidden_skill"]
+                        self.assertIn(target, installable)
+
+
 class TraceTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

@@ -24,7 +24,7 @@ import time
 import uuid
 from pathlib import Path, PurePosixPath
 
-DEFAULT_SPEC = Path(__file__).resolve().parents[1] / "docs/reviews/fixtures/invocation-controls-2026-10-03.json"
+DEFAULT_SPEC = Path(__file__).resolve().parent / "fixtures" / "skill-invocation-controls.json"
 SKILL_PATH = re.compile(r"[\\/]+([A-Za-z0-9_.-]+)[\\/]+SKILL\.md\b", re.I)
 SLUG = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*\Z")
 SHELL_TOKENS = re.compile(r"'([^']*(?:''[^']*)*)'|\"((?:\\.|[^\"])*)\"|([;&|]+)|([^\s;&|]+)")

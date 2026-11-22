@@ -35,7 +35,7 @@ what was parameterized, and when.
 | observer | AI-Skills repo | Portable from inception |
 | observer-test | AI-Skills repo | Retired 2026-08-09; use `observer` and its standalone hooks |
 | worktree-manager | AI-Skills repo | Retired 2026-08-09; use `manager` and its task runtime |
-| refactor-planner | AI-Skills repo | Retired 2026-08-09; use `/planner --mode refactor` |
+| refactor-planner | AI-Skills repo | Retired 2026-08-09. The planning contract covers refactor plans. |
 
 ## Chain Fixes Applied (2026-03-26)
 

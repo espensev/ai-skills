@@ -47,7 +47,7 @@ handoff and review it" — use `doc` with that path.
 - Do not report preferences as defects. If no documented standard supports a
   style concern, call it a note or omit it.
 - Do not fix issues in this skill. Recommend the next command (`/qa`, `/ship`,
-  `/manager verify`, or direct implementation) after the review is complete.
+  or direct implementation) after the review is complete.
 
 ---
 
@@ -190,12 +190,6 @@ For each changed file:
 For very large diffs, enumerate every changed file and state which files were
 deep-reviewed versus sampled. Do not hide skipped files.
 
-### Optional Local Delegation
-
-If `/delegate` is installed and the diff is large, it may be used only for a
-first-pass bounded review of already-fetched diff chunks. The controller must
-verify every delegated observation before it becomes a finding.
-
 ---
 
 ## Phase 4: Run Lightweight Verification When Useful
@@ -208,7 +202,7 @@ defined by the repo:
 - doc link/path checks for docs-only changes
 
 Do not turn this into full QA unless the user asked for it. If full verification
-is needed, recommend `/qa run` or `/manager verify`.
+is needed, recommend `/qa run`.
 
 Record every command run and its result. If you skip verification, explain why.
 

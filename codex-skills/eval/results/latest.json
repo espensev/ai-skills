@@ -2,8 +2,8 @@
   "cases": "eval/cases/light-skill-cases.json",
   "responses": "eval/responses.mock.json",
   "summary": {
-    "total_cases": 46,
-    "passed": 46,
+    "total_cases": 35,
+    "passed": 35,
     "failed": 0,
     "average_score": 5.0,
     "by_skill": {
@@ -27,11 +27,6 @@
         "passed": 3,
         "average_score": 5.0
       },
-      "delegate": {
-        "count": 1,
-        "passed": 1,
-        "average_score": 5.0
-      },
       "diagnosing-bugs": {
         "count": 1,
         "passed": 1,
@@ -47,16 +42,6 @@
         "passed": 1,
         "average_score": 5.0
       },
-      "documentation-lookup": {
-        "count": 1,
-        "passed": 1,
-        "average_score": 5.0
-      },
-      "exa-search": {
-        "count": 1,
-        "passed": 1,
-        "average_score": 5.0
-      },
       "grand-sweep": {
         "count": 1,
         "passed": 1,
@@ -67,34 +52,14 @@
         "passed": 1,
         "average_score": 5.0
       },
-      "loop-master": {
-        "count": 1,
-        "passed": 1,
-        "average_score": 5.0
-      },
       "manager": {
-        "count": 3,
-        "passed": 3,
-        "average_score": 5.0
-      },
-      "mcp-server-patterns": {
-        "count": 1,
-        "passed": 1,
+        "count": 4,
+        "passed": 4,
         "average_score": 5.0
       },
       "memory-management": {
         "count": 1,
         "passed": 1,
-        "average_score": 5.0
-      },
-      "parallel-agents-light": {
-        "count": 1,
-        "passed": 1,
-        "average_score": 5.0
-      },
-      "planner": {
-        "count": 3,
-        "passed": 3,
         "average_score": 5.0
       },
       "qa": {
@@ -105,11 +70,6 @@
       "repo-conventions": {
         "count": 7,
         "passed": 7,
-        "average_score": 5.0
-      },
-      "review-controller": {
-        "count": 1,
-        "passed": 1,
         "average_score": 5.0
       },
       "review": {
@@ -127,17 +87,7 @@
         "passed": 1,
         "average_score": 5.0
       },
-      "smart-test": {
-        "count": 1,
-        "passed": 1,
-        "average_score": 5.0
-      },
       "usage-stats": {
-        "count": 1,
-        "passed": 1,
-        "average_score": 5.0
-      },
-      "verification-loop": {
         "count": 1,
         "passed": 1,
         "average_score": 5.0
@@ -228,22 +178,6 @@
     {
       "id": "deep-audit-resume-002",
       "skill": "deep-audit",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "delegate-basic-001",
-      "skill": "delegate",
       "scores": {
         "trigger": 1.0,
         "contract": 1.0,
@@ -354,38 +288,6 @@
       "notes": "Deterministic mock response for docs-sync."
     },
     {
-      "id": "documentation-lookup-basic-001",
-      "skill": "documentation-lookup",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "exa-search-basic-001",
-      "skill": "exa-search",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
       "id": "grand-sweep-basic-001",
       "skill": "grand-sweep",
       "scores": {
@@ -416,22 +318,6 @@
       "pass": true,
       "failures": [],
       "notes": "Deterministic mock response for handoff."
-    },
-    {
-      "id": "loop-master-basic-001",
-      "skill": "loop-master",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
     },
     {
       "id": "manager-basic-001",
@@ -482,8 +368,8 @@
       "notes": "Deterministic mock response for package eval."
     },
     {
-      "id": "mcp-server-patterns-basic-001",
-      "skill": "mcp-server-patterns",
+      "id": "manager-plan-only-001",
+      "skill": "manager",
       "scores": {
         "trigger": 1.0,
         "contract": 1.0,
@@ -500,70 +386,6 @@
     {
       "id": "memory-management-basic-001",
       "skill": "memory-management",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "parallel-agents-light-basic-001",
-      "skill": "parallel-agents-light",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for parallel-agents-light."
-    },
-    {
-      "id": "planner-ambiguous-002",
-      "skill": "planner",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "planner-basic-001",
-      "skill": "planner",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "planner-edge-003",
-      "skill": "planner",
       "scores": {
         "trigger": 1.0,
         "contract": 1.0,
@@ -738,38 +560,6 @@
       "notes": "Deterministic mock response for package eval."
     },
     {
-      "id": "review-controller-basic-001",
-      "skill": "review-controller",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for review-controller."
-    },
-    {
-      "id": "review-controller-routing-boundary-001",
-      "skill": "review",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic routing boundary response for ordinary review."
-    },
-    {
       "id": "review-deep-audit-boundary-001",
       "skill": "review",
       "scores": {
@@ -784,6 +574,22 @@
       "pass": true,
       "failures": [],
       "notes": "Deterministic boundary mock response."
+    },
+    {
+      "id": "review-staged-diff-001",
+      "skill": "review",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic routing boundary response for ordinary review."
     },
     {
       "id": "ship-basic-001",
@@ -834,22 +640,6 @@
       "notes": "Deterministic mock response for skill-authoring."
     },
     {
-      "id": "smart-test-basic-001",
-      "skill": "smart-test",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for smart-test."
-    },
-    {
       "id": "usage-stats-measured-basic-001",
       "skill": "usage-stats",
       "scores": {
@@ -864,22 +654,6 @@
       "pass": true,
       "failures": [],
       "notes": "Deterministic mock response for usage-stats."
-    },
-    {
-      "id": "verification-loop-basic-001",
-      "skill": "verification-loop",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
     }
   ]
 }

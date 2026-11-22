@@ -133,9 +133,9 @@ Report in this order, briefly:
 | Audit a branch or diff | `/review` |
 | Land validated work | `/ship` |
 | Run tests | `/qa` |
-| Answer a bounded codebase question | `/discover` |
+| Answer a bounded codebase question | Inspect the relevant code and report the evidence |
 | Reproduce and fix one bug | do it directly in this session: reproduce, fix, test |
-| An explicitly requested multi-agent campaign | `/manager` — never for ordinary resumed work |
+| An explicitly requested multi-agent campaign | Use the native workflow tools |
 | Correct or prune the state store | `/memory-management` |
 
 Carry existing user authorization forward; do not ask for it again just

@@ -36,43 +36,7 @@
     "notes": ""
   },
   {
-    "id": "delegate-basic-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
     "id": "diagnosing-bugs-deep-audit-boundary-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "discover-ambiguous-002",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "discover-basic-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "discover-deep-audit-boundary-001",
     "selected_skill": "",
     "output": "",
     "created_files": [],
@@ -99,52 +63,7 @@
     "notes": ""
   },
   {
-    "id": "manager-basic-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "manager-deep-audit-boundary-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "manager-edge-002",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
     "id": "memory-management-basic-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "planner-basic-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "planner-edge-002",
     "selected_skill": "",
     "output": "",
     "created_files": [],
@@ -162,7 +81,7 @@
     "notes": ""
   },
   {
-    "id": "qa-triage-002",
+    "id": "qa-map-only-001",
     "selected_skill": "",
     "output": "",
     "created_files": [],
@@ -171,7 +90,7 @@
     "notes": ""
   },
   {
-    "id": "review-controller-product-001",
+    "id": "qa-triage-002",
     "selected_skill": "",
     "output": "",
     "created_files": [],
@@ -208,15 +127,6 @@
   },
   {
     "id": "skill-authoring-basic-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "smart-test-map-only-001",
     "selected_skill": "",
     "output": "",
     "created_files": [],

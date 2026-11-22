@@ -1,6 +1,6 @@
 {
-  "schema": "ai-skills/retired-skills/v1",
-  "description": "Authoritative list of standalone skill directories that package installation must remove from managed target roots.",
+  "schema": "ai-skills/retired-skills/v2",
+  "description": "Standalone skill directories removed during full package installs. An optional provider limits removal to that package.",
   "retired_skills": [
     {
       "name": "agent-report",
@@ -20,7 +20,22 @@
     },
     {
       "name": "campaign-health",
-      "replacement": "manager"
+      "replacement": "scripts/task_manager.py"
+    },
+    {
+      "name": "cc-workflow-builder",
+      "replacement": "native workflows",
+      "provider": "Claude"
+    },
+    {
+      "name": "chief-operator",
+      "replacement": "native workflows",
+      "provider": "Claude"
+    },
+    {
+      "name": "codebase-design",
+      "replacement": "direct design review",
+      "provider": "Claude"
     },
     {
       "name": "codebase-review-prompts",
@@ -31,12 +46,36 @@
       "replacement": "repo-conventions"
     },
     {
+      "name": "delegate",
+      "replacement": "provider tools"
+    },
+    {
       "name": "delegation-eval",
       "replacement": "usage-stats"
     },
     {
+      "name": "discover",
+      "replacement": "direct repository inspection",
+      "provider": "Claude"
+    },
+    {
+      "name": "docs-clean",
+      "replacement": "docs-sync",
+      "provider": "Claude"
+    },
+    {
+      "name": "documentation-lookup",
+      "replacement": "repo-conventions",
+      "provider": "Codex"
+    },
+    {
       "name": "e2e-testing",
       "replacement": "repo-conventions"
+    },
+    {
+      "name": "exa-search",
+      "replacement": "repo-conventions",
+      "provider": "Codex"
     },
     {
       "name": "frontend-patterns",
@@ -55,6 +94,21 @@
       "replacement": "repo-conventions"
     },
     {
+      "name": "loop-master",
+      "replacement": "manager",
+      "provider": "Codex"
+    },
+    {
+      "name": "manager",
+      "replacement": "native workflows or scripts/task_manager.py",
+      "provider": "Claude"
+    },
+    {
+      "name": "mcp-server-patterns",
+      "replacement": "direct implementation using the SDK documentation",
+      "provider": "Codex"
+    },
+    {
       "name": "observer",
       "replacement": "memory-management"
     },
@@ -63,12 +117,30 @@
       "replacement": "observer"
     },
     {
+      "name": "parallel-agents-light",
+      "replacement": "native subagents",
+      "provider": "Codex"
+    },
+    {
+      "name": "planner",
+      "replacement": "planning-contract.md and scripts/task_manager.py"
+    },
+    {
       "name": "prototype",
-      "replacement": "discover"
+      "replacement": "repository inspection"
     },
     {
       "name": "refactor-planner",
-      "replacement": "planner --mode refactor"
+      "replacement": "planning-contract.md"
+    },
+    {
+      "name": "resolving-merge-conflicts",
+      "replacement": "Git conflict resolution",
+      "provider": "Claude"
+    },
+    {
+      "name": "review-controller",
+      "replacement": "direct product review"
     },
     {
       "name": "schema-validator",
@@ -79,6 +151,10 @@
       "replacement": "usage-stats"
     },
     {
+      "name": "smart-test",
+      "replacement": "qa map or qa run --diff"
+    },
+    {
       "name": "token-audit",
       "replacement": "usage-stats"
     },
@@ -87,12 +163,17 @@
       "replacement": "docs-sync"
     },
     {
+      "name": "verification-loop",
+      "replacement": "qa",
+      "provider": "Codex"
+    },
+    {
       "name": "worktree-manager",
-      "replacement": "manager"
+      "replacement": "scripts/task_manager.py"
     },
     {
       "name": "worktree-preflight",
-      "replacement": "manager"
+      "replacement": "scripts/task_manager.py"
     }
   ]
 }

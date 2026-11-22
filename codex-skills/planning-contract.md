@@ -1,9 +1,7 @@
 # Planning Contract — Multi-Agent Campaign Structure
 
 This is a shared reference document, not a skill. It defines the reusable
-planning elements that any campaign planner must produce. Skills that produce
-plans (`$planner`, `$planner --mode refactor`, etc.) read this contract and add
-their own domain-specific context on top.
+planning elements that any campaign planner must produce. Use this contract with `$manager plan` or the planning phase of `$manager go`.
 
 This contract lives in the canonical Git-tracked skill tree under
 `.codex/skills`. Treat changes here as versioned API changes for the planning
@@ -194,7 +192,7 @@ document to match it.
 Derive `{slug}` as a short kebab-case name (2-4 words) from the campaign title.
 Example: title "WebSocket Live Push" → `campaign-7-websocket-live-push.md`.
 
-**Written by:** `$planner` and `$manager plan`/`go`
+**Written by:** `$manager plan` and `$manager go`
 **Referenced by:** `$manager review`
 
 **Consumed by:** `$manager verify` reads exit criteria from
@@ -278,8 +276,7 @@ Standard lifecycle statuses are `draft`, `approved`, `rejected`, and
 `executed`. Historical/backfill verification may also surface `partial` for
 legacy plans; do not invent additional status names in new plan artifacts.
 
-Refactor mode (`$planner --mode refactor`) appends extra elements (R1, R2, R3)
-after element 12.
+For a phased refactor, also document R1 (roadmap phase), R2 (behavioral invariants with tests) and R3 (rollback strategy). Establish the contracts and baseline tests before scheduling dependent implementation.
 
 ---
 

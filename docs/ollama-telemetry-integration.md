@@ -7,9 +7,8 @@ copying its implementation.
 
 Use three layers:
 
-1. **Live delegation:** `delegate` calls the `ollama-telemetry` MCP tools when
-   registered. It falls back to static guidance when the MCP server or fleet is
-   unavailable.
+1. **Live delegation.** The telemetry repository owns its MCP delegation tools.
+   Consumers can call registered tools directly.
 2. **Measured analytics:** `usage-stats` prefers the local telemetry API at
    `http://127.0.0.1:8099` for measured usage and cost data, then falls back
    to hooks/transcript estimates.

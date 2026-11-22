@@ -1,21 +1,18 @@
 ---
 name: manager
-description: "Use when the user explicitly wants a multi-agent campaign executed or managed: parallel worktrees, agent launches, dependency-aware progress, merges, verification, or campaign status. Do not use for plan-only design without execution, bounded codebase research, or one tight local change."
+description: "Use when the user explicitly wants a multi-agent campaign planned, executed or managed: parallel worktrees, agent launches, dependency-aware progress, merges, verification, or campaign status. Do not use for bounded codebase research or one tight local change."
 ---
 
 # Manager — Multi-Agent Orchestrator
 
-You are an AI project manager. You coordinate parallel agent work using the Python
-task manager backend for state management, and the Agent tool for launching parallel work.
+Use the Python task manager to track campaign state and Codex subagents to
+run the assigned work in separate Git worktrees.
 
 **All commands run to completion autonomously — no user input is required after launch.**
 
-**Architecture:** manager is the execution-facing orchestrator. `go` may compose
-planning plus execution, but planning policy remains planner-owned and should
-follow `.codex/skills/planner/SKILL.md` plus the shared planning contract.
-Use `plan` when you want to review a plan before executing (the standalone
-planner skill is optional and may be disabled in a provider). Use `go` when you
-want end-to-end autonomous execution.
+Use `plan` to design a campaign and prepare its specs for review. Use `go`
+to plan, launch, merge and verify the campaign. Both follow the installed
+`.codex/skills/planning-contract.md`.
 
 **Config:** `.codex/skills/project.toml` — project-specific paths, commands, modules
 **Backend:** `python scripts/task_manager.py <primitive>`
@@ -132,28 +129,15 @@ project graph metadata, conflict zones, and the planner-facing
 
 ## Command: `plan` — Autonomous Planning Phase
 
-Manager owns campaign orchestration; `$planner` and
-`.codex/skills/planning-contract.md` own plan design. Do not copy
-their decomposition rules into this skill.
+Read `.codex/skills/planning-contract.md` and run `plan preflight` before
+creating the plan. Use `analysis_v2.planning_context` to assign dependencies
+and file ownership. Finalize the plan, register its tasks, and fill every
+generated spec. Keep the JSON plan authoritative and derive its campaign
+document from it. Report `status` and `graph`. A plan-only request ends before
+launch. Under `go`, continue to the ready agents.
 
-Run the planner handoff in order: read the planner skill and planning
-contract; run `plan preflight` and stop on errors; create the plan; register
-agents from the planner contract and `analysis_v2.planning_context` with
-single-file ownership and explicit dependencies; finalize goal, exit criteria,
-verification, and documentation fields; replace every generated spec TODO with
-self-contained instructions before any agent launch; keep
-`data/plans/{plan-id}.json` authoritative and write the durable
-`docs/campaign-{plan-id}-{slug}.md` view; report `status` and `graph`, then
-continue to `run ready` under `go` or return the ready plan without launching
-agents under plan-only invocation.
-
-The full step list, the planning-surface reading order, feedback inputs, and
-the autonomous-addition policy are in
-[references/planning-handoff.md](references/planning-handoff.md). If analysis
-is partial or fallback-only, follow the planner skill's degraded analysis and
-discovery-replan rules. This section intentionally contains only the
-manager/backend handoff; detailed planning policy is loaded on demand from the
-owning skill and contract.
+The backend commands, degraded-analysis handling and planning inputs are in
+[references/planning-handoff.md](references/planning-handoff.md).
 
 ---
 

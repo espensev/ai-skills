@@ -642,8 +642,6 @@ def cmd_plan_create(
     print(f'    python scripts/task_manager.py plan-add-agent {plan_id} {next_letter} <name> --scope "..." --deps "" --files "..."')
     print("  Finalize required plan elements:")
     print(f'    python scripts/task_manager.py plan finalize {plan_id} --goal "..." --exit-criterion "..."')
-    print()
-    print("  Or use /manager plan to auto-generate agents from the analysis.")
     print("  Use --json flag for machine-readable output.")
 
 

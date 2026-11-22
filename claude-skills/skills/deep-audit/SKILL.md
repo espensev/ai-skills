@@ -28,8 +28,7 @@ Route narrower requests elsewhere:
 - Use `review` for a branch, PR, staged, or working-tree diff review.
 - Use `diagnosing-bugs` for one reproducible failure or performance regression
   when the goal includes a fix.
-- Use `discover` for bounded pre-planning research that does not require a
-  runtime cost model or multi-pass audit state.
+- Inspect the relevant code directly for bounded pre-planning research.
 - Use `qa` for test execution, coverage, and failure triage.
 - Use a security-specific workflow for authentication, authorization,
   injection, secrets, supply-chain, or vulnerability assessment. Do not claim

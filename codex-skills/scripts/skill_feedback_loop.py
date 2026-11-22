@@ -96,7 +96,7 @@ def analyze_observations(observations: list[dict[str, Any]]) -> dict[str, SkillH
         "drift": "observer",
         "risk": "observer",
         "progress": "manager",
-        "question": "planner",
+        "question": "manager",
         "debt": "observer",
         "test-fail": "qa",
         "test-pass": "qa",
@@ -126,8 +126,8 @@ def analyze_observations(observations: list[dict[str, Any]]) -> dict[str, SkillH
                 if "observer" in f.lower():
                     skill_name = "observer"
                     break
-                if "planner" in f.lower() or "plan" in f.lower():
-                    skill_name = "planner"
+                if "plan" in f.lower():
+                    skill_name = "manager"
                     break
             if not skill_name:
                 skill_name = cat  # Use category as fallback

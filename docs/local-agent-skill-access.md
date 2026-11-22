@@ -26,14 +26,12 @@ roots.
 
 ### Automatic selection
 
-Every packaged development skill except `delegate` supports selection from
-ordinary task requests; `delegate` keeps an explicit-only boundary. Users can
-still invoke any skill by name. Skill selection uses the task description and
+Packaged skills can be selected from ordinary requests or invoked by name. Skill selection uses the task description and
 preserves the task's action limits: documentation checks stay read-only,
 test-selection questions do not run tests, and closeouts do not write history
 or memory. A selected skill with subcommands maps the request to the command
 that does the work: `ship` commits and normally pushes without a second
-confirmation, and `manager` runs `go` or `plan` rather than `status`.
+confirmation, and the Codex `manager` runs `go` or `plan` rather than `status`.
 
 No model-selectable skill carries an `allowed-tools` grant. In Claude Code
 that field pre-approves tools for the invoking turn, so a skill the model can
@@ -58,7 +56,7 @@ Restart Codex after changing its config. Test a fresh session with a request
 that omits the skill name, then inspect whether it loads the intended skill
 and completes the requested action. Include nearby requests that should not
 select it. An installer or fixture pass proves file integrity, not model
-selection. Local-model `delegate` retains its separate invocation boundary.
+selection.
 
 Provider contracts: [Codex skills](https://learn.chatgpt.com/docs/build-skills)
 and [Claude skills](https://code.claude.com/docs/en/skills).

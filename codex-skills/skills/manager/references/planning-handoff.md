@@ -1,7 +1,6 @@
 # Planning handoff — surface, feedback, autonomy, and `plan` steps
 
-Manager owns campaign orchestration; the planner skill and the planning
-contract own plan design. Do not copy their decomposition rules into manager.
+Use the project’s `.codex/skills/planning-contract.md` for the 13 required plan elements, agent spec format and decomposition rules.
 
 ## Planning Surface
 
@@ -17,7 +16,10 @@ input. Consume it in this order:
 
 If `analysis_health.partial_analysis` or `analysis_health.fallback_only` is
 true, plan conservatively around startup projects, packaging projects, shared
-UI surfaces, and high-overlap hotspots.
+UI surfaces, and high-overlap hotspots. Name missing inventory and ownership
+data in the risk assessment. Inspect shared files and use explicit file lists
+before assigning concurrent writers. When an unresolved dependency prevents
+safe planning, use `discover` for that question and resume from its evidence.
 
 ## Feedback Inputs
 
@@ -51,20 +53,11 @@ section instead of implementing it.
 
 ## `plan` command steps
 
-1. Read the planner skill and planning contract.
-2. Run `python scripts/task_manager.py plan preflight --json`; stop on errors.
-3. Run `python scripts/task_manager.py plan create "<description>" --json`.
-4. Design and register agents using the planner contract and the returned
-   `analysis_v2.planning_context`; preserve single-file ownership and explicit
-   dependencies.
-5. Finalize concrete goal, exit criteria, verification, and documentation
-   fields through `task_manager.py plan finalize`.
-6. Approve and execute through the backend, then replace every generated spec
-   TODO with self-contained instructions before any agent launch.
-7. Keep `data/plans/{plan-id}.json` authoritative and write the durable
-   `docs/campaign-{plan-id}-{slug}.md` view.
-8. Report `status` and `graph`. Under `go`, continue to `run ready`; under
-   plan-only invocation, return the ready plan without launching agents.
-
-This section intentionally contains only the manager/backend handoff; detailed
-planning policy is loaded on demand from the owning skill and contract.
+1. Read the planning contract, project conventions, and any cited discovery findings.
+2. Run `python scripts/task_manager.py plan preflight --json`. Resolve reported errors before proceeding.
+3. Run `python scripts/task_manager.py plan create "<description>" --json`. Use the returned plan ID and planning context for subsequent commands.
+4. Register each agent with `python scripts/task_manager.py plan-add-agent <plan-id> <letter> <name> --scope "..." --files "..." --complexity medium`. Add `--deps "..."` for dependencies. Assign exclusive file ownership per group.
+5. Run `python scripts/task_manager.py plan finalize <plan-id> --goal "..." --exit-criterion "..." --verification-step "..." --documentation-update "..."`. Repeat flags for additional criteria, checks or documentation updates.
+6. Run `python scripts/task_manager.py plan approve <plan-id>`, then `python scripts/task_manager.py plan execute <plan-id>`. These commands register runtime tasks and generate specs. Fill all spec TODOs before launch.
+7. Keep the JSON plan under the configured plans directory authoritative and write the derived `docs/campaign-{plan-id}-{slug}.md`. For phased refactors, include R1–R3 from the contract.
+8. Report `status` and `graph`. Return the prepared plan for a plan-only request. Under `go`, continue with the launch instructions from `go <plan-id> --json`.

@@ -29,8 +29,7 @@ adversarial-critic), or repair Claude Code infrastructure (that's system-fixer).
 4. Smallest change that satisfies the criteria. No drive-by refactors, no
    speculative abstractions, no new dependencies unless the task requires them.
    Bloat gets your work REJECTED by the adversarial-critic.
-5. Never invoke skills that dispatch subagents (manager, discover, deep-research,
-   review, code-review) — you are already a subagent and nesting is not allowed.
+5. Do not invoke skills that dispatch subagents. The lead agent owns delegation.
 6. For repository work, after verification stage only the files owned by the
    assignment and create a focused commit. Preserve unrelated dirty files and do
    not broad-stage. Do not push; the orchestrator owns the reviewed normal push.

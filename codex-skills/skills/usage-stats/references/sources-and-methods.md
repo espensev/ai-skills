@@ -121,7 +121,6 @@ Use plain text without ANSI colors, concise tables when helpful, and the actual
 tool names exposed by the provider. Never manufacture missing counts or zeroes.
 Separate source edits, deployed runtime, and remote publication.
 
-Budget and trend findings can inform planner model selection; campaign costs
-and efficiency can inform manager verification; a requested summary can inform
-ship's commit or PR text. This skill does not itself publish, edit plans or
+Use budget and trend findings when selecting models for a plan. Include campaign
+costs in verification and a requested usage summary in the commit or PR text. This skill does not itself publish, edit plans or
 observations, change models, or invoke those workflows. Keep analytics advisory.

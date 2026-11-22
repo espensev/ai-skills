@@ -64,7 +64,7 @@ function Get-RetiredSkillRecords {
     }
 
     $Registry = Get-Content -Raw -LiteralPath $RetiredSkillsPath | ConvertFrom-Json
-    if ($Registry.schema -ne "ai-skills/retired-skills/v1") {
+    if ($Registry.schema -notin @("ai-skills/retired-skills/v1","ai-skills/retired-skills/v2")) {
         throw "Unsupported retired skill registry schema: $($Registry.schema)"
     }
 
@@ -82,6 +82,9 @@ function Get-RetiredSkillRecords {
         }
         if ([string]::IsNullOrWhiteSpace($Replacement)) {
             throw "Retired skill '$Name' has no replacement route"
+        }
+        if ($Record.PSObject.Properties["provider"] -and $Record.provider -notin @("Codex", "Claude")) {
+            throw "Invalid provider for retired skill '$Name'"
         }
         if ($Seen.ContainsKey($Name)) {
             throw "Duplicate retired skill in registry: $Name"
@@ -420,6 +423,9 @@ function Remove-RetiredSkillDirectories {
     $Pruned = @()
 
     foreach ($Record in @($RetiredSkills)) {
+        if ($Record.PSObject.Properties["provider"] -and $Record.provider -ne $ProviderName) {
+            continue
+        }
         $Name = [string]$Record.name
         $Replacement = [string]$Record.replacement
         $RetiredPath = [System.IO.Path]::GetFullPath((Join-Path $TargetFull $Name))

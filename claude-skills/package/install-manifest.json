@@ -1,31 +1,20 @@
 {
   "default_skills": [
-    "discover",
     "handoff",
-    "manager",
-    "planner",
     "qa",
     "ship"
   ],
   "optional_skills": [
     "browser-control",
     "deep-audit",
-    "delegate",
     "diagnosing-bugs",
     "docs-sync",
     "memory-management",
     "review",
-    "review-controller",
     "skill-authoring",
-    "smart-test",
     "usage-stats"
   ],
   "source_only_skills": [
-    "cc-workflow-builder",
-    "chief-operator",
-    "codebase-design",
-    "docs-clean",
-    "resolving-merge-conflicts",
     "telemetry-live-ops",
     "verify"
   ],

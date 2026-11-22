@@ -288,7 +288,7 @@ Describe "read-only install check" -Tag 'Check' {
 
 Describe "retired skill installation contract" {
     It "keeps the complete retirement set in one registry" {
-        $script:Registry.schema | Should -Be "ai-skills/retired-skills/v1"
+        $script:Registry.schema | Should -Be "ai-skills/retired-skills/v2"
         $required = @(
             "agent-report",
             "api-design",
@@ -303,6 +303,9 @@ Describe "retired skill installation contract" {
             "token-audit",
             "worktree-manager"
         )
+        foreach ($name in @("discover", "manager", "codebase-design")) {
+            ($script:Registry.retired_skills | Where-Object name -eq $name).provider | Should -Be "Claude"
+        }
         foreach ($name in $required) {
             $script:RetiredNames | Should -Contain $name
         }
@@ -322,13 +325,15 @@ Describe "retired skill installation contract" {
             -Force `
             -DryRun 6>&1) | Out-String
 
-        foreach ($name in $script:RetiredNames) {
+        foreach ($record in $script:Registry.retired_skills) {
+            $name = $record.name
             Test-Path -LiteralPath (Join-Path $target $name) | Should -BeTrue
-            $output | Should -Match ([regex]::Escape("Retired skill would-remove [Codex]: $name ->"))
+            $wouldRemove = $output.Contains("Retired skill would-remove [Codex]: $name ->")
+            $wouldRemove | Should -Be ($record.provider -ne "Claude")
         }
     }
 
-    It "prunes only retired directories and leaves both fake roots comparator-clean" {
+    It "prunes provider retirements and preserves local additions in surviving skills" {
         $codexTarget = Join-Path $TestDrive "codex-skills"
         $claudeTarget = Join-Path $TestDrive "claude-skills"
         foreach ($target in @($codexTarget, $claudeTarget)) {
@@ -359,9 +364,11 @@ Describe "retired skill installation contract" {
             @{ Name = "Claude"; Target = $claudeTarget }
         )) {
             Test-Path -LiteralPath (Join-Path $providerCase.Target "keep-me\marker.txt") | Should -BeTrue
-            foreach ($name in $script:RetiredNames) {
-                Test-Path -LiteralPath (Join-Path $providerCase.Target $name) | Should -BeFalse
-                $installOutput | Should -Match ([regex]::Escape("Retired skill removed [$($providerCase.Name)]: $name ->"))
+            foreach ($record in $script:Registry.retired_skills) {
+                $name = $record.name
+                $applies = -not $record.provider -or $record.provider -eq $providerCase.Name
+                Test-Path -LiteralPath (Join-Path $providerCase.Target $name) | Should -Be (-not $applies)
+                $installOutput.Contains("Retired skill removed [$($providerCase.Name)]: $name ->") | Should -Be $applies
             }
         }
 
@@ -375,7 +382,12 @@ Describe "retired skill installation contract" {
             -ClaudeTargets $claudeTarget `
             -FailOnMissingOrStale 2>&1) | Out-String
         $LASTEXITCODE | Should -Be 0
-        $greenOutput | Should -Match "PASS - local agent skill roots match manifest-listed files"
+        $findings = @($greenOutput -split "\r?\n" | Where-Object { $_ -like "FINDING *" })
+        $findings | Should -HaveCount 2
+        foreach ($name in @("discover", "manager")) {
+            (Get-Content -LiteralPath (Join-Path $codexTarget "$name/stale.txt")) | Should -Be "stale"
+            $findings | Should -Contain "FINDING ExtraFile [Codex] Skill $name/stale.txt <- $codexTarget"
+        }
     }
 }
 

@@ -2,20 +2,16 @@
 
 **Manifest-driven skill packages for AI coding agents — ready-to-export bundles for Claude Code and Codex, plus the shared contracts and validation tooling that support them.**
 
-This repo curates reusable workflows for planning, testing, review, shipping,
-multi-agent worktree orchestration, lightweight Codex sidecar routing,
-docs/schema drift checks, telemetry-aware token and cost analysis, and local
-Ollama delegation. The shipping surface is
-deliberately explicit: `release-manifest.json` selects ready packages, and each
-package's `package/install-manifest.json` selects the skills, runtime files,
-contracts, workflows, and wrappers that are exported.
+The two provider packages include skills for handoffs, testing, review,
+delivery and measured usage reporting. Each package's
+`package/install-manifest.json` lists its exported skills and runtime files.
 
-44 install-ready skills ship across two provider-specific packages:
+28 install-ready skills ship across two provider-specific packages:
 
 | Package | Skills | What it adds |
 |---|:---:|---|
-| **claude-skills** | 17 | Core campaign orchestration plus deep runtime audit, skill authoring, review/debug workflows, shared ops/analytics, and worktree guardrails for Claude Code |
-| **codex-skills** | 27 | Extended toolkit for Codex: repository-first API/backend/frontend/E2E/research guidance, gated audits, skill authoring, lightweight parallel sidecar routing, review/debug workflows, and the full ops/analytics and verification suite |
+| **claude-skills** | 11 | Handoffs, QA, shipping, review, debugging, documentation and analytics for Claude Code |
+| **codex-skills** | 17 | Shared development skills plus repository research, campaign orchestration, gated audits and Codex maintenance |
 
 > Counts reflect each ready package's `package/install-manifest.json`.
 > Explicit `source_only_skills` entries and unmanifested imported material stay as
@@ -69,7 +65,7 @@ Compare the installed Codex and Claude roots against the manifests:
 Package installs also prune retired standalone skill directories. The one
 authoritative retirement registry, including each replacement route, is
 [`scripts/retired-skills.json`](scripts/retired-skills.json); both the installer
-and root comparator consume it directly.
+and root comparator apply entries to the named provider, or to both when the provider is omitted.
 
 ### Measure hook cost
 
@@ -103,14 +99,13 @@ opt-in; the release gate runs deterministic tests without provider calls.
 
 ## What's Inside
 
-### Core campaign skills (shared across packages)
+### Development skills
 
 | Skill | Purpose |
 |---|---|
-| **planner** | Design structured multi-agent campaign plans with work decomposition and dependency mapping |
-| **manager** | Orchestrate parallel agents in worktrees — launch, merge, verify builds |
-| **discover** | Research a codebase before planning — map dependencies, assess feasibility, identify constraints |
-| **qa** | Run tests, check coverage, triage failures, smoke-test a configured app (HTTP or desktop/GUI), generate regression tests |
+| **manager** (Codex) | Orchestrate parallel agents in worktrees — launch, merge, verify builds |
+| **discover** (Codex) | Research a codebase before planning — map dependencies, assess feasibility, identify constraints |
+| **qa** | Map changes to tests, run scoped or full suites, check coverage, triage failures, smoke-test a configured app (HTTP or desktop/GUI), generate regression tests |
 | **diagnosing-bugs** | Build a tight red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or performance regressions |
 | **review** | Review branch, staged, or working-tree diffs against standards, specs, and regression risk, writing durable findings under `docs/reviews/` |
 | **ship** | Stage, commit, push validated work with campaign-aware commit grouping |
@@ -123,7 +118,6 @@ Playwright E2E, current research, and bounded inspect-edit-verify cycles.
 
 | Skill | Purpose |
 |---|---|
-| **smart-test** | Map changed files to the minimal useful test subset instead of the full suite (default-branch aware) |
 | **docs-sync** | Detect and fix drift between docs and code (versions, paths, conflict markers) |
 | **usage-stats** | Token/cost/budget/forecast intelligence, compact execution closeouts, session tool/agent/timeline analytics, and agent performance/cost reports — measured counters first with heuristic fallback |
 | **deep-audit** | Run evidence-backed, resumable runtime-efficiency audits with explicit safety and evidence boundaries |
@@ -144,24 +138,7 @@ skill includes the complete preflight, configuration boundary, fallback, and
 attended acceptance procedure in
 [`CODEX-INTEGRATION.md`](codex-skills/skills/browser-control/CODEX-INTEGRATION.md).
 
-### Lightweight Codex parallelism
-
-| Skill | Purpose |
-|---|---|
-| **parallel-agents-light** | Route Codex work between the local controller loop, bounded sidecar subagents, split implementation, and full `$manager` campaigns. Use it for Claude-style parallel subagent requests when the full campaign runtime would be too heavy. |
-| **review-controller** | Lead a multi-lens review of a product, feature, system, user journey, flow, or screens through frozen evidence and read-only Codex subagents. Branch/PR/diff review stays with `$review`. |
-
-### Claude review orchestration
-
-| Skill | Purpose |
-|---|---|
-| **review-controller** | Lead a multi-lens review of a product, feature, or user journey: the Claude controller frames and judges, bundled Opus `review-specialist` agents inspect a frozen evidence set one role each, and Critical/High claims are verified before the report. Claude-only; the agent definition ships under `skills/review-controller/agent-definitions/`. |
-
-### Local-model delegation
-
-| Skill | Purpose |
-|---|---|
-| **delegate** | Decide whether a narrow, well-scoped sub-task should go to a **local Ollama model** vs stay with the controller, and route it if so. Grounded in the local `ollama-telemetry` MCP delegation tools (`ollama_readiness` / `ollama_delegate` / `ollama_batch_delegate`), with a static-guidance fallback when the MCP server is unavailable. The controller always verifies the result. |
+### Usage reporting
 
 `usage-stats` uses **measured counters first**: native Codex `token_count`
 events when present, otherwise the local `ollama-telemetry` API at
@@ -171,12 +148,8 @@ heuristic estimates remain a clearly labelled last resort.
 
 Telemetry integration is deliberately split by portability:
 
-- `delegate` and `usage-stats` are portable and depend on API/MCP contracts.
+- `usage-stats` ships with both provider packages.
 - `telemetry-live-ops` is machine-local, points at a personal live deployment, and is not exported.
-- Standalone `delegation-eval` was retired in favor of `usage-stats` (`scripts/retired-skills.json`); deprecated Claude-only aliases `refactor-planner`, `observer-test`, and
-  `worktree-manager` were also removed, with their behavior covered by
-  `planner --mode refactor` and `manager` with its task runtime.
-
 See [docs/ollama-telemetry-integration.md](docs/ollama-telemetry-integration.md) for the integration boundary.
 
 ### Machine-local ops

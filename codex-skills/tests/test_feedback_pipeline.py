@@ -41,6 +41,12 @@ class TestObserveToEval(unittest.TestCase):
 
 
 class TestSkillFeedbackLoop(unittest.TestCase):
+    def test_planning_feedback_reaches_manager(self):
+        observations = [{"cat": "question"}, {"cat": "finding", "files": ["data/plans/plan-1.json"]}]
+        health = analyze_observations(observations)
+        self.assertEqual(set(health), {"manager"})
+        self.assertEqual(health["manager"].observer_issues, observations)
+
     def test_no_actionable_data_does_not_establish_effectiveness(self):
         for ranked in ([], [SkillHealth(name="review", eval_score=5.0, eval_cases=1)]):
             with self.subTest(ranked=ranked):

@@ -3,13 +3,11 @@
 - Use the package-source skills under `skills/` when working on this repository.
 - Prefer the smallest matching skill instead of inventing a new workflow:
   - `skills/discover/SKILL.md` for pre-change codebase research.
-  - `skills/planner/SKILL.md` for campaign design and agent decomposition.
-  - `skills/manager/SKILL.md` for execution orchestration with `scripts/task_manager.py`.
+  - `skills/manager/SKILL.md` for campaign planning and execution with `scripts/task_manager.py`.
   - `skills/qa/SKILL.md` for test execution, failure triage, and regression coverage.
   - `skills/ship/SKILL.md` for staging and commit packaging.
   - `skills/repo-conventions/SKILL.md` for repository-first engineering or a
     single-objective inspect-edit-verify cycle.
-  - `skills/loop-master/SKILL.md` for multi-round or multi-agent supervision.
 
 ## Repo Conventions
 

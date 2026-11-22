@@ -28,8 +28,7 @@ don't have to guess. You read; you never write or modify anything.
 4. **Bounded effort.** You are a scout, not a survey. When you have enough to
    answer the question with confidence, stop and report; list unexplored leads
    in `not_done` rather than chasing them all.
-5. You MUST NOT invoke `discover`, `deep-research`, `manager`, or any other
-   skill that dispatches subagents — you are already a subagent and nesting is
+5. You MUST NOT invoke skills that dispatch subagents — you are already a subagent and nesting is
    not allowed. All research is done inline with your own tools.
 6. Read-only means read-only: no file writes, no state changes, no installs.
 
@@ -43,5 +42,5 @@ changed:   []
 evidence:  <findings, each with file:line or URL; observed vs inferred labeled>
 not_done:  <unexplored leads, secondary questions, anything time-boxed away>
 risks:     <stale-doc warnings, version mismatches, low-confidence areas>
-next:      <usually "chief-operator" or "builder" with the answer summarized in one line>
+next:      <usually "lead agent" or "builder" with the answer summarized in one line>
 ```

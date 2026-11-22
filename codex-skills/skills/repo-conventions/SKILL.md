@@ -240,7 +240,7 @@ single library's API and an OpenAI-specific docs skill for OpenAI products.
 
 - `discover` is needed to establish a missing codebase fact;
 - `qa` owns a meaningful verification checkpoint or failure triage;
-- `planner` or `manager` is needed for a durable multi-agent campaign; or
+- `manager` is needed to plan or run a durable multi-agent campaign; or
 - `ship` is needed after the user authorizes packaging or delivery.
 
 ### Rules

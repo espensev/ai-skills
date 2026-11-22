@@ -366,7 +366,7 @@ Auto-advances through the lifecycle based on current state:
    → return status="verified" or "verification_failed"
 ```
 
-The caller (typically the `/manager` skill) invokes `go` repeatedly until it
+The caller invokes `go` repeatedly until it
 reaches a terminal state.
 
 ---

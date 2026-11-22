@@ -307,9 +307,9 @@ python scripts/task_manager.py status --json | jq '.counts'
 python scripts/task_manager.py plan criteria --json | jq '.criteria[]'
 ```
 
-### Using JSON output in skill workflows
+### Using JSON output in campaign workflows
 
-Skills like `/manager` and `/planner` consume JSON output programmatically:
+A caller can read the launch instructions and exit criteria from JSON.
 
 ```bash
 # Get launch instructions

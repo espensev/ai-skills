@@ -1,9 +1,8 @@
 # Planning Contract — Multi-Agent Campaign Structure
 
 This is a shared reference document, not a skill. It defines the reusable
-planning elements that any campaign planner must produce. Skills that produce
-plans (`/planner`, `/planner --mode refactor`, etc.) read this contract and add
-their own domain-specific context on top.
+planning elements for campaigns created with `scripts/task_manager.py`.
+Include any domain-specific context in the individual plan.
 
 This contract lives in the canonical Git-tracked skill tree under
 `.claude/skills`. Treat changes here as versioned API changes for the planning
@@ -214,12 +213,10 @@ document to match it.
 Derive `{slug}` as a short kebab-case name (2-4 words) from the campaign title.
 Example: title "WebSocket Live Push" → `campaign-7-websocket-live-push.md`.
 
-**Written by:** `/planner` and `/manager plan`/`go`
-**Referenced by:** `/manager review`
-
-**Consumed by:** `/manager verify` reads exit criteria from
-`python scripts/task_manager.py plan criteria --json` (which loads the JSON
-plan file). The markdown campaign document is derived drift-check material,
+Use `python scripts/task_manager.py plan create` to start the plan and
+`plan finalize` to record its criteria. Review recorded criteria with
+`python scripts/task_manager.py plan criteria --json`. The `verify` command
+reads the same plan JSON. The markdown campaign document is derived drift-check material,
 not the authoritative source for exit-criteria verification.
 
 ### Plan Document Format
@@ -298,7 +295,7 @@ Standard lifecycle statuses are `draft`, `approved`, `rejected`, and
 `executed`. Historical/backfill verification may also surface `partial` for
 legacy plans; do not invent additional status names in new plan artifacts.
 
-Refactor mode (`/planner --mode refactor`) appends extra elements (R1, R2, R3)
+A refactor plan appends extra elements (R1, R2, R3)
 after element 12.
 
 ---

@@ -2,8 +2,8 @@
   "cases": "eval/cases/light-skill-cases.json",
   "responses": "eval/responses.mock.json",
   "summary": {
-    "total_cases": 26,
-    "passed": 26,
+    "total_cases": 16,
+    "passed": 16,
     "failed": 0,
     "average_score": 5.0,
     "by_skill": {
@@ -17,19 +17,9 @@
         "passed": 3,
         "average_score": 5.0
       },
-      "delegate": {
-        "count": 1,
-        "passed": 1,
-        "average_score": 5.0
-      },
       "diagnosing-bugs": {
         "count": 1,
         "passed": 1,
-        "average_score": 5.0
-      },
-      "discover": {
-        "count": 3,
-        "passed": 3,
         "average_score": 5.0
       },
       "docs-sync": {
@@ -42,29 +32,14 @@
         "passed": 1,
         "average_score": 5.0
       },
-      "manager": {
-        "count": 3,
-        "passed": 3,
-        "average_score": 5.0
-      },
       "memory-management": {
         "count": 1,
         "passed": 1,
         "average_score": 5.0
       },
-      "planner": {
-        "count": 2,
-        "passed": 2,
-        "average_score": 5.0
-      },
       "qa": {
-        "count": 2,
-        "passed": 2,
-        "average_score": 5.0
-      },
-      "review-controller": {
-        "count": 1,
-        "passed": 1,
+        "count": 3,
+        "passed": 3,
         "average_score": 5.0
       },
       "review": {
@@ -78,11 +53,6 @@
         "average_score": 5.0
       },
       "skill-authoring": {
-        "count": 1,
-        "passed": 1,
-        "average_score": 5.0
-      },
-      "smart-test": {
         "count": 1,
         "passed": 1,
         "average_score": 5.0
@@ -160,72 +130,8 @@
       "notes": "Deterministic mock response for package eval."
     },
     {
-      "id": "delegate-basic-001",
-      "skill": "delegate",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
       "id": "diagnosing-bugs-deep-audit-boundary-001",
       "skill": "diagnosing-bugs",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic boundary mock response."
-    },
-    {
-      "id": "discover-ambiguous-002",
-      "skill": "discover",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "discover-basic-001",
-      "skill": "discover",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "discover-deep-audit-boundary-001",
-      "skill": "discover",
       "scores": {
         "trigger": 1.0,
         "contract": 1.0,
@@ -272,88 +178,8 @@
       "notes": "Deterministic mock; does not establish successful real handoff recovery."
     },
     {
-      "id": "manager-basic-001",
-      "skill": "manager",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "manager-deep-audit-boundary-001",
-      "skill": "manager",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic boundary mock response."
-    },
-    {
-      "id": "manager-edge-002",
-      "skill": "manager",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
       "id": "memory-management-basic-001",
       "skill": "memory-management",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "planner-basic-001",
-      "skill": "planner",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "planner-edge-002",
-      "skill": "planner",
       "scores": {
         "trigger": 1.0,
         "contract": 1.0,
@@ -384,6 +210,22 @@
       "notes": "Deterministic mock response for package eval."
     },
     {
+      "id": "qa-map-only-001",
+      "skill": "qa",
+      "scores": {
+        "trigger": 1.0,
+        "contract": 1.0,
+        "artifact": 1.0,
+        "verification": 1.0,
+        "acceptability": 1.0
+      },
+      "total": 5.0,
+      "max_total": 5.0,
+      "pass": true,
+      "failures": [],
+      "notes": "Deterministic mock; no tests or configuration writes were performed."
+    },
+    {
       "id": "qa-triage-002",
       "skill": "qa",
       "scores": {
@@ -398,22 +240,6 @@
       "pass": true,
       "failures": [],
       "notes": "Deterministic mock response for package eval."
-    },
-    {
-      "id": "review-controller-product-001",
-      "skill": "review-controller",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock; file list represents expected output, not an executed review."
     },
     {
       "id": "review-deep-audit-boundary-001",
@@ -478,22 +304,6 @@
       "pass": true,
       "failures": [],
       "notes": "Deterministic mock response for skill-authoring."
-    },
-    {
-      "id": "smart-test-map-only-001",
-      "skill": "smart-test",
-      "scores": {
-        "trigger": 1.0,
-        "contract": 1.0,
-        "artifact": 1.0,
-        "verification": 1.0,
-        "acceptability": 1.0
-      },
-      "total": 5.0,
-      "max_total": 5.0,
-      "pass": true,
-      "failures": [],
-      "notes": "Deterministic mock; no tests or configuration writes were performed."
     },
     {
       "id": "usage-stats-estimate-001",

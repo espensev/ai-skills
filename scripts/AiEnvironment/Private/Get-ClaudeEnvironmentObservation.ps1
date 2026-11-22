@@ -82,13 +82,12 @@ function Get-ClaudeEnvironmentObservation {
     }
 
     $uncorrelatedDeclaredPluginNames = @(
-        if ($registryAvailable) {
-            $declaredPluginNames | Where-Object {
-                -not (@($registryRecords.Keys) -ccontains [string]$_) -or @($registryRecords[$_]).Count -eq 0
+        foreach ($name in $declaredPluginNames) {
+            $setting = $enabledPlugins.PSObject.Properties[$name].Value
+            if ($setting -is [bool] -and -not $setting) { continue }
+            if (-not $registryAvailable -or $registryRecords.Keys -cnotcontains $name -or $registryRecords[$name].Count -eq 0) {
+                $name
             }
-        }
-        else {
-            $declaredPluginNames
         }
     )
     if (-not $registryAvailable) {
@@ -109,8 +108,11 @@ function Get-ClaudeEnvironmentObservation {
     elseif ($uncorrelatedDeclaredPluginNames.Count -gt 0) {
         'CLAUDE_PLUGIN_RECORD_MISSING'
     }
-    else {
+    elseif ($missingInstallPathCount -gt 0) {
         'CLAUDE_PLUGIN_RECORD_PATH_MISSING'
+    }
+    else {
+        'CLAUDE_PLUGIN_REGISTRY_CURRENT'
     }
     Add-AiCheck -Checks $Checks -Id 'provider.claude.plugin-registry' -Result $(if ($registryHealthy) { 'PASS' } else { 'FAIL' }) -Severity $(if (-not $registryAvailable -or $uncorrelatedDeclaredPluginNames.Count -gt 0) { 'ERROR' } elseif ($missingInstallPathCount -gt 0) { 'WARNING' } else { 'INFO' }) -ReasonCode $registryReasonCode -Owned $false -Evidence "available=$registryAvailable;version=$registryVersion;ids=$pluginIdCount;records=$pluginRecordCount;missingPaths=$missingInstallPathCount;declared=$($declaredPluginNames.Count);missingRecords=$($uncorrelatedDeclaredPluginNames.Count)"
 

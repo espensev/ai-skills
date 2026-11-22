@@ -3,7 +3,6 @@
     "discover",
     "handoff",
     "manager",
-    "planner",
     "qa",
     "ship"
   ],
@@ -12,23 +11,14 @@
     "browser-control",
     "codex-state-cleanup",
     "deep-audit",
-    "delegate",
     "diagnosing-bugs",
     "docs-sync",
-    "documentation-lookup",
-    "exa-search",
     "grand-sweep",
-    "loop-master",
-    "mcp-server-patterns",
     "memory-management",
-    "parallel-agents-light",
     "repo-conventions",
     "review",
-    "review-controller",
     "skill-authoring",
-    "smart-test",
-    "usage-stats",
-    "verification-loop"
+    "usage-stats"
   ],
   "source_only_skills": [
     "telemetry-live-ops",

@@ -126,8 +126,7 @@ Based on the findings, state the recommended next step:
 - **Ready to proceed:** "Findings support proceeding." Then continue in this
   session with the change the findings describe, citing this document. Name
   `$manager plan <goal>` only when the user explicitly asked for a
-  multi-agent campaign; do not route to a planning skill that is not enabled
-  in the current provider.
+  multi-agent campaign.
 - **Needs more discovery:** "Questions X and Y remain open. Run
   `$discover <narrower question>` next."
 - **Not feasible:** "Findings indicate X is not viable because [reason].
@@ -274,9 +273,7 @@ Discovery without bounds is unbounded research. Enforce these limits:
 
 ## Consumption downstream
 
-When a plan or campaign is designed from a discovery document (by
-`$manager plan`, or by a planning skill where one is enabled), it should
-use:
+When `$manager plan` uses a discovery document, carry these findings into the campaign:
 
 | Findings Section | Downstream Use |
 |-----------------|-------------|

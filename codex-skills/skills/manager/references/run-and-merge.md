@@ -26,9 +26,10 @@ agents from starting work with broken or incomplete instructions.
    ```
    If the backend is waiting for execution, it outputs JSON with agent prompts.
 
-2. **Parse the JSON.** For each agent in the `agents` array, launch it in an
-   isolated worktree with the JSON `prompt` field as its task, honoring the
-   JSON `model` field as the requested launch tier.
+2. **Parse the JSON.** For each agent in the `agents` array, create or verify
+   its assigned Git worktree and branch. Give the Codex subagent that path,
+   its owned files and the JSON `prompt` field. Honor the JSON `model` field
+   as the requested launch tier within the current host's launch policy.
 
    Map the backend `model` tier to the provider's model lineup: `mini` → the
    provider's low-cost tier, `standard` → the normal general-purpose coding
@@ -39,8 +40,8 @@ agents from starting work with broken or incomplete instructions.
    unavailable, fall back to the closest stronger available model rather
    than blocking launch.
 
-   **CRITICAL:** Launch ALL agents of a group together, in a single action, so
-   they run in parallel.
+   Launch independent agents together up to the host's available slots. As
+   slots open, launch the remaining ready agents in the group.
 
 3. **Report launch status.**
 

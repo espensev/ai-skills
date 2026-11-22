@@ -1,7 +1,7 @@
 # Campaign Skills
 
-A portable package for the generic multi-agent campaign skill stack used by
-Claude Code.
+Portable Claude Code skills and the campaign runtime for projects that use
+`scripts/task_manager.py`.
 
 This source package contains the installable skill docs, the
 `task_manager.py` backend, and the portability tests that consumer repos can
@@ -38,15 +38,13 @@ vendor into their own `.claude/skills` runtime tree.
 
 | Skill | Command | Purpose |
 |---|---|---|
-| Manager | `/manager` | Orchestrate parallel agents: plan, launch, merge, verify |
-| Planner | `/planner` | Design structured campaign plans with agent decomposition (supports `--mode refactor` for phased refactors) |
-| Discover | `/discover` | Research codebase before planning (supports optimization discovery) |
+| Handoff | `/handoff` | Verify earlier state and resume the requested work |
+| Browser Control | `/browser-control` | Operate the selected DevHome browser session |
+| Docs Sync | `/docs-sync` | Check documentation against code |
 | QA | `/qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
 | Ship | `/ship` | Stage, commit, and push with smart file classification |
 | Diagnosing Bugs | `/diagnosing-bugs` | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | Review | `/review` | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
-| Review Controller | `/review-controller` | Lead a multi-lens product or journey review: the controller plans and judges, bundled Opus `review-specialist` agents inspect a frozen evidence set |
-| Delegate | `/delegate` | Route one bounded, already-fetched transform to local Ollama when telemetry readiness allows it |
 | Usage Stats | `/usage-stats` | Analyze token/cost/budget usage, session/tool activity, and agent performance, preferring measured telemetry data when available |
 | Memory Management | `/memory-management` | Govern auto-memory: typed write schema, locality routing, index budget, and audits |
 | Deep Audit | `/deep-audit` | Run evidence-first, resumable runtime-efficiency audits while keeping product code read-only by default |
@@ -59,75 +57,47 @@ in [Local Agent Skill Access](../docs/local-agent-skill-access.md#maintain-the-l
 
 ## Workflow
 
-The generic campaign workflow moves through four stages:
-
-```text
-/discover <question>        -> findings document (docs/discovery-*.md)
-/planner <description>      -> campaign plan with agent specs
-/manager run ready          -> launches agents in parallel worktrees
-/manager merge              -> merges agent work into main
-/manager verify             -> validates build, tests, and readiness
-/qa run                     -> run test suite
-/ship commit                -> stage and commit changes
-```
-
-For end-to-end autonomous execution:
-
-```text
-/manager go "Add feature X"
-```
-
-For phased refactors:
-
-```text
-/planner --mode refactor "Extract storage layer"
-```
-
-For passive project intelligence:
-
-```text
-/observe review           -> suggest observations from recent context
-/observe synthesize       -> update project-intelligence.md
-```
+Run the campaign CLI from a consumer checkout. For example,
+`python scripts/task_manager.py plan create "Extract storage layer"` creates a
+draft. The runtime prints the commands for adding agents and finalizing the
+plan. Its `verify` command validates build, tests, and readiness. See the
+[command lifecycle](docs/program-flow.md) for the approval and execution steps.
 
 ## Installation
 
 ### Per-project install
 
-This installs the runtime files into a consumer repo. The target runtime layout
-is different from this package layout.
+Run the following from the Claude package root with the consumer Git checkout
+as the first shell argument.
 
 ```bash
-mkdir -p <project>/.claude/skills
-mkdir -p <project>/scripts
+project_root=$(git -C "$1" rev-parse --show-toplevel) || exit 1
+mkdir -p "$project_root/.claude/skills" "$project_root/scripts"
 
-for d in skills/discover skills/handoff skills/manager skills/planner skills/qa skills/ship; do
-  cp -r "$d" <project>/.claude/skills/
+for d in skills/handoff skills/qa skills/ship; do
+  cp -r "$d" "$project_root/.claude/skills/"
 done
 
-# Optional ops, analytics, and delegation skills
+# Optional skills
 for d in \
   skills/browser-control \
   skills/deep-audit \
-  skills/delegate \
   skills/diagnosing-bugs \
   skills/docs-sync \
   skills/memory-management \
   skills/review \
-  skills/review-controller \
   skills/skill-authoring \
-  skills/smart-test \
   skills/usage-stats; do
-  cp -r "$d" <project>/.claude/skills/
+  cp -r "$d" "$project_root/.claude/skills/"
 done
 
-cp planning-contract.md project.toml.template <project>/.claude/skills/
-cp scripts/task_manager.py <project>/scripts/
-cp scripts/memory_audit.py <project>/scripts/
-cp -r scripts/analysis <project>/scripts/
-cp -r scripts/task_runtime <project>/scripts/
+cp planning-contract.md project.toml.template "$project_root/.claude/skills/"
+cp scripts/task_manager.py "$project_root/scripts/"
+cp scripts/memory_audit.py "$project_root/scripts/"
+cp -r scripts/analysis "$project_root/scripts/"
+cp -r scripts/task_runtime "$project_root/scripts/"
 
-cd <project>
+cd "$project_root" || exit 1
 python scripts/task_manager.py init --force
 ```
 
@@ -136,33 +106,32 @@ directories, and writes a stub conventions file at the configured
 `[project].conventions` path when it is missing.
 
 If you also want the schema reference docs in the installed tree, copy
-`plan-schema.md` and `analysis-schema.md` into `<project>/.claude/skills/`.
+`plan-schema.md` and `analysis-schema.md` into `"$project_root/.claude/skills/"`.
 
 ### Global install
 
 ```bash
-mkdir -p ~/.claude/skills
+skill_root="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
+mkdir -p "$skill_root"
 
-for d in skills/discover skills/handoff skills/manager skills/planner skills/qa skills/ship; do
-  cp -r "$d" ~/.claude/skills/
+for d in skills/handoff skills/qa skills/ship; do
+  cp -r "$d" "$skill_root/"
 done
 
-# Optional ops, analytics, and delegation skills
+# Optional skills
 for d in \
+  skills/browser-control \
   skills/deep-audit \
-  skills/delegate \
   skills/diagnosing-bugs \
   skills/docs-sync \
   skills/memory-management \
   skills/review \
-  skills/review-controller \
   skills/skill-authoring \
-  skills/smart-test \
   skills/usage-stats; do
-  cp -r "$d" ~/.claude/skills/
+  cp -r "$d" "$skill_root/"
 done
 
-cp planning-contract.md project.toml.template ~/.claude/skills/
+cp planning-contract.md project.toml.template "$skill_root/"
 ```
 
 The `init --force` command renders `.claude/skills/project.toml` from
@@ -193,8 +162,8 @@ test = "python -m pytest tests/ -q"
 `python scripts/task_manager.py verify --profile fast|full`; when they are not
 set, the runtime falls back to `[commands].test`.
 
-The base planning surface contains 13 standard plan elements. In refactor mode
-(`/planner --mode refactor`), elements `R1`, `R2`, and `R3` are added on top
+The base planning surface contains 13 standard plan elements. For refactor plans,
+elements `R1`, `R2`, and `R3` are added on top
 of that shared contract.
 
 Use `[analysis].mode = "basic" | "auto" | "deep"` to control provider
@@ -244,8 +213,6 @@ After vendoring, the target repo should have this runtime layout:
 
 | Installed location | Purpose |
 |---|---|
-| `.claude/skills/manager/SKILL.md` | Manager skill runtime doc |
-| `.claude/skills/planner/SKILL.md` | Planner skill runtime doc (includes refactor mode) |
 | `.claude/skills/planning-contract.md` | Shared planning contract |
 | `.claude/skills/project.toml` | Generated project-local config |
 | `scripts/task_manager.py` | Backend command surface |

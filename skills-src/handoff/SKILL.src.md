@@ -135,14 +135,24 @@ Report in this order, briefly:
 | Audit a branch or diff | `{{cmd}}review` |
 | Land validated work | `{{cmd}}ship` |
 | Run tests | `{{cmd}}qa` |
+{{#claude}}
+| Answer a bounded codebase question | Inspect the relevant code and report the evidence |
+{{/claude}}
+{{#codex}}
 | Answer a bounded codebase question | `{{cmd}}discover` |
+{{/codex}}
 {{#claude}}
 | Reproduce and fix one bug | do it directly in this session: reproduce, fix, test |
 {{/claude}}
 {{#codex}}
 | Reproduce and fix one bug | `$diagnosing-bugs` |
 {{/codex}}
+{{#claude}}
+| An explicitly requested multi-agent campaign | Use the native workflow tools |
+{{/claude}}
+{{#codex}}
 | An explicitly requested multi-agent campaign | `{{cmd}}manager` {{dash}} never for ordinary resumed work |
+{{/codex}}
 | Correct or prune the state store | `{{cmd}}memory-management` |
 
 Carry existing user authorization forward; do not ask for it again just

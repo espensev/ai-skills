@@ -12,9 +12,7 @@ transition. Subagents can inspect, draft, implement in owned files, and recommen
 pass/block outcomes, but they never self-approve a plan, merge, live action, or
 final handoff.
 
-This is the heavier sibling of `parallel-agents-light`. Prefer
-`parallel-agents-light` for fast two-or-three-lane work. Use this skill when the
-work needs a durable PASS 0 inventory, explicit lane packets, independent
+Use this skill when the work needs a durable PASS 0 inventory, explicit lane packets, independent
 reviewers, or strict safety gates. Escalate to `manager` when isolated worktrees,
 dependency groups, managed merges, or backend task state are required.
 

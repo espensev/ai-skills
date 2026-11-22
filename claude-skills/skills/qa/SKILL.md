@@ -1,7 +1,7 @@
 ---
 name: qa
-description: Use when the user wants tests run, coverage checked, failures classified, a configured app smoke-tested, or regression tests added. Do not use for findings-first diff review (use review), a hard bug needing a new reproduction-and-fix loop (use diagnosing-bugs), or a broad runtime-efficiency audit (use deep-audit).
-argument-hint: "<command> [args] — run | smoke | coverage | triage | regtest"
+description: Use when the user wants tests selected for changed files, tests run, coverage checked, failures classified, a configured app smoke-tested, or regression tests added. Do not use for findings-first diff review (use review), a hard bug needing a new reproduction-and-fix loop (use diagnosing-bugs), or a broad runtime-efficiency audit (use deep-audit).
+argument-hint: "<command> [args] — run | map | smoke | coverage | triage | regtest"
 user-invocable: true
 ---
 
@@ -46,12 +46,22 @@ irreversible, or that drives a live signed-in session — those pause for explic
 | Command | Usage | Purpose |
 |---------|-------|---------|
 | `run` | `/qa` or `/qa run [scope]` | Run tests — full suite or scoped |
+| `map` | `/qa map [files or --diff]` | Show source-to-test mappings without executing tests |
 | `smoke` | `/qa smoke` | Smoke-test a configured app — HTTP endpoints, or a provenance-gated desktop/GUI build (`[smoke-test].mode`) |
 | `coverage` | `/qa coverage` | Map source modules to tests, find gaps |
 | `triage` | `/qa triage` | Diagnose current test failures with root cause analysis |
 | `regtest` | `/qa regtest <files>` | Generate regression tests for changed files |
 
-Default to `run` if no command given.
+Default to `run` if no command is given. When asked which tests cover a change,
+use `map` and stop after reporting the selection. For a targeted run, accept
+`run --diff` or named changed files and execute the selected tests.
+
+For `--diff`, include staged, unstaged and untracked source files plus changes
+since the branch diverged from the repository's default branch. Honor existing
+`[smart-test.mappings]` and `[smart-test.cross-cutting].paths` overrides. Map
+remaining files using modules, imports and the repository's test naming
+conventions. Report unmapped files. For shared build or test configuration,
+select the full affected suite. List required delivery checks separately.
 
 ---
 
@@ -59,7 +69,7 @@ Default to `run` if no command given.
 
 Before any command, load project configuration:
 
-1. Read `.claude/skills/project.toml`
+1. Read `.claude/skills/project.toml` if present
 2. Extract `[commands].test` for the test command
 3. Extract `[modules]` for the source module list (if configured)
 4. Extract `[smoke-test]` for smoke-test config (HTTP by default; `mode = "gui"` for a desktop app)
@@ -78,6 +88,7 @@ the default**, so a project with no `[qa].framework` behaves exactly as before:
 
 | framework | scope / select | collect-and-count | verbose run | test→source link |
 |---|---|---|---|---|
+| `pester` | `Invoke-Pester -Path <test-file>` | Inspect discovered test blocks | `Invoke-Pester -Path <test-file> -Output Detailed` | Matching `*.Tests.ps1` or imported module |
 | `pytest` *(default)* | `<test-cmd> <files>` | `<test-cmd> <file> --co 2>&1 \| tail -1` | `<test-cmd> -v` | import (`import X` / `from X`) |
 | `dotnet` | `<test-cmd> --filter "<expr>"` | `<test-cmd> --list-tests` | `<test-cmd> --logger "console;verbosity=detailed"` | type name (`FooTests` ↔ type `Foo`) |
 | `jest` | `<test-cmd> <pattern>` | `<test-cmd> --listTests` | `<test-cmd> --verbose` | import / path convention |

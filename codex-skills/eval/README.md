@@ -46,8 +46,8 @@ The scorer expects a response file shaped like this:
 ```json
 [
   {
-    "id": "planner-basic-001",
-    "selected_skill": "planner",
+    "id": "manager-plan-only-001",
+    "selected_skill": "manager",
     "output": "text output from the run",
     "created_files": ["agents/agent-a-example.md"],
     "verification_commands": ["python -m pytest -q"],

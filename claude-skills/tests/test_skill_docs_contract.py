@@ -17,11 +17,8 @@ PROGRAM_FLOW = ROOT / "docs" / "program-flow.md"
 PRODUCT_BACKLOG = ROOT / "docs" / "product-cost-optimization-backlog.md"
 FILE_MAP = ROOT / "docs" / "file-map.md"
 EXAMPLES_README = ROOT / "examples" / "README.md"
-MANAGER_SKILL = SKILLS / "manager" / "SKILL.md"
 SHIP_SKILL = SKILLS / "ship" / "SKILL.md"
-CHIEF_OPERATOR_SKILL = SKILLS / "chief-operator" / "SKILL.md"
 BUILDER_AGENT = ROOT / "agent-definitions" / "builder.md"
-PLANNER_SKILL = SKILLS / "planner" / "SKILL.md"
 DEEP_AUDIT_SKILL = SKILLS / "deep-audit" / "SKILL.md"
 DIAGNOSING_BUGS_SKILL = SKILLS / "diagnosing-bugs" / "SKILL.md"
 DEEP_AUDIT_MODE_CONTRACT = SKILLS / "deep-audit" / "references" / "mode-contracts.md"
@@ -38,7 +35,7 @@ class TestSkillDocsContract(unittest.TestCase):
         portable = set(manifest["default_skills"] + manifest["optional_skills"])
         covered = {case["skill"] for case in cases}
 
-        self.assertEqual(portable - covered, set(), "Portable skills missing eval coverage")
+        self.assertEqual(portable, covered)
 
     def test_expected_export_files_exist(self):
         expected = [
@@ -76,9 +73,6 @@ class TestSkillDocsContract(unittest.TestCase):
             SKILLS / "deep-audit" / "examples" / "depth-test.md",
             SKILLS / "deep-audit" / "references" / "mode-contracts.md",
             SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md",
-            SKILLS / "discover" / "SKILL.md",
-            SKILLS / "manager" / "SKILL.md",
-            SKILLS / "planner" / "SKILL.md",
             SKILLS / "qa" / "SKILL.md",
             SKILLS / "ship" / "SKILL.md",
             SKILLS / "skill-authoring" / "SKILL.md",
@@ -110,7 +104,7 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("analysis-schema.md", text)
         self.assertIn("planning_context", text)
         self.assertIn("13 standard plan elements", text)
-        self.assertIn("--mode refactor", text)
+        self.assertIn("For refactor plans", text)
         self.assertIn("skills/deep-audit", text)
         self.assertIn("skills/diagnosing-bugs", text)
         self.assertIn("skills/skill-authoring", text)
@@ -146,12 +140,9 @@ class TestSkillDocsContract(unittest.TestCase):
 
     def test_install_manifest_lists_default_skill_set(self):
         manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
-        self.assertIn("manager", manifest["default_skills"])
-        self.assertIn("planner", manifest["default_skills"])
-        self.assertIn("discover", manifest["default_skills"])
+        self.assertIn("handoff", manifest["default_skills"])
         self.assertIn("qa", manifest["default_skills"])
         self.assertIn("ship", manifest["default_skills"])
-        self.assertIn("delegate", manifest["optional_skills"])
         self.assertIn("deep-audit", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
@@ -160,6 +151,17 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertNotIn("telemetry-live-ops", manifest["optional_skills"])
         self.assertIn("telemetry-live-ops", manifest["source_only_skills"])
         for removed in (
+            "cc-workflow-builder",
+            "chief-operator",
+            "codebase-design",
+            "delegate",
+            "discover",
+            "docs-clean",
+            "manager",
+            "planner",
+            "resolving-merge-conflicts",
+            "review-controller",
+            "smart-test",
             "agent-report",
             "observer-test",
             "refactor-planner",
@@ -167,6 +169,7 @@ class TestSkillDocsContract(unittest.TestCase):
             "token-audit",
             "worktree-manager",
         ):
+            self.assertNotIn(removed, manifest["default_skills"])
             self.assertNotIn(removed, manifest["optional_skills"])
             self.assertNotIn(removed, manifest["source_only_skills"])
             self.assertFalse((SKILLS / removed).exists(), f"Deleted skill still present: {removed}")
@@ -188,7 +191,6 @@ class TestSkillDocsContract(unittest.TestCase):
             "diagnosing-bugs",
             "docs-sync",
             "skill-authoring",
-            "smart-test",
             "usage-stats",
         )
         for skill in automatic:
@@ -196,10 +198,6 @@ class TestSkillDocsContract(unittest.TestCase):
             frontmatter = text.split("---", 2)[1]
             self.assertNotIn("disable-model-invocation: true", frontmatter, skill)
             self.assertNotIn("allowed-tools:", frontmatter, skill)
-
-    def test_local_model_delegation_keeps_explicit_invocation_boundary(self):
-        text = (SKILLS / "delegate" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("disable-model-invocation: true", text)
 
     def test_model_invocable_skills_carry_no_tool_grants_or_unknown_keys(self):
         # allowed-tools pre-approves tools for the invoking turn, so a skill Claude
@@ -233,25 +231,13 @@ class TestSkillDocsContract(unittest.TestCase):
             self.assertLessEqual(len(description), 1024, skill)
             self.assertNotRegex(description, r"[<>]", skill)
 
-    def test_manager_uses_progressive_disclosure(self):
-        manager = MANAGER_SKILL.read_text(encoding="utf-8")
-        self.assertNotIn("### Phase 1: Load context", manager)
-        self.assertIn("planning policy is loaded on demand", manager)
-
     def test_validated_work_is_committed_and_normally_pushed_without_a_second_gate(self):
-        manager = MANAGER_SKILL.read_text(encoding="utf-8")
         ship = SHIP_SKILL.read_text(encoding="utf-8")
-        chief_operator = CHIEF_OPERATOR_SKILL.read_text(encoding="utf-8")
         builder = BUILDER_AGENT.read_text(encoding="utf-8")
 
-        self.assertIn("Deliver before cleanup", manager)
-        self.assertIn("normally push the current branch", manager)
-        self.assertNotIn("git worktree remove <path> --force", manager)
         self.assertIn("does not require another confirmation", ship)
         self.assertNotIn("Always confirms with the user first", ship)
         self.assertNotIn("This is the ONE command that requires user confirmation", ship)
-        self.assertIn("normally push the current branch without another prompt", chief_operator)
-        self.assertNotIn("Approval gates (merge, push", chief_operator)
         self.assertIn("create a focused commit", builder)
         self.assertIn("the orchestrator owns the reviewed normal push", builder)
 
@@ -260,10 +246,7 @@ class TestSkillDocsContract(unittest.TestCase):
             "deep-audit",
             "diagnosing-bugs",
             "qa",
-            "planner",
-            "manager",
             "review",
-            "discover",
             "usage-stats",
             # 2026-10-26 audit: 7 of 25 automatic `verify` selections were in
             # projects unrelated to the DevHome shell profile.
@@ -327,10 +310,6 @@ class TestSkillDocsContract(unittest.TestCase):
 
     def test_current_docs_match_runtime_verify_surface(self):
         self.assertIn("validates build, tests, and readiness", README.read_text(encoding="utf-8"))
-        self.assertIn("readiness check", PLANNER_SKILL.read_text(encoding="utf-8"))
-        manager_text = MANAGER_SKILL.read_text(encoding="utf-8")
-        self.assertIn("optional follow-up audit findings", manager_text)
-        self.assertIn("Do not claim that", manager_text)
         json_examples_text = JSON_OUTPUT_EXAMPLES.read_text(encoding="utf-8")
         self.assertIn("does not independently prove each natural-language", json_examples_text)
         self.assertIn("--poll SECONDS", PROGRAM_FLOW.read_text(encoding="utf-8"))

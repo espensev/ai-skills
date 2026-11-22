@@ -27,7 +27,7 @@ if (-not (Test-Path -LiteralPath $RetiredSkillsPath -PathType Leaf)) {
     throw "Retired skill registry missing: $RetiredSkillsPath"
 }
 $RetiredRegistry = Get-Content -Raw -LiteralPath $RetiredSkillsPath | ConvertFrom-Json
-if ($RetiredRegistry.schema -ne "ai-skills/retired-skills/v1") {
+if ($RetiredRegistry.schema -notin @("ai-skills/retired-skills/v1","ai-skills/retired-skills/v2")) {
     throw "Unsupported retired skill registry schema: $($RetiredRegistry.schema)"
 }
 $RetiredSkills = @($RetiredRegistry.retired_skills)
@@ -311,6 +311,9 @@ function Compare-ProviderPackage {
         }
 
         foreach ($Retired in $RetiredSkills) {
+            if ($Retired.PSObject.Properties["provider"] -and $Retired.provider -ne $ProviderName) {
+                continue
+            }
             $RetiredName = [string]$Retired.name
             if ($RetiredName -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
                 throw "Unsafe retired skill name in registry: $RetiredName"

@@ -1,74 +1,5 @@
 [
   {
-    "id": "discover-basic-001",
-    "selected_skill": "discover",
-    "output": "Mock eval response for discover. question. evidence. recommend.",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "discover-ambiguous-002",
-    "selected_skill": "discover",
-    "output": "Mock eval response for discover. question. evidence.",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "planner-basic-001",
-    "selected_skill": "planner",
-    "output": "Mock eval response for planner. exit criteria. agent. verification. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "python",
-      "pytest",
-      "verify"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "planner-edge-002",
-    "selected_skill": "planner",
-    "output": "Mock eval response for planner. agent. exit criteria. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "pytest",
-      "verify"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "manager-basic-001",
-    "selected_skill": "manager",
-    "output": "Mock eval response for manager. plan. merge. verify. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "verify",
-      "pytest",
-      "build"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "manager-edge-002",
-    "selected_skill": "manager",
-    "output": "Mock eval response for manager. plan. merge. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "verify",
-      "pytest",
-      "build"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
     "id": "qa-basic-001",
     "selected_skill": "qa",
     "output": "Mock eval response for qa. test. fail. pass. Verification coverage is listed in verification_commands.",
@@ -114,18 +45,6 @@
     "verification_commands": [
       "git status",
       "git diff"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "delegate-basic-001",
-    "selected_skill": "delegate",
-    "output": "Mock eval response for delegate. delegate. controller. readiness. ollama.",
-    "created_files": [],
-    "verification_commands": [
-      "readiness",
-      "ollama"
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."
@@ -200,28 +119,6 @@
     "notes": "Deterministic boundary mock response."
   },
   {
-    "id": "discover-deep-audit-boundary-001",
-    "selected_skill": "discover",
-    "output": "Inspect the dependencies and constraints, then produce evidence-backed feasibility findings before planning.",
-    "created_files": [],
-    "verification_commands": [
-      "rg"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic boundary mock response."
-  },
-  {
-    "id": "manager-deep-audit-boundary-001",
-    "selected_skill": "manager",
-    "output": "Coordinate parallel lanes with explicit approval gates, implement only approved fixes, and verify them with tests.",
-    "created_files": [],
-    "verification_commands": [
-      "test"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic boundary mock response."
-  },
-  {
     "id": "skill-authoring-basic-001",
     "selected_skill": "skill-authoring",
     "output": "Create SKILL.md with focused frontmatter and discovery metadata, wire the package manifest, then validate the package.",
@@ -269,21 +166,8 @@
     "notes": "Deterministic mock; no actual repository consistency claim."
   },
   {
-    "id": "review-controller-product-001",
-    "selected_skill": "review-controller",
-    "output": "Mock contract response: the controller assigns read-only usability, accessibility, and recovery reviews over frozen evidence, then reconciles findings against the supplied screenshots.",
-    "created_files": [
-      "docs/reviews/checkout-review.md"
-    ],
-    "verification_commands": [
-      "cross-check findings against screenshot evidence"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock; file list represents expected output, not an executed review."
-  },
-  {
-    "id": "smart-test-map-only-001",
-    "selected_skill": "smart-test",
+    "id": "qa-map-only-001",
+    "selected_skill": "qa",
     "output": "Mock contract response: map changed files to targeted tests using imports and the existing test layout. Report the mapping and unmapped files; tests were not run for this map-only request.",
     "created_files": [],
     "verification_commands": [

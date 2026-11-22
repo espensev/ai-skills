@@ -11,11 +11,9 @@
 - Deep Audit is read-only toward product code by default. Do not run risky
   profiling, load, fault, restart, privileged, production, or paid activity
   without explicit authority.
-- Route ordinary branch or PR review to `/review`, one known regression with a
-  requested fix to `/diagnosing-bugs`, bounded feasibility research to
-  `/discover`, tests and coverage to `/qa`, and security assessment to a
-  security-specific workflow. Route parallel audit/remediation, approval gates,
-  and implementation ownership to `/manager` or `Workflow`.
+- Use `/review` for a branch or PR review and `/qa` for tests and coverage.
+  Inspect the code directly for bounded research, reproduce regressions before
+  fixing them, and use native workflows for multi-agent campaigns.
 
 ## Package Boundary
 

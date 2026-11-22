@@ -27,7 +27,7 @@ skill selection or effectiveness. Use recorded runs with reviewed labels for
 those conclusions.
 
 Coverage includes stale-handoff reconciliation, isolated browser routing,
-read-only documentation checks, product-review ownership, test mapping without
+read-only documentation checks, test mapping without
 execution, and estimated usage reporting. Contract tests require every portable
 skill to have a case, keep case/mock/template IDs aligned, and verify that these
 boundary cases reject wrong skill selections and prohibited actions or claims.
@@ -60,8 +60,8 @@ Same as the shared scorer contract:
 ```json
 [
   {
-    "id": "discover-basic-001",
-    "selected_skill": "discover",
+    "id": "qa-basic-001",
+    "selected_skill": "qa",
     "output": "text output from the run",
     "created_files": [],
     "verification_commands": [],

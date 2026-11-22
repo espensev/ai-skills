@@ -18,14 +18,15 @@
     }
   },
   {
-    "id": "planner-basic-001",
-    "skill": "planner",
-    "prompt": "Plan a small refactor of the runtime config loading path.",
+    "id": "manager-plan-only-001",
+    "skill": "manager",
+    "prompt": "Design a multi-agent campaign to refactor runtime configuration loading. Prepare the plan and agent specs for review before launching anyone.",
     "checks": {
       "must_mention": [
         "exit criteria",
         "agent",
-        "verification"
+        "verification",
+        "before launch"
       ],
       "must_not_mention": [
         ".claude/skills",
@@ -128,28 +129,6 @@
     }
   },
   {
-    "id": "loop-master-basic-001",
-    "skill": "loop-master",
-    "prompt": "Supervise a multi-round cleanup of runtime docs and tests.",
-    "checks": {
-      "must_mention": [
-        "local_blocker",
-        "ownership",
-        "validation_gates"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [
-        "validation_gates",
-        "pytest",
-        "verify"
-      ],
-      "must_create": []
-    }
-  },
-  {
     "id": "discover-ambiguous-002",
     "skill": "discover",
     "prompt": "I need to understand this code before we do anything. Look at the analysis pipeline.",
@@ -181,47 +160,6 @@
         "CLAUDE.md"
       ],
       "verification_any_of": [],
-      "must_create": []
-    }
-  },
-  {
-    "id": "planner-ambiguous-002",
-    "skill": "planner",
-    "prompt": "Break down the work for splitting task_runtime into separate modules.",
-    "checks": {
-      "must_mention": [
-        "agent",
-        "verification",
-        "exit criteria"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [
-        "pytest",
-        "verify",
-        "python"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "planner-edge-003",
-    "skill": "planner",
-    "prompt": "Plan a campaign with only one agent \u2014 just fix the config loader.",
-    "checks": {
-      "must_mention": [
-        "agent",
-        "exit criteria"
-      ],
-      "must_not_mention": [
-        ".claude/skills"
-      ],
-      "verification_any_of": [
-        "pytest",
-        "verify"
-      ],
       "must_create": []
     }
   },
@@ -385,23 +323,6 @@
     }
   },
   {
-    "id": "documentation-lookup-basic-001",
-    "skill": "documentation-lookup",
-    "prompt": "Check the current Next.js docs for the correct App Router middleware pattern.",
-    "checks": {
-      "must_mention": [
-        "documentation",
-        "current"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [],
-      "must_create": []
-    }
-  },
-  {
     "id": "repo-conventions-e2e-basic-001",
     "skill": "repo-conventions",
     "prompt": "Write a Playwright E2E test for the login flow using stable selectors.",
@@ -422,23 +343,6 @@
     }
   },
   {
-    "id": "exa-search-basic-001",
-    "skill": "exa-search",
-    "prompt": "Use Exa to find recent examples of MCP server implementations in Python.",
-    "checks": {
-      "must_mention": [
-        "search",
-        "result"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [],
-      "must_create": []
-    }
-  },
-  {
     "id": "repo-conventions-frontend-basic-001",
     "skill": "repo-conventions",
     "prompt": "Build an accessible React form component that follows our design system.",
@@ -454,69 +358,6 @@
       "verification_any_of": [
         "test",
         "lint"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "mcp-server-patterns-basic-001",
-    "skill": "mcp-server-patterns",
-    "prompt": "Build an MCP server with proper schema validation and transport handling.",
-    "checks": {
-      "must_mention": [
-        "schema",
-        "transport"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [
-        "test",
-        "validate"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "verification-loop-basic-001",
-    "skill": "verification-loop",
-    "prompt": "Run the full build-lint-test-review cycle before handing off this change.",
-    "checks": {
-      "must_mention": [
-        "build",
-        "test"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [
-        "build",
-        "test",
-        "lint"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "delegate-basic-001",
-    "skill": "delegate",
-    "prompt": "I already fetched the failing build log. Summarize these 180 lines into the failing tests and why \u2014 offload it to a local model if that's safe.",
-    "checks": {
-      "must_mention": [
-        "delegate",
-        "controller"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [
-        "readiness",
-        "guidance",
-        "ollama",
-        "stay with controller"
       ],
       "must_create": []
     }
@@ -643,35 +484,7 @@
     }
   },
   {
-    "id": "review-controller-basic-001",
-    "skill": "review-controller",
-    "prompt": "Use Codex subagents to lead a multi-lens review of the admin onboarding product journey across these five screens. Keep the evidence frozen and workers read-only, then verify every accepted finding.",
-    "checks": {
-      "must_mention": [
-        "product journey",
-        "screens",
-        "read-only",
-        "subagent",
-        "controller",
-        "evidence fingerprint"
-      ],
-      "must_not_mention": [
-        "git diff",
-        "merge blocker",
-        "edit the source",
-        "post the review",
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [
-        "fingerprint",
-        "verify"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "review-controller-routing-boundary-001",
+    "id": "review-staged-diff-001",
     "skill": "review",
     "prompt": "Review this small staged diff for merge blockers and report the findings.",
     "checks": {
@@ -897,52 +710,6 @@
       "verification_any_of": [
         "rg",
         "check"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "parallel-agents-light-basic-001",
-    "skill": "parallel-agents-light",
-    "prompt": "Use two lightweight read-only Codex subagents to inspect separate concerns, then integrate and verify their findings in the controller thread.",
-    "checks": {
-      "must_mention": [
-        "ownership",
-        "read-only",
-        "controller",
-        "verification"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [
-        "git diff",
-        "test",
-        "verify"
-      ],
-      "must_create": []
-    }
-  },
-  {
-    "id": "smart-test-basic-001",
-    "skill": "smart-test",
-    "prompt": "Map these changed files to the smallest useful test subset for fast feedback before the full QA gate.",
-    "checks": {
-      "must_mention": [
-        "changed files",
-        "targeted",
-        "unmapped",
-        "full suite"
-      ],
-      "must_not_mention": [
-        ".claude/skills",
-        "CLAUDE.md"
-      ],
-      "verification_any_of": [
-        "git diff",
-        "pytest",
-        "test"
       ],
       "must_create": []
     }

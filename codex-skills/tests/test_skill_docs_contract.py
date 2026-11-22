@@ -21,8 +21,6 @@ PRODUCT_BACKLOG = ROOT / "docs" / "product-cost-optimization-backlog.md"
 FILE_MAP = ROOT / "docs" / "file-map.md"
 EXAMPLES_README = ROOT / "examples" / "README.md"
 MANAGER_SKILL = SKILLS / "manager" / "SKILL.md"
-PLANNER_SKILL = SKILLS / "planner" / "SKILL.md"
-LOOP_MASTER_SKILL = SKILLS / "loop-master" / "SKILL.md"
 DEEP_AUDIT_SKILL = SKILLS / "deep-audit" / "SKILL.md"
 DIAGNOSING_BUGS_SKILL = SKILLS / "diagnosing-bugs" / "SKILL.md"
 DEEP_AUDIT_MODE_CONTRACT = SKILLS / "deep-audit" / "references" / "mode-contracts.md"
@@ -150,18 +148,13 @@ class TestSkillDocsContract(unittest.TestCase):
             SKILLS / "audit-gated-subagents" / "SKILL.md",
             SKILLS / "deep-audit" / "SKILL.md",
             SKILLS / "discover" / "SKILL.md",
-            SKILLS / "documentation-lookup" / "SKILL.md",
-            SKILLS / "exa-search" / "SKILL.md",
             SKILLS / "manager" / "SKILL.md",
-            SKILLS / "mcp-server-patterns" / "SKILL.md",
             SKILLS / "memory-management" / "SKILL.md",
-            SKILLS / "planner" / "SKILL.md",
             SKILLS / "qa" / "SKILL.md",
             SKILLS / "repo-conventions" / "SKILL.md",
             SKILLS / "ship" / "SKILL.md",
             SKILLS / "skill-authoring" / "SKILL.md",
             SKILLS / "usage-stats" / "SKILL.md",
-            SKILLS / "verification-loop" / "SKILL.md",
         ]
         for path in expected:
             self.assertTrue(path.exists(), f"Missing exported file: {path}")
@@ -189,12 +182,10 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("analysis-schema.md", text)
         self.assertIn("planning_context", text)
         self.assertIn("13 standard plan elements", text)
-        self.assertIn("--mode refactor", text)
+        self.assertIn("rollback strategy (R1–R3)", text)
         self.assertIn("skills/repo-conventions", text)
         self.assertIn("skills/audit-gated-subagents", text)
         self.assertIn("skills/deep-audit", text)
-        self.assertIn("skills/verification-loop", text)
-        self.assertIn("skills/exa-search", text)
         self.assertIn("skills/memory-management", text)
         self.assertIn("skills/skill-authoring", text)
 
@@ -230,25 +221,28 @@ class TestSkillDocsContract(unittest.TestCase):
     def test_install_manifest_lists_default_skill_set(self):
         manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
         self.assertIn("manager", manifest["default_skills"])
-        self.assertIn("planner", manifest["default_skills"])
         self.assertIn("discover", manifest["default_skills"])
         self.assertIn("qa", manifest["default_skills"])
         self.assertIn("ship", manifest["default_skills"])
         self.assertIn("audit-gated-subagents", manifest["optional_skills"])
         self.assertIn("deep-audit", manifest["optional_skills"])
-        self.assertIn("delegate", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])
-        self.assertIn("documentation-lookup", manifest["optional_skills"])
-        self.assertIn("exa-search", manifest["optional_skills"])
-        self.assertIn("mcp-server-patterns", manifest["optional_skills"])
         self.assertIn("memory-management", manifest["optional_skills"])
-        self.assertIn("parallel-agents-light", manifest["optional_skills"])
         self.assertIn("repo-conventions", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
         self.assertIn("skill-authoring", manifest["optional_skills"])
         self.assertIn("usage-stats", manifest["optional_skills"])
-        self.assertIn("verification-loop", manifest["optional_skills"])
         for removed in (
+            "delegate",
+            "documentation-lookup",
+            "exa-search",
+            "loop-master",
+            "mcp-server-patterns",
+            "parallel-agents-light",
+            "planner",
+            "review-controller",
+            "smart-test",
+            "verification-loop",
             "agent-report",
             "api-design",
             "backend-patterns",
@@ -259,6 +253,7 @@ class TestSkillDocsContract(unittest.TestCase):
             "session-stats",
             "token-audit",
         ):
+            self.assertNotIn(removed, manifest["default_skills"])
             self.assertNotIn(removed, manifest["optional_skills"])
             self.assertNotIn(removed, manifest["source_only_skills"])
             self.assertFalse((SKILLS / removed).exists(), f"Deleted skill still present: {removed}")
@@ -269,13 +264,6 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("scripts/skill_feedback_loop.py", manifest["runtime_files"])
         self.assertIn("scripts/analysis", manifest["runtime_directories"])
         self.assertIn("scripts/task_runtime", manifest["runtime_directories"])
-
-    def test_loop_master_is_a_compatibility_alias(self):
-        text = LOOP_MASTER_SKILL.read_text(encoding="utf-8")
-        self.assertIn("Backward-compatible alias", text)
-        self.assertIn("follow `repo-conventions`", text)
-        self.assertIn("follow `planner`", text)
-        self.assertNotIn("## Responsibilities", text)
 
     def test_repo_conventions_preserves_collapsed_playbooks(self):
         text = REPO_CONVENTIONS_SKILL.read_text(encoding="utf-8")
@@ -304,11 +292,9 @@ class TestSkillDocsContract(unittest.TestCase):
 
     def test_development_skills_remain_available_for_implicit_invocation(self):
         automatic = (
-            "delegate",
             "diagnosing-bugs",
             "docs-sync",
             "skill-authoring",
-            "smart-test",
             "usage-stats",
         )
         for skill in automatic:
@@ -341,14 +327,19 @@ class TestSkillDocsContract(unittest.TestCase):
     def test_manager_uses_progressive_disclosure(self):
         manager = MANAGER_SKILL.read_text(encoding="utf-8")
         self.assertNotIn("### Phase 1: Load context", manager)
-        self.assertIn("planning policy is loaded on demand", manager)
+        reference_path = MANAGER_SKILL.parent / "references" / "planning-handoff.md"
+        self.assertIn("references/planning-handoff.md", manager)
+        planning = reference_path.read_text(encoding="utf-8")
+        for step in ("planning-contract.md", "plan preflight", "plan create", "plan-add-agent",
+                     "plan finalize", "plan approve", "plan execute", "go <plan-id> --json"):
+            self.assertIn(step, planning)
+        self.assertIn("Return the prepared plan for a plan-only request", planning)
 
     def test_collision_prone_skills_use_trigger_first_descriptions(self):
         for skill in (
             "deep-audit",
             "diagnosing-bugs",
             "qa",
-            "planner",
             "manager",
             "review",
             "discover",
@@ -421,7 +412,6 @@ class TestSkillDocsContract(unittest.TestCase):
 
     def test_current_docs_match_runtime_verify_surface(self):
         self.assertIn("validates build, tests, and readiness", README.read_text(encoding="utf-8"))
-        self.assertIn("readiness check", PLANNER_SKILL.read_text(encoding="utf-8"))
         manager_text = MANAGER_SKILL.read_text(encoding="utf-8")
         self.assertIn("optional follow-up audit findings", manager_text)
         self.assertIn("Do not claim that", manager_text)

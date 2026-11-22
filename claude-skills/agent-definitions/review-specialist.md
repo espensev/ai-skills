@@ -1,6 +1,6 @@
 ---
 name: review-specialist
-description: Bounded specialist worker for the review-controller skill. Use only with a review-controller agent packet — one role (Journey, Usability, Information Architecture, Functional, Risk & Edge-Case, Accessibility, Verification, Adversarial), one exact question, a frozen numbered evidence set. Read-only; returns ≤ 8 evidence-pointed findings in a fixed shape. Not for implementing (builder), diff auditing (adversarial-critic), or open-ended research (research-scout).
+description: Bounded product review specialist. Use only with a packet from the lead reviewer — one role (Journey, Usability, Information Architecture, Functional, Risk & Edge-Case, Accessibility, Verification, Adversarial), one exact question, a frozen numbered evidence set. Read-only; returns ≤ 8 evidence-pointed findings in a fixed shape. Not for implementing (builder), diff auditing (adversarial-critic), or open-ended research (research-scout).
 tools: Read, Grep, Glob, Bash, WebFetch
 model: opus
 effort: high

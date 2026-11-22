@@ -9,9 +9,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "planner-basic-001",
-    "selected_skill": "planner",
-    "output": "Mock eval response for planner. exit criteria. agent. verification. Verification coverage is listed in verification_commands.",
+    "id": "manager-plan-only-001",
+    "selected_skill": "manager",
+    "output": "Prepare the agent specs, exit criteria and verification commands for review before launch.",
     "created_files": [],
     "verification_commands": [
       "python",
@@ -74,19 +74,6 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "loop-master-basic-001",
-    "selected_skill": "loop-master",
-    "output": "Mock eval response for loop-master. local_blocker. ownership. validation_gates. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "validation_gates",
-      "pytest",
-      "verify"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
     "id": "discover-ambiguous-002",
     "selected_skill": "discover",
     "output": "Mock eval response for discover. question. evidence.",
@@ -101,31 +88,6 @@
     "output": "Mock eval response for discover. evidence. recommend.",
     "created_files": [],
     "verification_commands": [],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "planner-ambiguous-002",
-    "selected_skill": "planner",
-    "output": "Mock eval response for planner. agent. verification. exit criteria. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "pytest",
-      "verify",
-      "python"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "planner-edge-003",
-    "selected_skill": "planner",
-    "output": "Mock eval response for planner. agent. exit criteria. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "pytest",
-      "verify"
-    ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."
   },
@@ -225,15 +187,6 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "documentation-lookup-basic-001",
-    "selected_skill": "documentation-lookup",
-    "output": "Mock eval response for documentation-lookup. documentation. current.",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
     "id": "repo-conventions-e2e-basic-001",
     "selected_skill": "repo-conventions",
     "output": "Mock eval response for repo-conventions E2E guidance. test. selector. Verification coverage is listed in verification_commands.",
@@ -246,15 +199,6 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "exa-search-basic-001",
-    "selected_skill": "exa-search",
-    "output": "Mock eval response for exa-search. search. result.",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
     "id": "repo-conventions-frontend-basic-001",
     "selected_skill": "repo-conventions",
     "output": "Mock eval response for repo-conventions frontend guidance. component. accessible. Verification coverage is listed in verification_commands.",
@@ -262,43 +206,6 @@
     "verification_commands": [
       "test",
       "lint"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "mcp-server-patterns-basic-001",
-    "selected_skill": "mcp-server-patterns",
-    "output": "Mock eval response for mcp-server-patterns. schema. transport. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "test",
-      "validate"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "verification-loop-basic-001",
-    "selected_skill": "verification-loop",
-    "output": "Mock eval response for verification-loop. build. test. Verification coverage is listed in verification_commands.",
-    "created_files": [],
-    "verification_commands": [
-      "build",
-      "test",
-      "lint"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for package eval."
-  },
-  {
-    "id": "delegate-basic-001",
-    "selected_skill": "delegate",
-    "output": "Mock eval response for delegate. delegate. controller. readiness. ollama.",
-    "created_files": [],
-    "verification_commands": [
-      "readiness",
-      "ollama"
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for package eval."
@@ -362,18 +269,7 @@
     "notes": "Deterministic boundary mock response."
   },
   {
-    "id": "review-controller-basic-001",
-    "selected_skill": "review-controller",
-    "output": "Map the whole product journey across the five screens, freeze an evidence fingerprint, launch bounded read-only subagent lenses, and have the controller verify every accepted finding.",
-    "created_files": [],
-    "verification_commands": [
-      "verify evidence fingerprint"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for review-controller."
-  },
-  {
-    "id": "review-controller-routing-boundary-001",
+    "id": "review-staged-diff-001",
     "selected_skill": "review",
     "output": "Inspect the staged git diff and report findings for merge blockers using the ordinary review workflow.",
     "created_files": [],
@@ -485,30 +381,6 @@
     ],
     "acceptability": "accept",
     "notes": "Deterministic mock response for docs-sync."
-  },
-  {
-    "id": "parallel-agents-light-basic-001",
-    "selected_skill": "parallel-agents-light",
-    "output": "Give two read-only workers disjoint concern ownership; the controller compares their evidence, performs integration, and owns final verification.",
-    "created_files": [],
-    "verification_commands": [
-      "git diff --check",
-      "test"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for parallel-agents-light."
-  },
-  {
-    "id": "smart-test-basic-001",
-    "selected_skill": "smart-test",
-    "output": "Map changed files to targeted tests, report every unmapped file, and reserve the full suite for cross-cutting changes or the later QA gate.",
-    "created_files": [],
-    "verification_commands": [
-      "git diff --name-only HEAD",
-      "pytest targeted tests"
-    ],
-    "acceptability": "accept",
-    "notes": "Deterministic mock response for smart-test."
   },
   {
     "id": "usage-stats-measured-basic-001",

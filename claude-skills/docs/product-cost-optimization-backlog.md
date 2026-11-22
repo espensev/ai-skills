@@ -2,9 +2,9 @@
 
 ## Scope
 
-This backlog targets **when the skill is running in product workflows** (not
+This backlog targets **when the campaign runtime runs in product workflows** (not
 maintenance-only repo tasks). It focuses on reducing wall time, token/context
-footprint, and failed/autonomous run waste for `/manager go`.
+footprint, and failed/autonomous run waste for `task_manager.py go`.
 
 ## Measured Baseline (2026-03-12)
 
@@ -42,8 +42,7 @@ Observed:
   root, update config to that path.
 3. Keep existing failure behavior when auto-fix cannot safely resolve.
 4. Document new usage:
-- `skills/manager/SKILL.md`
-- `skills/manager/SKILL.md`
+- `docs/program-flow.md`
 
 ### Acceptance criteria
 
@@ -126,8 +125,8 @@ exclude-globs = [
   - `default`: `compile`, optional `build`, `test`
   - `fast`: `compile`, optional `build`, `test_fast` fallback to `test`
   - `full`: `compile`, optional `build`, `test_full` fallback to `test`
-3. Update `/manager verify` guidance:
-- `skills/manager/SKILL.md`
+3. Update the campaign verification guidance:
+- `docs/program-flow.md`
 : document profile-specific verify behavior and fallback rules.
 4. Add tests:
 - `tests/test_cli_commands.py`
@@ -183,8 +182,7 @@ exclude-globs = [
 `test_full`) with sane defaults.
 2. Include timeout status in verify JSON and manifest.
 3. Update docs:
-- `skills/manager/SKILL.md`
-- `skills/manager/SKILL.md`
+- `docs/program-flow.md`
 
 ### Acceptance criteria
 
@@ -213,7 +211,7 @@ failure cases.
   - `launched_agents`
   - `failed_agents`
 2. Persist metrics in execution manifest and JSON output.
-3. Add report section in `/manager go` final report format.
+3. Add report section in `task_manager.py go` final report format.
 
 ### Acceptance criteria
 

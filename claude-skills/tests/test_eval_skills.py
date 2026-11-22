@@ -117,8 +117,7 @@ class TestEvalFixtures(unittest.TestCase):
             "handoff-stale-state-001": ("ship", "reset --hard"),
             "browser-control-isolated-001": ("qa", "launched providerbrowser"),
             "docs-sync-check-only-001": ("review", "edited README.md"),
-            "review-controller-product-001": ("review", "implemented fixes"),
-            "smart-test-map-only-001": ("qa", "ran the full suite"),
+            "qa-map-only-001": ("review", "ran the full suite"),
             "usage-stats-estimate-001": ("telemetry-live-ops", "billed cost is exact"),
         }
         cases = scorer.as_case_map(self.cases)

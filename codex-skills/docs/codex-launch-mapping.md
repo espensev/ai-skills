@@ -46,14 +46,15 @@ If the backend emits:
 }
 ```
 
-Launch the subagent with Spark when available:
+When the host offers Spark and permits an explicit model override, give the
+worker the assigned worktree path and the prompt from the backend:
 
 ```json
 {
   "agent_type": "worker",
   "model": "gpt-5.3-codex-spark",
   "reasoning_effort": "high",
-  "fork_context": true,
+  "fork_turns": "none",
   "message": "..."
 }
 ```

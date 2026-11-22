@@ -64,11 +64,10 @@ for its operator contract.
 | Skill | Command | Purpose |
 |---|---|---|
 | Manager | `$manager` | Orchestrate parallel agents: plan, launch, merge, verify |
-| Planner | `$planner` | Design structured campaign plans with agent decomposition (supports `--mode refactor` for phased refactors) |
+| Handoff | `$handoff` | Resume prior work from verified project state |
 | Discover | `$discover` | Research codebase before planning (supports optimization discovery) |
 | QA | `$qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
 | Ship | `$ship` | Stage, commit, and push with smart file classification |
-| Loop Master | `$loop-master` | Backward-compatible alias that routes immediate work to `repo-conventions` and durable campaigns to `planner`/`manager` |
 
 ### Optional Engineering Skills
 
@@ -78,22 +77,17 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Skill | Trigger | Purpose |
 |---|---|---|
 | Audit-Gated Subagents | auto | Run review-first multi-agent audits with PASS 0 maps, chief/operator gates, lane ownership, independent reviewers, and safety stops |
+| Browser Control | auto | Inspect and operate the selected DevHome browser |
 | Codex State Cleanup | auto | Audit, compress, and safely prune native memory, archived sessions, databases, caches, logs, and temporary Codex state |
 | Deep Audit | auto | Run evidence-first, resumable runtime-efficiency audits across hot paths, allocation/retention, I/O, concurrency, queues, retries, scaling, and lifecycle behavior |
-| Delegate | auto | Route one bounded, already-fetched transform to local Ollama via the `ollama-telemetry` MCP tools when readiness and task class allow it |
 | Diagnosing Bugs | auto | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
-| Documentation Lookup | auto | Fetch current framework and library docs before answering library-specific questions |
-| Exa Search | auto | Use Exa as an optional accelerator for semantic web, code, company, or people search when Exa MCP is available |
+| Docs Sync | auto | Check documentation against current code |
 | Grand Sweep | auto | Run multi-tier grand audit campaigns as ZCode dynamic workflows with a world-read probe, frozen scope skeleton, tiered reviewers, independent confirmation, crash recovery, and per-tier accounting |
-| MCP Server Patterns | auto | Build and maintain MCP servers with current SDK semantics, schema validation, and transport choices |
 | Memory Management | auto | Govern explicit updates to native Codex memory, keep generated registries read-only, enforce index budgets, and label controller/target machine provenance |
-| Parallel Agents Light | auto | Route Codex work between local execution, bounded sidecar subagents, split implementation, and full manager campaigns |
 | Repository Conventions | auto | Follow the target repo first, with fallback playbooks for API/backend/frontend structure, Playwright E2E, current research, and bounded local cycles |
 | Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
-| Review Controller | auto | Lead multi-lens product, system, journey, flow, or screen reviews over frozen evidence with read-only native subagents and controller-verified findings |
 | Skill Authoring | auto | Create and revise Agent Skills with focused discovery metadata, progressive disclosure, and package wiring |
 | Usage Stats | auto | Analyze tokens, costs, budgets, forecasts, session/tool activity, and agent performance, preferring measured telemetry API data when available |
-| Verification Loop | auto | Run repo-appropriate build, lint, typecheck, test, and diff review before handoff |
 
 `telemetry-live-ops` remains an explicit source-only skill; it depends on
 machine-local telemetry deployment details and is not copied by the provider
@@ -111,7 +105,7 @@ The generic campaign workflow moves through four stages:
 
 ```text
 $discover <question>        -> findings document (docs/discovery-*.md)
-$planner <description>      -> campaign plan with agent specs
+$manager plan <description> -> campaign plan with agent specs
 $manager run ready          -> launches agents in parallel worktrees
 $manager merge              -> merges agent work into main
 $manager verify             -> validates build, tests, and readiness
@@ -128,7 +122,7 @@ $manager go "Add feature X"
 For phased refactors:
 
 ```text
-$planner --mode refactor "Extract storage layer"
+$manager plan "Design a phased storage-layer refactor"
 ```
 
 ## Installation
@@ -142,33 +136,24 @@ is different from this package layout.
 mkdir -p <project>/.codex/skills
 mkdir -p <project>/scripts
 
-for d in skills/discover skills/handoff skills/manager skills/planner skills/qa skills/ship; do
+for d in skills/discover skills/handoff skills/manager skills/qa skills/ship; do
   cp -r "$d" <project>/.codex/skills/
 done
 
 # Optional engineering skills
 for d in \
-  skills/loop-master \
   skills/audit-gated-subagents \
   skills/browser-control \
   skills/codex-state-cleanup \
   skills/deep-audit \
-  skills/delegate \
   skills/diagnosing-bugs \
   skills/docs-sync \
-  skills/documentation-lookup \
-  skills/exa-search \
   skills/grand-sweep \
-  skills/mcp-server-patterns \
   skills/memory-management \
-  skills/parallel-agents-light \
   skills/repo-conventions \
   skills/review \
-  skills/review-controller \
   skills/skill-authoring \
-  skills/smart-test \
-  skills/usage-stats \
-  skills/verification-loop; do
+  skills/usage-stats; do
   cp -r "$d" <project>/.codex/skills/
 done
 
@@ -193,32 +178,24 @@ If you also want the schema reference docs in the installed tree, copy
 ```bash
 mkdir -p ~/.codex/skills
 
-for d in skills/discover skills/handoff skills/manager skills/planner skills/qa skills/ship; do
+for d in skills/discover skills/handoff skills/manager skills/qa skills/ship; do
   cp -r "$d" ~/.codex/skills/
 done
 
 # Optional engineering skills
 for d in \
-  skills/loop-master \
   skills/audit-gated-subagents \
+  skills/browser-control \
   skills/codex-state-cleanup \
   skills/deep-audit \
-  skills/delegate \
   skills/diagnosing-bugs \
   skills/docs-sync \
-  skills/documentation-lookup \
-  skills/exa-search \
   skills/grand-sweep \
-  skills/mcp-server-patterns \
   skills/memory-management \
-  skills/parallel-agents-light \
   skills/repo-conventions \
   skills/review \
-  skills/review-controller \
   skills/skill-authoring \
-  skills/smart-test \
-  skills/usage-stats \
-  skills/verification-loop; do
+  skills/usage-stats; do
   cp -r "$d" ~/.codex/skills/
 done
 
@@ -253,9 +230,7 @@ test = "python -m pytest tests/ -q"
 `python scripts/task_manager.py verify --profile fast|full`; when they are not
 set, the runtime falls back to `[commands].test`.
 
-The base planning surface contains 13 standard plan elements. In refactor mode
-(`$planner --mode refactor`), elements `R1`, `R2`, and `R3` are added on top
-of that shared contract.
+The base planning surface contains 13 standard plan elements. For a phased refactor, also record the roadmap phase, behavioral invariants and rollback strategy (R1–R3).
 
 Use `[analysis].mode = "basic" | "auto" | "deep"` to control provider
 selection. `basic` runs only the portable heuristic scanner. `auto` and `deep`
@@ -305,7 +280,6 @@ After vendoring, the target repo should have this runtime layout:
 | Installed location | Purpose |
 |---|---|
 | `.codex/skills/manager/SKILL.md` | Manager skill runtime doc |
-| `.codex/skills/planner/SKILL.md` | Planner skill runtime doc (includes refactor mode) |
 | `.codex/skills/planning-contract.md` | Shared planning contract |
 | `.codex/skills/project.toml` | Generated project-local config |
 | `scripts/task_manager.py` | Backend command surface |

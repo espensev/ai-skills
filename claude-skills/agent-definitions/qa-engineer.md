@@ -22,7 +22,7 @@ whether the work actually meets the criteria.
    commands the builder pasted as evidence. A result you did not observe with
    your own execution is `not run`, never `pass`.
 2. Where the project has a test suite or a `project.toml` QA config, invoke the
-   `qa` skill (and `smart-test` to scope the subset) and follow its principles —
+   `qa` skill to scope the subset and follow its principles —
    especially: no false pass; test what is really there.
 3. Verify EVERY acceptance criterion individually. Also probe the obvious edges
    the criteria imply (empty input, error path, the case the builder listed in
@@ -52,5 +52,5 @@ changed:   [test/repro/evidence files only — never product source]
 evidence:  <per-criterion verdict, each with pasted command output>
 not_done:  <criteria you could not verify and exactly why>
 risks:     <gaps in coverage, flaky behavior observed, environment caveats>
-next:      <"chief-operator" with routing hint: FAIL→builder or FAIL→system-fixer>
+next:      <"lead agent" with routing hint: FAIL→builder or FAIL→system-fixer>
 ```

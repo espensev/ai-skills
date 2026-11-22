@@ -16,17 +16,17 @@ observability, analytics, and safety features.
 |--------|-----------|---------|-------------|
 | `log_hook_event.py` | Any | Universal JSONL event logger | `/usage-stats` |
 | `safety_guard.py` | PreToolUse | Block destructive commands and protected file edits | Standalone |
-| `observe_session_briefing.py` | SessionStart | Inject project health context at session start | observation-log readers (`/manager`, `/usage-stats`) |
+| `observe_session_briefing.py` | SessionStart | Inject project health context at session start | observation-log readers |
 | `observe_test_output.py` | PostToolUse (Bash) | Record test/build results as observations | observation log |
 | `observe_churn.py` | PostToolUse (Edit\|Write) | Track file edit frequency, flag churn | observation log |
-| `observe_agent_stop.py` | SubagentStop | Summarize worktree observations for parent | `/manager` |
+| `observe_agent_stop.py` | SubagentStop | Summarize worktree observations for parent | parent session |
 
 ## Data Files
 
 | File | Created By | Read By |
 |------|-----------|---------|
 | `.claude/hooks/logs/hooks-log.jsonl` | `log_hook_event.py` | `/usage-stats` |
-| `data/observations.jsonl` | `observe_test_output.py`, `observe_churn.py` | `/manager`, `/usage-stats`, `observe_session_briefing.py` |
+| `data/observations.jsonl` | `observe_test_output.py`, `observe_churn.py` | `/usage-stats`, `observe_session_briefing.py` |
 
 ## Installation
 
@@ -57,7 +57,7 @@ You don't need all hooks. Pick by category:
 - `log_hook_event.py` on: SessionStart, PreToolUse, PostToolUse,
   PostToolUseFailure, SubagentStart, SubagentStop, Stop, StopFailure
 
-**Observation log only** (read by `/manager` and `/usage-stats`):
+**Observation log only** (read by `/usage-stats` and session hooks):
 - `observe_session_briefing.py` on: SessionStart
 - `observe_test_output.py` on: PostToolUse (Bash)
 - `observe_churn.py` on: PostToolUse (Edit|Write)
@@ -71,12 +71,11 @@ You don't need all hooks. Pick by category:
 ```
 /usage-stats    ──── reads ── .claude/hooks/logs/hooks-log.jsonl ◄── log_hook_event.py
 
-/manager        ──┐
-/usage-stats    ──┼── reads ── data/observations.jsonl ◄── observe_test_output.py
+/usage-stats    ──┬── reads ── data/observations.jsonl ◄── observe_test_output.py
                   │                                     ◄── observe_churn.py
                   └── reads via session briefing        ◄── observe_session_briefing.py
 
-/manager        ──── reads agent observations via       ◄── observe_agent_stop.py
+parent session  ──── reads agent observations via       ◄── observe_agent_stop.py
 
 (standalone)    ──── blocks destructive actions via     ◄── safety_guard.py
 ```

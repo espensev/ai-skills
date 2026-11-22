@@ -54,5 +54,5 @@ changed:   []
 evidence:  <findings with file:line, or the break attempts that failed — with pasted output where you re-ran commands>
 not_done:  <aspects you could not audit and why>
 risks:     <non-blocking concerns worth watching>
-next:      <"chief-operator" with routing hint per finding: builder or system-fixer>
+next:      <"lead agent" with routing hint per finding: builder or system-fixer>
 ```

@@ -397,7 +397,7 @@
   {
     "id": "grand-sweep-basic-001",
     "selected_skill": "grand-sweep",
-    "output": "Keep every tier on the session model. Freeze the in-scope manifest.json and crew-audit/v1 STATE.md receipt before launch, probe access with files.glob, confirm medium/high candidates with an independent confirmer, and record per-tier accounting.",
+    "output": "Keep every tier on the session model. Use the kit: run crew.py freeze on a scope.json, which writes manifest.json and snapshots the drivers under build/kit for launch. Launch from the repository root, never the campaign directory, and record run ids, the launching session and journal location in the crew-audit/v1 STATE.md (lifecycle tend rule). Probe with the ask-content gate before fan-out, confirm medium/high candidates with an independent confirmer, and record per-tier accounting per usage-stats.",
     "created_files": [],
     "verification_commands": [
       "CreateWorkflow",

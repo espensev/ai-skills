@@ -152,6 +152,7 @@ if (-not $SkipUnitTests) {
             'codex-skills.tests.test_skill_docs_contract'
             'codex-skills.tests.test_local_plugin_contract'
             'codex-skills.tests.test_eval_skills'
+            'codex-skills.tests.test_grand_sweep_crew'
             'claude-skills.tests.test_skill_docs_contract'
             'claude-skills.tests.test_eval_skills'
         )
@@ -209,6 +210,14 @@ if (-not $SkipUnitTests) {
         $AiEnvironmentResult = Invoke-Pester -Path $AiEnvironmentTestPath -Output Normal -PassThru
         if ($AiEnvironmentResult.FailedCount -ne 0) {
             throw "AI environment wanted-state contracts failed: $($AiEnvironmentResult.FailedCount)"
+        }
+    }
+
+    Invoke-Step "Grand Sweep ZCode projection contracts" {
+        $GrandSweepSyncTestPath = Join-Path $RepoRoot (Join-Path "scripts" (Join-Path "tests" "Sync-GrandSweepZCode.Tests.ps1"))
+        $GrandSweepSyncResult = Invoke-Pester -Path $GrandSweepSyncTestPath -Output Normal -PassThru
+        if ($GrandSweepSyncResult.FailedCount -ne 0) {
+            throw "Grand Sweep ZCode projection contracts failed: $($GrandSweepSyncResult.FailedCount)"
         }
     }
 

@@ -740,14 +740,19 @@
   {
     "id": "grand-sweep-basic-001",
     "skill": "grand-sweep",
-    "prompt": "Plan and launch a multi-tier grand audit campaign on the current session model. Include frozen scope receipts, independent confirmation of medium/high candidates, and per-tier token accounting.",
+    "prompt": "Plan and launch a multi-tier grand audit campaign using the grand-sweep campaign kit (crew.py freeze, kit snapshot, generic drivers, lifecycle tend and close). Include frozen scope receipts, independent confirmation of medium/high candidates, per-tier token accounting, and state where runs launch from and why.",
     "checks": {
       "must_mention": [
         "manifest.json",
         "STATE.md",
         "confirmer",
         "accounting",
-        "session model"
+        "session model",
+        "crew.py",
+        "freeze",
+        "lifecycle",
+        "build/kit",
+        "repository root"
       ],
       "must_not_mention": [
         ".claude/skills",

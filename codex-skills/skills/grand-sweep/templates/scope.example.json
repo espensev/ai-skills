@@ -1,0 +1,29 @@
+{
+  "campaign": "example-sweep-20261123-ab12",
+  "root": "D:/path/to/clean/checkout",
+  "commit": "0000000000000000000000000000000000000000",
+  "soloAtBytes": 250000,
+  "excludeGlobs": ["**/*.exe", "**/*.dll", "**/vendor/generated/**"],
+  "lanes": [
+    {
+      "name": "scripts",
+      "prefix": "ps",
+      "include": ["shell/powershell/scripts"],
+      "unit": {"maxFiles": 5, "maxBytes": 150000}
+    },
+    {
+      "name": "docs",
+      "prefix": "doc",
+      "include": ["docs", "README.md"],
+      "unit": {"maxFiles": 20, "maxBytes": 300000}
+    }
+  ],
+  "subsets": {
+    "cmd-surface": {
+      "description": "Command-surface lens: entry points, publishers, catalog/doctor/status paths",
+      "paths": [],
+      "pathPrefixes": ["shell/powershell/scripts"]
+    }
+  },
+  "lensSets": ["cmd-surface"]
+}

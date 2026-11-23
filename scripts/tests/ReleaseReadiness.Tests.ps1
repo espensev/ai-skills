@@ -57,7 +57,7 @@ Describe "controller-only plugin-cache contracts" {
         foreach ($name in @("Test-ReadyPackages.ps1", "Update-ReadmePackageCounts.ps1", "Build-ProviderSkillPackages.ps1", "Compare-ProviderSkillParity.ps1")) {
             Set-Content -LiteralPath (Join-Path $scriptRoot $name) -Encoding utf8 -Value 'param([switch]$StrictSkillManifest, [switch]$Check, [switch]$FailOnUndeclaredFork, [int]$MaxRows)'
         }
-        foreach ($name in @("Install-AgentSkills.Tests.ps1", "AiEnvironment.Tests.ps1", "TelemetryRepositoryRoot.Tests.ps1")) {
+        foreach ($name in @("Install-AgentSkills.Tests.ps1", "AiEnvironment.Tests.ps1", "Sync-GrandSweepZCode.Tests.ps1", "TelemetryRepositoryRoot.Tests.ps1")) {
             Set-Content -LiteralPath (Join-Path $scriptRoot "tests\$name") -Encoding utf8 -Value 'Describe "portable fixture contract" { It "passes" { $true | Should -BeTrue } }'
         }
         Set-Content -LiteralPath (Join-Path $scriptRoot "tests\ReleaseReadiness.Tests.ps1") -Encoding utf8 -Value 'Describe "fixture readiness contract" { It "passes without recursion" { $true | Should -BeTrue } }'

@@ -82,7 +82,7 @@ slash commands; they add Codex-native guidance for common engineering tasks.
 | Deep Audit | auto | Run evidence-first, resumable runtime-efficiency audits across hot paths, allocation/retention, I/O, concurrency, queues, retries, scaling, and lifecycle behavior |
 | Diagnosing Bugs | auto | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | Docs Sync | auto | Check documentation against current code |
-| Grand Sweep | auto | Run multi-tier grand audit campaigns as ZCode dynamic workflows with a world-read probe, frozen scope skeleton, tiered reviewers, independent confirmation, crash recovery, and per-tier accounting |
+| Grand Sweep | auto | Run multi-tier grand audit campaigns as ZCode dynamic workflows with the bundled campaign kit (`crew.py` freeze/lanes/units/agg, kit snapshot under `build/kit/`, generic drivers), ask-content-gated probes, tiered reviewers, independent confirmation, lifecycle tend and recovery, and per-tier accounting |
 | Memory Management | auto | Govern explicit updates to native Codex memory, keep generated registries read-only, enforce index budgets, and label controller/target machine provenance |
 | Repository Conventions | auto | Follow the target repo first, with fallback playbooks for API/backend/frontend structure, Playwright E2E, current research, and bounded local cycles |
 | Review | auto | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |

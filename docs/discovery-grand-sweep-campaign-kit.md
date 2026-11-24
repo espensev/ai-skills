@@ -60,7 +60,9 @@ Campaign `ps-shell-sweep-20261123-4522`, measured 2026-11-23/24: 460 files
 frozen into 132 units at `928abd4`; 132 of 132 units and 24 of 24 lenses
 completed; 285 de-duplicated candidates; about 124M tokens in the campaign
 tiers (83M in workflow runs, 41M in native lanes). Three review rounds before
-launch each found a real defect (recorded above).
+launch each found a real defect (recorded above). Retiring the pinned worktree
+after close made `check` report every file missing, so `check`/`close` gained
+`--repository <checkout>` to re-verify identities from the frozen commit.
 
 Confirmation calibrated severity both ways. Of 56 medium/high candidates, 50
 were confirmed (0 high, 33 medium, 17 downgraded to low), 5 refuted, and 1

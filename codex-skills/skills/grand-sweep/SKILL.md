@@ -194,7 +194,10 @@ enforce the closure checklist. The controller reads the evidence and owns the
 verdict; worker completion or confirmer votes alone cannot approve it. A
 complete review requires all in-scope units completed, reconciled input
 identities, and no unresolved medium/high candidates — `close` fails while
-anything is open. Publish `FINDINGS.md`, `MAP.md`, `REPORT.md`,
+anything is open. After the pinned worktree is retired, identities stay
+provable from the frozen commit: re-verify with
+`check all --repository <checkout>` and `close --repository <checkout>`
+against any checkout of the frozen repository. Publish `FINDINGS.md`, `MAP.md`, `REPORT.md`,
 `build/verdict.json` and the verdict at `docs/reviews/audit-*.md` (or the
 tracked location chosen in prep), marked explicitly partial when units failed
 or were deferred. Budget stops and empty scope are not complete reviews.

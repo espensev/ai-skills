@@ -71,6 +71,13 @@ is read-only until the remediation gates pass.
    `set`, `limit`; `confirm`: `campaign`, `crewPy`, `limit`, `minSeverity`),
    honoring the user confirmation flow. Provider quota and rate windows pace
    the flash tiers; expect multi-window spans and record the burn cadence.
+   Measure throughput after the first 30 minutes: when runs report
+   `rate_limited` and the stage is crawling, stop them on purpose (record it
+   in `build/runs.json` and `STATE.md`) and continue with native agent lanes
+   that write the same verdict formats, then aggregate with the same
+   `crew.py` commands — native lanes were about ten times faster than
+   slot-throttled workflow runs (engine-traps #15) and run on the session
+   model, so record that for accounting.
 3. The workflow probes before fan-out: file identity + sha256, `probe-ok`
    staging round-trip, and the ask-content gate. Probes carry no resume
    check — every launch performs the real read, hash, write and read-back.
@@ -102,6 +109,12 @@ is read-only until the remediation gates pass.
 - Cross-session reality: another session's runs cannot be stopped or amended
   from this one. If the launching session is gone, adopt via fresh launch
   over on-disk verdicts.
+- Runs and automations advance only while the app is open: in the first live
+  use the owning app process exited for about six hours and all seven runs
+  came back `stopped` with `stop_reason="interrupted"` while the
+  automation's run count stayed 0 (engine-traps #17). Resuming the
+  interrupted runs under their original ids worked — finished steps
+  replayed, completed units stayed completed.
 
 ## Phase 4 — verdict (owner: controller session)
 
@@ -116,7 +129,11 @@ is read-only until the remediation gates pass.
    `build/seeded.json` join the tier with source `seed:<source>`.
    `crew.py confirmagg` counts outcomes. Lens and confirm asks name the
    frozen root and commit and require reading under that root; confirm asks
-   require quoted lines and an explicit `counterevidence` entry.
+   require quoted lines and an explicit `counterevidence` entry. Hand
+   confirmers an existing verification-gate log from the same tree as
+   primary evidence where one exists — in the first live use it settled
+   several claims, and severity calibrated both ways: expect downgrades and
+   refutations, not blanket confirmation.
 4. Publish `FINDINGS.md`, `MAP.md`, `REPORT.md`, `build/accounting.json`
    and `build/verdict.json`, then run
    `python -I crew.py <campaignDir> close` — it enforces the seven-item
@@ -184,3 +201,14 @@ automation ("sweep tender"). Its contract:
    audit, and never runs machine-sensitive commands. `CreateWorkflow`
    requires user confirmation, so an unattended fire cannot launch dynamic
    workflows — that is why the tender uses native lanes.
+6. Before any wave it reads `<campaign>/build/controller-active.json` and
+   stands down (log only) while its `heartbeatUtc` is fresher than 30
+   minutes: an automation created in a session fires inside that same
+   session, so the tender can fire inside the controller's own session while
+   controller-issued lanes are in flight, and it cannot see those lanes
+   (engine-traps #16). The controller refreshes the heartbeat while it holds
+   lanes.
+7. Runs and automations advance only while the app is open (engine-traps
+   #17); a tender fire during an app-closed period does nothing, and
+   interrupted runs resume under their original ids once the app is open
+   again.

@@ -27,17 +27,29 @@ For each listed campaign, in order:
    or delete campaigns, automation definitions, or files outside a listed
    campaign directory.
 
-2. **Resume stopped runs.** If the campaign's `build/runs.json` shows
-   `stopped` entries, attempt `ResumeWorkflowRun` for each. If resume is not
-   possible (missing journal, superseded predecessor, dead session), skip it
-   and note that on-disk verdicts will be adopted by the lanes below instead.
-   Never resume a superseded predecessor; never modify another session's runs
-   beyond resume. Do not call `CreateWorkflow` — unattended fires cannot
-   complete its confirmation step.
+2. **Handle stopped runs.** Entries already marked `stopped` in
+   `build/runs.json` were stopped by the controller on purpose (for example,
+   rate-limited runs replaced with native lanes) and must never be resumed.
+   If `build/runs.json` shows a run interrupted by an app-closed period
+   (`stop_reason="interrupted"`), attempt `ResumeWorkflowRun` for it under
+   its original id — finished steps replay and completed units stay
+   completed. If resume is not possible (missing journal, superseded
+   predecessor, dead session), skip it and note that on-disk verdicts will
+   be adopted by the lanes below instead. Never resume a superseded
+   predecessor; never modify another session's runs beyond resume. Do not
+   call `CreateWorkflow` — unattended fires cannot complete its confirmation
+   step.
 
-3. **Run pending work as native agent lanes.** For each lane/report that
-   `status` shows as not complete, run bounded waves of native subagents
-   (not dynamic workflows) over the pending records:
+3. **Run pending work as native agent lanes.** First, read
+   `<campaign>/build/controller-active.json` if it exists: while its
+   `heartbeatUtc` is fresher than 30 minutes, stand down for this campaign
+   (log only) and move to the next one — the controller is holding lanes.
+   Note: an automation created in a session fires inside that same session,
+   so you may be firing inside the controller's own session while its native
+   lanes are in flight; it cannot see controller-issued lanes, and skipping
+   on a fresh heartbeat is the only duplicate protection. Then, for each
+   lane/report that `status` shows as not complete, run bounded waves of
+   native subagents (not dynamic workflows) over the pending records:
    - Check `build/runs.json` for the campaign's runs. A `stopped` entry may
      be resumed (step 2); `orphaned` or `superseded` entries are never
      resumed — their work is adopted from disk instead.

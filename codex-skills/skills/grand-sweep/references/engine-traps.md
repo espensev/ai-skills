@@ -93,3 +93,38 @@ updates, not as a guaranteed contract.
     concurrent sessions add files ("inputHash differs", 2026-09-29). Freeze
     at submit time; the pre-flight guards (HEAD + manifest digest + dirty
     set) aborted three poisoned launches at ~zero cost on 2026-11-18.
+
+15. **Workflow runs are slot-throttled under provider rate limiting; native
+    Agent lanes were about ten times faster.** Seven workflow runs launched
+    2026-11-23 ~16:05Z (five flash breadth lanes at concurrency 6, two lens
+    sets): in about 2.7 hours of app-open time the lens runs settled 3 of 24
+    lenses and the flash breadth lanes about 15 units per hour
+    (`GetWorkflowRun` showed `rate_limited`, e.g. `concurrency=3/6`). After
+    the controller stopped those runs on purpose, the remaining 20 lenses ran
+    as native Agent-tool lanes in 6 to 12 minutes each, and 47 of the
+    remaining 64 breadth units completed within 15 minutes of launching 23
+    native lanes (ps-shell-sweep-20261123-4522). Rule: measure throughput
+    after the first 30 minutes; when runs report `rate_limited` and the
+    stage is crawling, stop the runs on purpose (record it in the ledger and
+    `STATE.md`) and continue with native lanes that write the same verdict
+    formats, then aggregate with the same `crew.py` commands. Native lanes
+    run on the session model — record that for accounting.
+
+16. **A scheduled automation created in a session fires inside that same
+    session.** The campaign's sweep tender (CronCreate, every 3 hours) fired
+    as a message inside the controller's own session while controller-issued
+    native lanes were in flight; its "run a native wave on any stage with
+    pending work and no live run" rule would have launched duplicate
+    reviewers on the same records, because it cannot see controller-issued
+    lanes (ps-shell-sweep-20261123-4522). Rule: the controller writes
+    `<campaign>/build/controller-active.json` with a `heartbeatUtc` and
+    refreshes it while it holds lanes; the tender reads it before any wave
+    and stands down (log only) when the heartbeat is fresher than 30
+    minutes.
+
+17. **Runs and automations advance only while the app is open.** The owning
+    app process exited for about six hours; all seven runs came back
+    `stopped` with `stop_reason="interrupted"` and the automation's run
+    count stayed 0 (ps-shell-sweep-20261123-4522). Resuming the interrupted
+    runs under their original ids worked — finished steps replayed and
+    completed units stayed completed.

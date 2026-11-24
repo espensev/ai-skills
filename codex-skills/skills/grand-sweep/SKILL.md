@@ -25,7 +25,9 @@ whenever `.audit/` was cleaned (2026-11-21 wiped a live campaign); the kit is
 versioned here and snapshotted per campaign precisely so that cannot recur.
 
 Read `references/lifecycle.md` for the full prep → launch → tend → verdict →
-close/retire contract and the tender automation rules. Read
+close/retire contract and the tender automation rules; while holding native
+lanes, the controller keeps `<campaign>/build/controller-active.json`'s
+`heartbeatUtc` fresh so the tender stands down. Read
 `references/engine-traps.md` before authoring or amending any workflow
 script; every entry there is an observed failure that cost a real campaign
 time or tokens.
@@ -107,8 +109,9 @@ and increments `revision`.
   with quoted evidence, sha256 verification with `failed`/`input-changed` on
   mismatch, and no style opinions. Lens candidates may raise any severity
   supported by evidence. Confirm medium/high candidates independently against
-  pinned source and counterevidence; low candidates stay explicitly
-  unconfirmed appendix items.
+  pinned source and counterevidence — hand confirmers an existing
+  verification-gate log as primary evidence and expect downgrades and
+  refutations; low candidates stay explicitly unconfirmed appendix items.
 - Each finding keeps a stable content-addressed candidate id (`C-` plus the
   first 10 hex of the sha256 over the normalized identity: `where` path +
   line + the first 120 characters of normalized `what`; `path:line`,
@@ -157,7 +160,9 @@ to the launching session's cwd, and four runs launched from a campaign
 directory were invisible from the repo root on 2026-11-23. Provider quota and
 rate windows pace the flash tiers; plan multi-window spans (a campaign can
 lap several 5-hour windows) and record the burn cadence in `STATE.md`
-accounting.
+accounting. Measure throughput after the first 30 minutes: if runs report
+`rate_limited` and the stage is crawling, stop them on purpose (record it)
+and continue with native lanes writing the same verdict formats.
 
 ## Step 3 — tend
 

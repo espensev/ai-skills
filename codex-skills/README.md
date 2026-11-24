@@ -67,7 +67,7 @@ for its operator contract.
 | Handoff | `$handoff` | Resume prior work from verified project state |
 | Discover | `$discover` | Research codebase before planning (supports optimization discovery) |
 | QA | `$qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
-| Ship | `$ship` | Stage, commit, and push with smart file classification |
+| Land | `$land` | Stage, commit, and push with smart file classification |
 
 ### Optional Engineering Skills
 
@@ -110,7 +110,7 @@ $manager run ready          -> launches agents in parallel worktrees
 $manager merge              -> merges agent work into main
 $manager verify             -> validates build, tests, and readiness
 $qa run                     -> run test suite
-$ship commit                -> stage and commit changes
+$land commit                -> stage and commit changes
 ```
 
 For end-to-end autonomous execution:
@@ -136,7 +136,7 @@ is different from this package layout.
 mkdir -p <project>/.codex/skills
 mkdir -p <project>/scripts
 
-for d in skills/discover skills/handoff skills/manager skills/qa skills/ship; do
+for d in skills/discover skills/handoff skills/land skills/manager skills/qa; do
   cp -r "$d" <project>/.codex/skills/
 done
 
@@ -178,7 +178,7 @@ If you also want the schema reference docs in the installed tree, copy
 ```bash
 mkdir -p ~/.codex/skills
 
-for d in skills/discover skills/handoff skills/manager skills/qa skills/ship; do
+for d in skills/discover skills/handoff skills/land skills/manager skills/qa; do
   cp -r "$d" ~/.codex/skills/
 done
 

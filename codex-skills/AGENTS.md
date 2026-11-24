@@ -5,7 +5,7 @@
   - `skills/discover/SKILL.md` for pre-change codebase research.
   - `skills/manager/SKILL.md` for campaign planning and execution with `scripts/task_manager.py`.
   - `skills/qa/SKILL.md` for test execution, failure triage, and regression coverage.
-  - `skills/ship/SKILL.md` for staging and commit packaging.
+  - `skills/land/SKILL.md` for staging and commit packaging.
   - `skills/repo-conventions/SKILL.md` for repository-first engineering or a
     single-objective inspect-edit-verify cycle.
 

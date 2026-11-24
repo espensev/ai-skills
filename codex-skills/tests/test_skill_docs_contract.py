@@ -152,7 +152,7 @@ class TestSkillDocsContract(unittest.TestCase):
             SKILLS / "memory-management" / "SKILL.md",
             SKILLS / "qa" / "SKILL.md",
             SKILLS / "repo-conventions" / "SKILL.md",
-            SKILLS / "ship" / "SKILL.md",
+            SKILLS / "land" / "SKILL.md",
             SKILLS / "skill-authoring" / "SKILL.md",
             SKILLS / "usage-stats" / "SKILL.md",
         ]
@@ -223,7 +223,7 @@ class TestSkillDocsContract(unittest.TestCase):
         self.assertIn("manager", manifest["default_skills"])
         self.assertIn("discover", manifest["default_skills"])
         self.assertIn("qa", manifest["default_skills"])
-        self.assertIn("ship", manifest["default_skills"])
+        self.assertIn("land", manifest["default_skills"])
         self.assertIn("audit-gated-subagents", manifest["optional_skills"])
         self.assertIn("deep-audit", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])

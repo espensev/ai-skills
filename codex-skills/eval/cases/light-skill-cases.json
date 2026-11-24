@@ -85,8 +85,8 @@
     }
   },
   {
-    "id": "ship-basic-001",
-    "skill": "ship",
+    "id": "land-basic-001",
+    "skill": "land",
     "prompt": "Prepare the current validated changes for commit.",
     "checks": {
       "must_mention": [
@@ -204,8 +204,8 @@
     }
   },
   {
-    "id": "ship-edge-002",
-    "skill": "ship",
+    "id": "land-edge-002",
+    "skill": "land",
     "prompt": "Nothing is staged yet. Stage and commit only the runtime script changes.",
     "checks": {
       "must_mention": [

@@ -30,7 +30,7 @@ Packaged skills can be selected from ordinary requests or invoked by name. Skill
 preserves the task's action limits: documentation checks stay read-only,
 test-selection questions do not run tests, and closeouts do not write history
 or memory. A selected skill with subcommands maps the request to the command
-that does the work: `ship` commits and normally pushes without a second
+that does the work: `land` commits and normally pushes without a second
 confirmation, and the Codex `manager` runs `go` or `plan` rather than `status`.
 
 No model-selectable skill carries an `allowed-tools` grant. In Claude Code

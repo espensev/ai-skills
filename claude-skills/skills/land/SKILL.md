@@ -1,13 +1,11 @@
 ---
-name: ship
+name: land
 description: "Use when the user asks to commit, land, package, or push changes, or when validated repository work reaches its delivery phase. Stages only validated files, groups multi-file changes into focused commits, drafts commit messages, excludes temp and sensitive files, and normally pushes the current branch without a second confirmation. Do not use to run tests first (use qa) or to review a diff (use review)."
-{{#claude}}
 argument-hint: "<command> [args] — commit | split | preview | push"
 user-invocable: true
-{{/claude}}
 ---
 
-# Ship — Commit & Deliver
+# Land — Commit & Deliver
 
 You package validated work into clean git commits. You handle staging, commit
 message drafting, file grouping, and exclusion of files that should not be
@@ -17,16 +15,16 @@ committed.
 original implementation or delivery request is the authorization; do not ask
 for a second confirmation.**
 
-**Config:** `.{{provider-lc}}/skills/project.toml` — project-specific paths, commands, modules
+**Config:** `.claude/skills/project.toml` — project-specific paths, commands, modules
 
 ## Commands
 
 | Command | Usage | Purpose |
 |---------|-------|---------|
-| `commit` | `{{cmd}}ship` or `{{cmd}}ship commit` | Stage + commit all current changes as one commit |
-| `split` | `{{cmd}}ship split` | Group changes by concern and create multiple commits |
-| `preview` | `{{cmd}}ship preview` | Dry-run: show what would be committed without doing it |
-| `push` | `{{cmd}}ship push` | Push current branch to remote without a second prompt |
+| `commit` | `/land` or `/land commit` | Stage + commit all current changes as one commit |
+| `split` | `/land split` | Group changes by concern and create multiple commits |
+| `preview` | `/land preview` | Dry-run: show what would be committed without doing it |
+| `push` | `/land push` | Push current branch to remote without a second prompt |
 
 Default to `commit` if no command given. When this skill is selected from an
 ordinary request rather than by name, map the request to a command: "commit"
@@ -46,7 +44,7 @@ read-only requests; preserve unrelated changes and report genuine blockers.
 
 Before any command, load project configuration:
 
-1. Read `.{{provider-lc}}/skills/project.toml`
+1. Read `.claude/skills/project.toml`
 2. Extract `[modules]` for file grouping in `split` mode
 3. Extract `[ship]` section for project-specific exclusions and warnings:
    - `exclude-extra` — additional paths to never commit (beyond universal exclusions)
@@ -267,7 +265,7 @@ does not require another confirmation.
 - `dist/`, `bin/`, `obj/` — build output
 - `node_modules/` — dependencies
 - `*.db`, `*.db-wal`, `*.db-shm` — database files
-- `{{wt}}/` — agent worktrees
+- `.claude/worktrees/` — agent worktrees
 - Files in `.gitignore`
 
 ### Project-specific exclusions:

@@ -2,9 +2,9 @@
   "default_skills": [
     "discover",
     "handoff",
+    "land",
     "manager",
-    "qa",
-    "ship"
+    "qa"
   ],
   "optional_skills": [
     "audit-gated-subagents",

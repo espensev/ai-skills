@@ -131,7 +131,7 @@ Report in this order, briefly:
 |---|---|
 | Read and critique a plan, doc, or the handoff itself | `/review --doc <path>` |
 | Audit a branch or diff | `/review` |
-| Land validated work | `/ship` |
+| Land validated work | `/land` |
 | Run tests | `/qa` |
 | Answer a bounded codebase question | Inspect the relevant code and report the evidence |
 | Reproduce and fix one bug | do it directly in this session: reproduce, fix, test |

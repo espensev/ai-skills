@@ -31,7 +31,7 @@ what was parameterized, and when.
 | planner | AI-Skills repo | Portable from inception |
 | manager | AI-Skills repo | Portable from inception; March chain fixes added preflight and the then-current observer-test integration; current observation capture is owned by observer hooks |
 | qa | AI-Skills repo | Portable from inception |
-| ship | AI-Skills repo | Portable from inception |
+| land (formerly ship) | AI-Skills repo | Portable from inception |
 | observer | AI-Skills repo | Portable from inception |
 | observer-test | AI-Skills repo | Retired 2026-08-09; use `observer` and its standalone hooks |
 | worktree-manager | AI-Skills repo | Retired 2026-08-09; use `manager` and its task runtime |

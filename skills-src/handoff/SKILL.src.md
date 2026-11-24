@@ -133,7 +133,7 @@ Report in this order, briefly:
 |---|---|
 | Read and critique a plan, doc, or the handoff itself | `{{cmd}}review --doc <path>` |
 | Audit a branch or diff | `{{cmd}}review` |
-| Land validated work | `{{cmd}}ship` |
+| Land validated work | `{{cmd}}land` |
 | Run tests | `{{cmd}}qa` |
 {{#claude}}
 | Answer a bounded codebase question | Inspect the relevant code and report the evidence |

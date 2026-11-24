@@ -48,7 +48,7 @@ handoff and review it" — use `doc` with that path.
     covers it.
 - Do not report preferences as defects. If no documented standard supports a
   style concern, call it a note or omit it.
-- Do not fix issues in this skill. Recommend the next command (`{{cmd}}qa`, `{{cmd}}ship`,
+- Do not fix issues in this skill. Recommend the next command (`{{cmd}}qa`, `{{cmd}}land`,
   or direct implementation) after the review is complete.
 
 ---

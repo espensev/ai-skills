@@ -241,7 +241,7 @@ single library's API and an OpenAI-specific docs skill for OpenAI products.
 - `discover` is needed to establish a missing codebase fact;
 - `qa` owns a meaningful verification checkpoint or failure triage;
 - `manager` is needed to plan or run a durable multi-agent campaign; or
-- `ship` is needed after the user authorizes packaging or delivery.
+- `land` is needed after the user authorizes packaging or delivery.
 
 ### Rules
 

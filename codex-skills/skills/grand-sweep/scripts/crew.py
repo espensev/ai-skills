@@ -829,9 +829,41 @@ def cmd_agg(campaign, args):
     return 0
 
 
-def check_lane_files(manifest, lanes):
+def verify_frozen_commit(repository, commit):
+    """Fail cleanly when the repository lacks the frozen commit."""
+    try:
+        done = subprocess.run(
+            ["git", "-C", repository, "rev-parse", "--verify", "--quiet",
+             commit + "^{commit}"],
+            capture_output=True, text=True)
+    except OSError as exc:
+        raise Fail("cannot run git against repository %s: %s" % (repository, exc))
+    if done.returncode != 0:
+        raise Fail("repository %s does not contain the frozen commit %s"
+                   % (repository, commit))
+
+
+def git_blob_sha256(repository, commit, rel):
+    """Hash the blob <commit>:<rel> read from the repository's object store."""
+    try:
+        done = subprocess.run(
+            ["git", "-C", repository, "cat-file", "blob", "%s:%s" % (commit, rel)],
+            capture_output=True)
+    except OSError as exc:
+        raise Fail("cannot run git against repository %s: %s" % (repository, exc))
+    if done.returncode != 0:
+        raise Fail("cannot read blob %s:%s from repository %s"
+                   % (commit, rel, repository))
+    return hashlib.sha256(done.stdout).hexdigest()
+
+
+def check_lane_files(manifest, lanes, repository=None):
     changed, missing = [], []
+    from_git = 0
     total = 0
+    commit = str(manifest.get("commit", ""))
+    if repository:
+        verify_frozen_commit(repository, commit)
     for f in manifest["files"]:
         if f["lane"] not in lanes:
             continue
@@ -840,8 +872,18 @@ def check_lane_files(manifest, lanes):
             if sha256_file(f["path"]) != f["sha256"]:
                 changed.append(f["path"])
         except OSError:
-            missing.append(f["path"])
+            if repository:
+                # The pinned worktree is gone (retired after the campaign):
+                # prove the identity from the frozen commit instead.
+                if git_blob_sha256(repository, commit, f["rel"]) == f["sha256"]:
+                    from_git += 1
+                else:
+                    changed.append(f["path"])
+            else:
+                missing.append(f["path"])
     return {"files": total, "changed": len(changed), "missing": len(missing),
+            "fromGit": from_git,
+            "repository": repository.replace("\\", "/") if repository else None,
             "changedPaths": changed[:50], "missingPaths": missing[:50]}
 
 
@@ -853,7 +895,7 @@ def cmd_check(campaign, args):
         lanes = [lane]
     else:
         lanes = lane_names(manifest)
-    emit(check_lane_files(manifest, lanes))
+    emit(check_lane_files(manifest, lanes, getattr(args, "repository", None)))
     return 0
 
 
@@ -1099,7 +1141,7 @@ def cmd_status(campaign, _args):
     return 0
 
 
-def cmd_close(campaign, _args):
+def cmd_close(campaign, args):
     manifest, units_doc = load_campaign(campaign)
     items = []
 
@@ -1137,11 +1179,16 @@ def cmd_close(campaign, _args):
                   "detail": "; ".join(unconfirmed) or "every medium/high candidate confirmed"})
 
     # 4. check all is clean.
-    check = check_lane_files(manifest, lane_names(manifest))
+    repository = getattr(args, "repository", None)
+    check = check_lane_files(manifest, lane_names(manifest), repository)
+    detail = "%d changed, %d missing of %d files" \
+        % (check["changed"], check["missing"], check["files"])
+    if repository:
+        detail += "; %d verified from commit %s via %s" \
+            % (check["fromGit"], manifest["commit"], check["repository"])
     items.append({"item": "inputs-clean", "pass": check["changed"] == 0 and
                   check["missing"] == 0,
-                  "detail": "%d changed, %d missing of %d files"
-                            % (check["changed"], check["missing"], check["files"])})
+                  "detail": detail})
 
     # 5. No runs.json entry is running.
     runs_path = os.path.join(campaign, "build", "runs.json")
@@ -1237,6 +1284,7 @@ def build_parser():
 
     p = sub.add_parser("check", add_help=False)
     p.add_argument("lane")
+    p.add_argument("--repository")
     p.set_defaults(fn=cmd_check)
 
     p = sub.add_parser("subset", add_help=False)
@@ -1266,6 +1314,7 @@ def build_parser():
     p.set_defaults(fn=cmd_status)
 
     p = sub.add_parser("close", add_help=False)
+    p.add_argument("--repository")
     p.set_defaults(fn=cmd_close)
     return parser
 

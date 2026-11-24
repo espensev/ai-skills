@@ -138,6 +138,9 @@ is read-only until the remediation gates pass.
    and `build/verdict.json`, then run
    `python -I crew.py <campaignDir> close` — it enforces the seven-item
    closure checklist (below) and exits non-zero while anything is open.
+   After the pinned worktree is retired, item 4 stays provable from the frozen
+   commit by passing `--repository <checkout>` (any checkout of the frozen
+   repository) to `close`, or to `check all` for the re-hash alone.
 5. Publish the verdict doc at `docs/reviews/audit-*.md` or the tracked
    location chosen in prep; mirror small receipt files to the pCloud backup
    root when the consumer root is untracked. Mark partial results explicitly.

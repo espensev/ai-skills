@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -194,6 +195,14 @@ class GrandSweepKitFixture:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(doc, indent=1), encoding="utf-8", newline="\n")
         return target
+
+
+def _rmtree(path):
+    """rmtree that clears Windows read-only bits (git object files)."""
+    def onerror(func, target, _exc):
+        os.chmod(target, 0o666)
+        func(target)
+    shutil.rmtree(path, onerror=onerror)
 
 
 def completed(unit_id, where="src/a.py:1", what=WHAT, severity="medium"):
@@ -743,6 +752,102 @@ class TestGrandSweepCrew(unittest.TestCase):
                  if i["item"] == "inputs-clean"][0]
         self.assertFalse(item4["pass"])
         self.assertIn("1 changed", item4["detail"])
+
+    # -- check/close --repository (worktree retired) ------------------------
+
+    def _retire_pinned_worktree(self):
+        """Delete the frozen working tree, keeping .git so blobs stay readable."""
+        for entry in self.fx.repo.iterdir():
+            if entry.name == ".git":
+                continue
+            if entry.is_dir():
+                _rmtree(entry)
+            else:
+                entry.unlink()
+
+    def test_check_and_close_fail_when_worktree_retired(self):
+        # (a) without --repository, retired worktree means missing inputs.
+        self.test_close_passes_on_closed_fixture()
+        _rmtree(self.fx.repo)
+        done = run_crew(self.fx.campaign, "check", "all")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        check = json.loads(done.stdout)
+        self.assertEqual(check["files"], 6)
+        self.assertEqual(check["missing"], 6)
+        self.assertEqual(check["changed"], 0)
+        self.assertEqual(check["fromGit"], 0)
+        self.assertIsNone(check["repository"])
+        closed = run_crew(self.fx.campaign, "close")
+        self.assertEqual(closed.returncode, 1)
+        item4 = [i for i in json.loads(closed.stdout)["items"]
+                 if i["item"] == "inputs-clean"][0]
+        self.assertFalse(item4["pass"])
+
+    def test_check_from_git_after_worktree_retired(self):
+        # (b) --repository recovers every identity from the frozen commit.
+        self.freeze_ok()
+        self._retire_pinned_worktree()
+        done = run_crew(self.fx.campaign, "check", "all",
+                        "--repository", str(self.fx.repo))
+        self.assertEqual(done.returncode, 0, done.stderr)
+        check = json.loads(done.stdout)
+        self.assertEqual(check["files"], 6)
+        self.assertEqual(check["missing"], 0)
+        self.assertEqual(check["changed"], 0)
+        self.assertEqual(check["fromGit"], 6)
+        self.assertEqual(check["repository"], str(self.fx.repo).replace("\\", "/"))
+
+    def test_check_from_git_reports_changed_blob(self):
+        # (c) a manifest hash that does not match the blob is changed.
+        self.freeze_ok()
+        self._retire_pinned_worktree()
+        manifest_path = self.fx.campaign / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        for f in manifest["files"]:
+            if f["rel"] == "src/a.py":
+                f["sha256"] = "0" * 64
+        manifest_path.write_text(json.dumps(manifest, indent=1) + "\n",
+                                 encoding="utf-8", newline="\n")
+        done = run_crew(self.fx.campaign, "check", "all",
+                        "--repository", str(self.fx.repo))
+        self.assertEqual(done.returncode, 0, done.stderr)
+        check = json.loads(done.stdout)
+        self.assertEqual(check["changed"], 1)
+        self.assertEqual(check["missing"], 0)
+        self.assertEqual(check["fromGit"], 5)
+        self.assertTrue(any("a.py" in p for p in check["changedPaths"]))
+
+    def test_close_from_git_passes_item4(self):
+        # (d) close --repository passes inputs-clean from the frozen commit.
+        self.test_close_passes_on_closed_fixture()
+        self._retire_pinned_worktree()
+        done = run_crew(self.fx.campaign, "close",
+                        "--repository", str(self.fx.repo))
+        self.assertEqual(done.returncode, 0, done.stderr)
+        checklist = json.loads(done.stdout)
+        self.assertTrue(checklist["pass"], checklist)
+        item4 = [i for i in checklist["items"]
+                 if i["item"] == "inputs-clean"][0]
+        self.assertTrue(item4["pass"], item4)
+        self.assertIn("6", item4["detail"])
+        self.assertIn(str(self.fx.repo).replace("\\", "/"), item4["detail"])
+
+    def test_repository_without_commit_fails_cleanly(self):
+        # (e) a repository lacking the frozen commit: exit 1, no traceback.
+        self.freeze_ok()
+        other = Path(self._tmp.name) / "other-repo"
+        other.mkdir()
+        git(other, "init", "-q")
+        (other / "unrelated.txt").write_text("x", encoding="utf-8")
+        git(other, *GIDENT, "add", "-A")
+        git(other, *GIDENT, "commit", "-q", "-m", "unrelated")
+        for argv in (("check", "all", "--repository", str(other)),
+                     ("close", "--repository", str(other))):
+            done = run_crew(self.fx.campaign, *argv)
+            self.assertEqual(done.returncode, 1, argv)
+            self.assertNotIn("Traceback", done.stderr)
+            self.assertNotIn("\n", done.stderr.strip())
+            self.assertIn("commit", done.stderr)
 
     def test_confirm_gate_blocks_vacuous_completeness(self):
         # Fresh campaign: breadth and lenses have not settled, so the

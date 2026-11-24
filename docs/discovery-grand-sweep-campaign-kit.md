@@ -54,6 +54,21 @@ them.
 - First live use: campaign `ps-shell-sweep-20261123-4522`, revision 2,
   132 units, 5 breadth lanes + 2 lens sets launched 2026-11-23.
 
+## First live use: outcome
+
+Campaign `ps-shell-sweep-20261123-4522`, measured 2026-11-23/24: 460 files
+frozen into 132 units at `928abd4`; 132 of 132 units and 24 of 24 lenses
+completed; 285 de-duplicated candidates; about 124M tokens in the campaign
+tiers (83M in workflow runs, 41M in native lanes). Three review rounds before
+launch each found a real defect (recorded above).
+
+Confirmation calibrated severity both ways. Of 56 medium/high candidates, 50
+were confirmed (0 high, 33 medium, 17 downgraded to low), 5 refuted, and 1
+duplicate. Both reviewer-rated "high" candidates did not survive: one was
+downgraded to medium (report noise), one was refuted against the verification
+gate log. A verification-gate log from the same tree was given to confirmers
+as primary evidence and settled several claims.
+
 Eval: `grand-sweep-basic-001` keeps its original tokens and gains kit checks
 (`crew.py`, `freeze`, `lifecycle`, `build/kit`, `repository root`); the mock
 response and committed snapshot still score 35/35 offline.

@@ -281,7 +281,7 @@ different surfaces and can run independently or together:
 {{#codex}}
 | `{{cmd}}manager verify` | Include docs-sync check in campaign exit criteria |
 {{/codex}}
-| `{{cmd}}ship` | Quick check before commit catches stale doc references |
+| `{{cmd}}land` | Quick check before commit catches stale doc references |
 | Observation log | Record `drift` observations in `data/observations.jsonl` for documentation divergence |
 | `{{cmd}}qa` | Docs-sync complements code quality with documentation quality |
 

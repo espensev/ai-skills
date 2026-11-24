@@ -25,9 +25,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "ship-basic-001",
-    "selected_skill": "ship",
-    "output": "Mock eval response for ship. stage. commit. git. Verification coverage is listed in verification_commands.",
+    "id": "land-basic-001",
+    "selected_skill": "land",
+    "output": "Mock eval response for land. stage. commit. git. Verification coverage is listed in verification_commands.",
     "created_files": [],
     "verification_commands": [
       "git status",
@@ -38,9 +38,9 @@
     "notes": "Deterministic mock response for package eval."
   },
   {
-    "id": "ship-edge-002",
-    "selected_skill": "ship",
-    "output": "Mock eval response for ship. stage. commit. Verification coverage is listed in verification_commands.",
+    "id": "land-edge-002",
+    "selected_skill": "land",
+    "output": "Mock eval response for land. stage. commit. Verification coverage is listed in verification_commands.",
     "created_files": [],
     "verification_commands": [
       "git status",

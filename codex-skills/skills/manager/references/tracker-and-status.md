@@ -93,5 +93,5 @@ recently.
 post-completion tracker section). Never update the tracker before the work
 is verified — tracker entries represent completed, validated work.
 
-**Ship behavior:** the ship skill classifies the tracker file as a "warn" file —
+**Land behavior:** the land skill classifies the tracker file as a "warn" file —
 it will be staged for commit but flagged for review.

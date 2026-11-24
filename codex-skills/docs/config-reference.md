@@ -360,7 +360,7 @@ endpoints = ["/health"]
 ### `[ship]` -- Optional
 
 Controls the ship/release workflow.
-This section is consumed by the `/ship` skill flow rather than the core
+This section is consumed by the `$land` skill flow rather than the core
 `task_manager.py` backend.
 
 ```toml

@@ -42,7 +42,7 @@ vendor into their own `.claude/skills` runtime tree.
 | Browser Control | `/browser-control` | Operate the selected DevHome browser session |
 | Docs Sync | `/docs-sync` | Check documentation against code |
 | QA | `/qa` | Run tests, coverage, triage failures, and optional configured smoke checks |
-| Ship | `/ship` | Stage, commit, and push with smart file classification |
+| Land | `/land` | Stage, commit, and push with smart file classification |
 | Diagnosing Bugs | `/diagnosing-bugs` | Build a red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or regressions |
 | Review | `/review` | Review branch, staged, or working-tree diffs against standards, specs, and regression risk |
 | Usage Stats | `/usage-stats` | Analyze token/cost/budget usage, session/tool activity, and agent performance, preferring measured telemetry data when available |
@@ -74,7 +74,7 @@ as the first shell argument.
 project_root=$(git -C "$1" rev-parse --show-toplevel) || exit 1
 mkdir -p "$project_root/.claude/skills" "$project_root/scripts"
 
-for d in skills/handoff skills/qa skills/ship; do
+for d in skills/handoff skills/land skills/qa; do
   cp -r "$d" "$project_root/.claude/skills/"
 done
 
@@ -114,7 +114,7 @@ If you also want the schema reference docs in the installed tree, copy
 skill_root="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
 mkdir -p "$skill_root"
 
-for d in skills/handoff skills/qa skills/ship; do
+for d in skills/handoff skills/land skills/qa; do
   cp -r "$d" "$skill_root/"
 done
 

@@ -1,6 +1,6 @@
 ---
 name: verify
-description: "Use when a DevHome shell/powershell profile or module change needs tests and evidence from interactive pwsh and Windows PowerShell 5.1 consoles. Do not use for handoff claims, deployments, general test results, or work outside the DevHome PowerShell profile; use the workflow that owns that work (review, qa, ship)."
+description: "Use when a DevHome shell/powershell profile or module change needs tests and evidence from interactive pwsh and Windows PowerShell 5.1 consoles. Do not use for handoff claims, deployments, general test results, or work outside the DevHome PowerShell profile; use the workflow that owns that work (review, qa, land)."
 ---
 
 # Verifying DevHome shell changes

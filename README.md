@@ -108,7 +108,7 @@ opt-in; the release gate runs deterministic tests without provider calls.
 | **qa** | Map changes to tests, run scoped or full suites, check coverage, triage failures, smoke-test a configured app (HTTP or desktop/GUI), generate regression tests |
 | **diagnosing-bugs** | Build a tight red-capable feedback loop, reproduce/minimize the symptom, fix, and verify hard bugs or performance regressions |
 | **review** | Review branch, staged, or working-tree diffs against standards, specs, and regression risk, writing durable findings under `docs/reviews/` |
-| **ship** | Stage, commit, push validated work with campaign-aware commit grouping |
+| **land** | Stage, commit, push validated work with campaign-aware commit grouping |
 
 `repo-conventions` (codex-skills only) starts from the target repository's own
 rules, then supplies fallback playbooks for APIs, backend/frontend structure,

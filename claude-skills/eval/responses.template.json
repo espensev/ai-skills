@@ -63,6 +63,24 @@
     "notes": ""
   },
   {
+    "id": "land-basic-001",
+    "selected_skill": "",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "",
+    "notes": ""
+  },
+  {
+    "id": "land-edge-002",
+    "selected_skill": "",
+    "output": "",
+    "created_files": [],
+    "verification_commands": [],
+    "acceptability": "",
+    "notes": ""
+  },
+  {
     "id": "memory-management-basic-001",
     "selected_skill": "",
     "output": "",
@@ -100,24 +118,6 @@
   },
   {
     "id": "review-deep-audit-boundary-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "ship-basic-001",
-    "selected_skill": "",
-    "output": "",
-    "created_files": [],
-    "verification_commands": [],
-    "acceptability": "",
-    "notes": ""
-  },
-  {
-    "id": "ship-edge-002",
     "selected_skill": "",
     "output": "",
     "created_files": [],

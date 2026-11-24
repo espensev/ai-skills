@@ -17,7 +17,7 @@ PROGRAM_FLOW = ROOT / "docs" / "program-flow.md"
 PRODUCT_BACKLOG = ROOT / "docs" / "product-cost-optimization-backlog.md"
 FILE_MAP = ROOT / "docs" / "file-map.md"
 EXAMPLES_README = ROOT / "examples" / "README.md"
-SHIP_SKILL = SKILLS / "ship" / "SKILL.md"
+LAND_SKILL = SKILLS / "land" / "SKILL.md"
 BUILDER_AGENT = ROOT / "agent-definitions" / "builder.md"
 DEEP_AUDIT_SKILL = SKILLS / "deep-audit" / "SKILL.md"
 DIAGNOSING_BUGS_SKILL = SKILLS / "diagnosing-bugs" / "SKILL.md"
@@ -74,7 +74,7 @@ class TestSkillDocsContract(unittest.TestCase):
             SKILLS / "deep-audit" / "references" / "mode-contracts.md",
             SKILLS / "deep-audit" / "references" / "state-and-report-contracts.md",
             SKILLS / "qa" / "SKILL.md",
-            SKILLS / "ship" / "SKILL.md",
+            SKILLS / "land" / "SKILL.md",
             SKILLS / "skill-authoring" / "SKILL.md",
             SKILLS / "usage-stats" / "SKILL.md",
         ]
@@ -142,7 +142,7 @@ class TestSkillDocsContract(unittest.TestCase):
         manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
         self.assertIn("handoff", manifest["default_skills"])
         self.assertIn("qa", manifest["default_skills"])
-        self.assertIn("ship", manifest["default_skills"])
+        self.assertIn("land", manifest["default_skills"])
         self.assertIn("deep-audit", manifest["optional_skills"])
         self.assertIn("diagnosing-bugs", manifest["optional_skills"])
         self.assertIn("review", manifest["optional_skills"])
@@ -232,12 +232,12 @@ class TestSkillDocsContract(unittest.TestCase):
             self.assertNotRegex(description, r"[<>]", skill)
 
     def test_validated_work_is_committed_and_normally_pushed_without_a_second_gate(self):
-        ship = SHIP_SKILL.read_text(encoding="utf-8")
+        land = LAND_SKILL.read_text(encoding="utf-8")
         builder = BUILDER_AGENT.read_text(encoding="utf-8")
 
-        self.assertIn("does not require another confirmation", ship)
-        self.assertNotIn("Always confirms with the user first", ship)
-        self.assertNotIn("This is the ONE command that requires user confirmation", ship)
+        self.assertIn("does not require another confirmation", land)
+        self.assertNotIn("Always confirms with the user first", land)
+        self.assertNotIn("This is the ONE command that requires user confirmation", land)
         self.assertIn("create a focused commit", builder)
         self.assertIn("the orchestrator owns the reviewed normal push", builder)
 

@@ -151,6 +151,10 @@
       "replacement": "usage-stats"
     },
     {
+      "name": "ship",
+      "replacement": "land"
+    },
+    {
       "name": "smart-test",
       "replacement": "qa map or qa run --diff"
     },

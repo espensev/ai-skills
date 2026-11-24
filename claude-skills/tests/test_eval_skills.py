@@ -114,7 +114,7 @@ class TestEvalFixtures(unittest.TestCase):
 
     def test_boundary_cases_reject_wrong_routes_and_scope_violations(self):
         boundaries = {
-            "handoff-stale-state-001": ("ship", "reset --hard"),
+            "handoff-stale-state-001": ("land", "reset --hard"),
             "browser-control-isolated-001": ("qa", "launched providerbrowser"),
             "docs-sync-check-only-001": ("review", "edited README.md"),
             "qa-map-only-001": ("review", "ran the full suite"),

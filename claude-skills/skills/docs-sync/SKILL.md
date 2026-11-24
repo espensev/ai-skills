@@ -258,7 +258,7 @@ different surfaces and can run independently or together:
 
 | Skill | How Docs Sync Helps |
 |-------|---------------------|
-| `/ship` | Quick check before commit catches stale doc references |
+| `/land` | Quick check before commit catches stale doc references |
 | Observation log | Record `drift` observations in `data/observations.jsonl` for documentation divergence |
 | `/qa` | Docs-sync complements code quality with documentation quality |
 

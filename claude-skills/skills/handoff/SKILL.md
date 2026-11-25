@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "Use when the session opens by pointing back at earlier work instead of describing new work: resume, continue, take over, follow up, pick this up, read the handoff, or a path to a handoff/state/plan file. Reconciles the latest user direction with the prior state, verifies the claims the next action relies on, and continues through the workflow that owns the work. Do not use for a fresh task with no prior state, or for handoff authoring."
+description: "Use when the session opens by pointing back at earlier work instead of describing new work: resume, continue, take over, follow up, pick this up, read the handoff, review and find open work!, then continue adessing, or a path to a handoff/state/plan file. That open-work opener authorizes addressing the open work in this same session. Reconciles the latest user direction with the prior state, verifies the claims the next action relies on, and continues through the workflow that owns the work. Do not use for a fresh task with no prior state, or for handoff authoring."
 argument-hint: "[<handoff path>] - or nothing, to find the state yourself"
 user-invocable: true
 ---
@@ -145,7 +145,8 @@ later direction supersedes it.
 Then do the work in this same session. Intake alone is not completion, and
 naming the next gate is not an outcome — stop only when an unanswered
 decision genuinely blocks the work, and never treat an ordinary commit, push,
-or merge as that gate.
+or merge as that gate. A bare `go` or `GO` authorizes that named next gate.
+It is not a new task and not a second confirmation.
 
 ---
 
